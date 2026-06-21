@@ -288,6 +288,85 @@ textarea.inp{resize:vertical;min-height:60px}
   .color-grid{grid-template-columns:repeat(6,1fr)}
   .row2{grid-template-columns:1fr}
 }
+/* LEVEL PROGRESSION MODAL */
+.level-modal .modal-content{max-width:520px;max-height:85vh}
+.level-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:5px;max-height:60vh;overflow-y:auto;padding:4px 0}
+.level-item{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:var(--panel2);font-size:12px}
+.level-item.current{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--panel2));box-shadow:0 0 8px color-mix(in srgb,var(--accent) 30%,transparent)}
+.level-item.completed{opacity:.55}
+.level-item .li-lv{font-weight:800;color:var(--accent);min-width:28px;font-size:11px}
+.level-item .li-name{flex:1;font-weight:600;font-size:12px}
+.level-item .li-xp{color:var(--dim);font-size:10px;white-space:nowrap}
+.level-summary{display:flex;gap:10px;margin:12px 0;flex-wrap:wrap}
+.level-summary .ls{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:10px 14px;flex:1;min-width:100px;text-align:center}
+.level-summary .ls .lsl{font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
+.level-summary .ls .lsv{font-size:18px;font-weight:800;margin-top:3px}
+.xpwrap{cursor:pointer}
+
+/* REWARD POPUP */
+.reward-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:200;
+  background:var(--panel);border:2px solid var(--accent);border-radius:20px;padding:28px 24px;
+  text-align:center;max-width:320px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,.5);
+  transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.reward-popup.show{transform:translate(-50%,-50%) scale(1)}
+.reward-popup .rp-emoji{font-size:52px;margin-bottom:8px}
+.reward-popup .rp-title{font-size:18px;font-weight:800;color:var(--accent);margin-bottom:4px}
+.reward-popup .rp-habit{font-size:14px;color:var(--dim);margin-bottom:10px}
+.reward-popup .rp-reward{font-size:15px;font-weight:700;padding:12px;background:var(--panel2);border-radius:12px;margin:8px 0;color:var(--pink)}
+.reward-popup .rp-close{margin-top:12px}
+.reward-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
+.reward-overlay.show{display:block}
+
+/* STAT FILTERS */
+.stat-filters{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px}
+.stat-filters summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--accent);list-style:none;display:flex;align-items:center;gap:6px}
+.stat-filters summary::before{content:"▸";transition:transform .2s}
+.stat-filters[open] summary::before{transform:rotate(90deg)}
+.sf-section{margin-top:10px}
+.sf-label{font-size:10px;font-weight:700;color:var(--dim);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
+.sf-row{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:8px}
+.sf-chip{padding:4px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;
+  border:1px solid var(--line);background:var(--panel2);color:var(--dim);transition:all .12s;user-select:none}
+.sf-chip.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.sf-chip.tag-chip{border-left:3px solid var(--tag-color,var(--dim))}
+.sf-actions{display:flex;gap:6px;margin-top:4px}
+.sf-actions button{font-size:10px;padding:3px 8px;border-radius:6px;background:var(--panel2);border:1px solid var(--line);color:var(--dim);cursor:pointer;font-weight:600}
+
+/* DRAG TODAY */
+.today-item[draggable]{cursor:grab}
+.today-item.dragging{opacity:.4}
+.today-item .ti-drag{color:var(--tdim);font-size:14px;padding:0 2px;user-select:none;cursor:grab;flex:0 0 auto}
+
+/* WEEKLY CHART */
+.week-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding:12px 0}
+.wc-bar{flex:1;display:flex;flex-direction:column;align-items:center;gap:4px}
+.wc-fill{width:100%;border-radius:4px 4px 0 0;min-height:2px}
+.wc-label{font-size:10px;color:var(--dim)}
+.wc-val{font-size:10px;font-weight:700}
+
+/* TAG PERF */
+.tag-perf-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.tag-perf-item:last-child{border-bottom:none}
+.tag-perf-bar{flex:1;height:8px;background:var(--line);border-radius:4px;overflow:hidden}
+.tag-perf-fill{height:100%;border-radius:4px}
+.tag-perf-name{font-size:12px;font-weight:700;min-width:80px}
+.tag-perf-pct{font-size:12px;font-weight:800;min-width:40px;text-align:right}
+
+/* STREAKS */
+.streak-item{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.streak-item:last-child{border-bottom:none}
+.streak-rank{font-size:16px;font-weight:800;color:var(--accent);min-width:28px}
+.streak-name{flex:1;font-size:13px;font-weight:600}
+.streak-val{font-size:14px;font-weight:800;color:var(--green)}
+
+/* HEATMAP */
+.heatmap-grid{overflow-x:auto;margin:10px 0}
+.heatmap-table{border-spacing:2px}
+.heatmap-table td{width:14px;height:14px;border-radius:3px;cursor:default;position:relative}
+.heatmap-table th{font-size:9px;color:var(--dim);font-weight:600;padding:2px 4px}
+.hm-0{background:var(--line)} .hm-1{background:#1a4731} .hm-2{background:#22633e} .hm-3{background:#2ecc71}
+[data-theme="light"] .hm-1{background:#b7e4c7} [data-theme="light"] .hm-2{background:#6bc88f} [data-theme="light"] .hm-3{background:#2ecc71}
+
 @media print{
   header,.tabs,.months,.freeze-btn,.hint,.btn,.acts,.io{display:none!important}
   body{background:#fff;color:#000;padding:0}
@@ -547,6 +626,24 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 </div>
 
+<div class="modal level-modal" id="levelModal">
+  <div class="modal-content">
+    <h3 id="lLevelProgression">Level Progression</h3>
+    <div id="levelSummary"></div>
+    <div class="level-grid" id="levelGrid"></div>
+    <button class="btn ghost" style="margin-top:12px" id="btnCloseLevel"><span id="lBtnCloseLevel">Close</span></button>
+  </div>
+</div>
+
+<div class="reward-overlay" id="rewardOverlay"></div>
+<div class="reward-popup" id="rewardPopup">
+  <div class="rp-emoji">&#127805;</div>
+  <div class="rp-title" id="rpTitle">Reward Earned!</div>
+  <div class="rp-habit" id="rpHabit"></div>
+  <div class="rp-reward" id="rpReward"></div>
+  <button class="btn primary rp-close" id="btnCloseReward">OK</button>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -560,6 +657,13 @@ daysShort:["Su","Mo","Tu","We","Th","Fr","Sa"],dayNames:["Sun","Mon","Tue","Wed"
 tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabAnalytics:"Analytics",tabSettings:"Settings",
 syncLocal:"○ local",syncOnline:"● online",syncConnecting:"● connecting...",
 lvls:["Beginner","Practitioner","Expert","Master","Guru","Legend"],
+ranks:["Novice","Apprentice","Seeker","Guardian","Pathfinder","Warrior","Knight","Mystic","Sage","Hunter","Berserker","Paladin","Sorcerer","Titan","Phoenix","Dragon","Archon","Immortal","Legend","God"],
+levelProgression:"Level Progression",currentLevel:"Current Level",totalXP:"Total XP",xpToNext:"XP to next level",
+rewardEarned:"Reward Earned!",targetReached:"Target reached for",yourReward:"Your reward:",closeBtn2:"Close",
+filterTitle:"Filters",selectAll:"Select all",deselectAll:"Deselect all",filterMonths:"Months",filterHabits:"Habits",filterTags:"Tags",
+weeklyPattern:"Weekly Pattern",tagPerformance:"Tag Performance",streaksBoard:"Streaks Leaderboard",habitHeatmap:"Habit Heatmap",
+topStreaks:"Top streaks across all months",avgByDay:"Average completion by day of week",perfByTag:"Performance by tag category",
+heatmapDesc:"Daily completion intensity across the year",daysLabel:"days",
 done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",
 freezeToday:"Freeze today",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
 streak:"streak",notYearYet:"Not {0} yet",xpToday:"XP today",
@@ -650,6 +754,13 @@ daysShort:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],dayNames:["Вск",
 tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabAnalytics:"Аналитика",tabSettings:"Настройки",
 syncLocal:"○ локально",syncOnline:"● онлайн",syncConnecting:"● подключение...",
 lvls:["Новичок","Практик","Эксперт","Мастер","Гуру","Легенда"],
+ranks:["Новичок","Ученик","Искатель","Страж","Следопыт","Воин","Рыцарь","Мистик","Мудрец","Охотник","Берсерк","Паладин","Чародей","Титан","Феникс","Дракон","Архонт","Бессмертный","Легенда","Бог"],
+levelProgression:"Прогрессия уровней",currentLevel:"Текущий уровень",totalXP:"Всего XP",xpToNext:"XP до след. уровня",
+rewardEarned:"Награда получена!",targetReached:"Норма выполнена для",yourReward:"Ваша награда:",closeBtn2:"Закрыть",
+filterTitle:"Фильтры",selectAll:"Выбрать все",deselectAll:"Снять все",filterMonths:"Месяцы",filterHabits:"Привычки",filterTags:"Теги",
+weeklyPattern:"Недельный паттерн",tagPerformance:"Эффективность тегов",streaksBoard:"Рейтинг серий",habitHeatmap:"Тепловая карта",
+topStreaks:"Лучшие серии за все месяцы",avgByDay:"Средний % выполнения по дням недели",perfByTag:"Результативность по категориям тегов",
+heatmapDesc:"Интенсивность выполнения по дням года",daysLabel:"дн.",
 done:"выполнено",todayDone:"Сделано",remaining:"Осталось",freezesLeft:"Заморозок осталось",
 freezeToday:"Заморозить день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
 streak:"серия",notYearYet:"Ещё не {0} год",xpToday:"XP сегодня",
@@ -740,6 +851,13 @@ daysShort:["Do","Lu","Ma","Mi","Ju","Vi","Sá"],dayNames:["Dom","Lun","Mar","Mi�
 tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabAnalytics:"Análisis",tabSettings:"Ajustes",
 syncLocal:"○ local",syncOnline:"● en línea",syncConnecting:"● conectando...",
 lvls:["Principiante","Practicante","Experto","Maestro","Gurú","Leyenda"],
+ranks:["Novato","Aprendiz","Buscador","Guardián","Explorador","Guerrero","Caballero","Místico","Sabio","Cazador","Berserker","Paladín","Hechicero","Titán","Fénix","Dragón","Arconte","Inmortal","Leyenda","Dios"],
+levelProgression:"Progresión de nivel",currentLevel:"Nivel actual",totalXP:"XP total",xpToNext:"XP para siguiente nivel",
+rewardEarned:"¡Recompensa ganada!",targetReached:"Meta alcanzada para",yourReward:"Tu recompensa:",closeBtn2:"Cerrar",
+filterTitle:"Filtros",selectAll:"Seleccionar todo",deselectAll:"Deseleccionar todo",filterMonths:"Meses",filterHabits:"Hábitos",filterTags:"Etiquetas",
+weeklyPattern:"Patrón semanal",tagPerformance:"Rendimiento por etiqueta",streaksBoard:"Ranking de rachas",habitHeatmap:"Mapa de calor",
+topStreaks:"Mejores rachas de todos los meses",avgByDay:"Promedio de cumplimiento por día de semana",perfByTag:"Rendimiento por categoría",
+heatmapDesc:"Intensidad de cumplimiento diario durante el año",daysLabel:"días",
 done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones rest.",
 freezeToday:"Congelar hoy",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
 streak:"racha",notYearYet:"Aún no es {0}",xpToday:"XP hoy",
@@ -830,6 +948,13 @@ daysShort:["日","一","二","三","四","五","六"],dayNames:["周日","周一
 tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabAnalytics:"分析",tabSettings:"设置",
 syncLocal:"○ 本地",syncOnline:"● 在线",syncConnecting:"● 连接中...",
 lvls:["初学者","修行者","专家","大师","导师","传奇"],
+ranks:["新手","学徒","探索者","守护者","探路者","战士","骑士","神秘者","贤者","猎人","狂战士","圣骑士","术士","泰坦","凤凰","龙","执政官","不朽者","传说","神"],
+levelProgression:"等级进度",currentLevel:"当前等级",totalXP:"总XP",xpToNext:"距下一级XP",
+rewardEarned:"获得奖励！",targetReached:"已达标：",yourReward:"你的奖励：",closeBtn2:"关闭",
+filterTitle:"筛选",selectAll:"全选",deselectAll:"取消全选",filterMonths:"月份",filterHabits:"习惯",filterTags:"标签",
+weeklyPattern:"每周模式",tagPerformance:"标签表现",streaksBoard:"连续排行榜",habitHeatmap:"热力图",
+topStreaks:"所有月份最佳连续记录",avgByDay:"按星期几的平均完成率",perfByTag:"按标签类别的表现",
+heatmapDesc:"全年每日完成强度",daysLabel:"天",
 done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结",
 freezeToday:"冻结今天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
 streak:"连续",notYearYet:"还不是{0}年",xpToday:"今日XP",
@@ -920,6 +1045,13 @@ daysShort:["Di","Lu","Ma","Me","Je","Ve","Sa"],dayNames:["Dim","Lun","Mar","Mer"
 tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabAnalytics:"Analyse",tabSettings:"Paramètres",
 syncLocal:"○ local",syncOnline:"● en ligne",syncConnecting:"● connexion...",
 lvls:["Débutant","Praticien","Expert","Maître","Gourou","Légende"],
+ranks:["Novice","Apprenti","Chercheur","Gardien","Éclaireur","Guerrier","Chevalier","Mystique","Sage","Chasseur","Berserker","Paladin","Sorcier","Titan","Phénix","Dragon","Archonte","Immortel","Légende","Dieu"],
+levelProgression:"Progression de niveau",currentLevel:"Niveau actuel",totalXP:"XP total",xpToNext:"XP pour le prochain niveau",
+rewardEarned:"Récompense gagnée !",targetReached:"Objectif atteint pour",yourReward:"Votre récompense :",closeBtn2:"Fermer",
+filterTitle:"Filtres",selectAll:"Tout sélectionner",deselectAll:"Tout désélectionner",filterMonths:"Mois",filterHabits:"Habitudes",filterTags:"Étiquettes",
+weeklyPattern:"Modèle hebdomadaire",tagPerformance:"Performance par étiquette",streaksBoard:"Classement des séries",habitHeatmap:"Carte thermique",
+topStreaks:"Meilleures séries de tous les mois",avgByDay:"Moyenne d'achèvement par jour de semaine",perfByTag:"Performance par catégorie",
+heatmapDesc:"Intensité d'achèvement quotidien sur l'année",daysLabel:"jours",
 done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",
 freezeToday:"Geler aujourd'hui",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
 streak:"série",notYearYet:"Pas encore {0}",xpToday:"XP aujourd'hui",
@@ -1034,7 +1166,8 @@ function applyLang(){
     lNotePrefix:T.notePrefix,lBtnSaveNote:T.saveBtn,lBtnCloseNote:T.closeBtn,
     lTagNameLabel:T.tagNameLabel,lColorLabel:T.colorLabel,
     lBtnSaveTag:T.saveTagBtn,lBtnCloseTag:T.cancel,lBtnDeleteTag:T.deleteTagBtn,
-    gridHintText:T.gridHint,lHowToCreate:T.howToCreate};
+    gridHintText:T.gridHint,lHowToCreate:T.howToCreate,
+    lLevelProgression:T.levelProgression,lBtnCloseLevel:T.closeBtn2||T.closeBtn};
   for(const[id,text]of Object.entries(ids)){const el=document.getElementById(id);if(el)el.textContent=text}
   const phs={fName:T.namePH,fReward:T.rewardPH,syncUrl:"https://...firebasedatabase.app",
     syncPaste:T.pasteKeyPH,noteText:T.notePH,tagNameInp:T.tagNamePH};
@@ -1105,14 +1238,23 @@ function defaultHabits(){
   ];
 }
 
-/* ===== XP SYSTEM ===== */
+/* ===== XP SYSTEM (100 levels, 20 ranks × 5 sub-levels) ===== */
 function xpForCheck(weight){return(weight||1)*10}
-function xpForLevel(lv){return lv<=1?0:250*lv*(lv-1)}
-function levelFromXp(xp){let lv=1;while(xpForLevel(lv+1)<=xp)lv++;return lv}
+function xpForLevel(lv){
+  if(lv<=1)return 0;
+  let total=0;
+  for(let l=2;l<=lv;l++){total+=Math.ceil(l/5)*100}
+  return total;
+}
+function levelFromXp(xp){let lv=1;while(lv<100&&xpForLevel(lv+1)<=xp)lv++;return lv}
 function levelTitle(lv){
-  const L=T.lvls;
-  if(lv>=31)return L[5];if(lv>=21)return L[4];if(lv>=16)return L[3];
-  if(lv>=11)return L[2];if(lv>=6)return L[1];return L[0];
+  const rankIdx=Math.min(Math.ceil(lv/5)-1,19);
+  const sub=((lv-1)%5)+1;
+  return(T.ranks||T.lvls)[Math.min(rankIdx,(T.ranks||T.lvls).length-1)]+" "+sub;
+}
+function rankName(lv){
+  const rankIdx=Math.min(Math.ceil(lv/5)-1,19);
+  return(T.ranks||T.lvls)[Math.min(rankIdx,(T.ranks||T.lvls).length-1)];
 }
 
 /* ===== STATE ===== */
@@ -1218,9 +1360,11 @@ function toggleFreeze(m,d){
 function toggleCheck(m,hid,day){
   const c=getChecks(m,hid);
   const h=state.habits.find(x=>x.id===hid);
+  const wasMet=h?metTarget(h,m):false;
   if(c[day]){delete c[day];state.xp=Math.max(0,(state.xp||0)-xpForCheck(h?h.weight:1))}
   else{c[day]=true;state.xp=(state.xp||0)+xpForCheck(h?h.weight:1)}
   save();
+  if(h&&!wasMet&&metTarget(h,m)&&h.reward)showRewardPopup(h);
 }
 function checkedCount(m,hid){return Object.keys(getChecks(m,hid)).length}
 function effTarget(h,m){
@@ -1304,6 +1448,60 @@ function renderXP(){
     <div class="xplevel">Lv.${lv} ${levelTitle(lv)}</div>
     <div class="xptrack"><div class="xpfill" style="width:${pct}%"></div></div>
     <div class="xptext">${state.xp||0} XP</div>`;
+  document.getElementById("xpBar").onclick=openLevelModal;
+}
+
+/* ===== LEVEL PROGRESSION MODAL ===== */
+function openLevelModal(){
+  const lv=levelFromXp(state.xp||0);
+  const cur=state.xp-xpForLevel(lv);
+  const need=xpForLevel(lv+1)-xpForLevel(lv);
+  const toNext=Math.max(0,need-cur);
+
+  document.getElementById("lLevelProgression").textContent=T.levelProgression;
+  document.getElementById("lBtnCloseLevel").textContent=T.closeBtn2||T.closeBtn;
+
+  document.getElementById("levelSummary").innerHTML=`
+    <div class="level-summary">
+      <div class="ls"><div class="lsl">${T.currentLevel}</div><div class="lsv">Lv.${lv}</div></div>
+      <div class="ls"><div class="lsl">${rankName(lv)}</div><div class="lsv">${((lv-1)%5)+1}/5</div></div>
+      <div class="ls"><div class="lsl">${T.totalXP}</div><div class="lsv">${state.xp||0}</div></div>
+      <div class="ls"><div class="lsl">${T.xpToNext}</div><div class="lsv">${lv>=100?'MAX':toNext}</div></div>
+    </div>`;
+
+  let html='';
+  for(let l=1;l<=100;l++){
+    const xpNeed=xpForLevel(l);
+    const isCurrent=l===lv;
+    const isCompleted=l<lv;
+    const cls=isCurrent?'current':isCompleted?'completed':'';
+    html+=`<div class="level-item ${cls}">
+      <div class="li-lv">${l}</div>
+      <div class="li-name">${levelTitle(l)}</div>
+      <div class="li-xp">${xpNeed} XP</div>
+    </div>`;
+  }
+  document.getElementById("levelGrid").innerHTML=html;
+  document.getElementById("levelModal").classList.add("open");
+
+  setTimeout(()=>{
+    const cur=document.querySelector(".level-item.current");
+    if(cur)cur.scrollIntoView({block:"center",behavior:"smooth"});
+  },100);
+}
+function closeLevelModal(){document.getElementById("levelModal").classList.remove("open")}
+
+/* ===== REWARD POPUP ===== */
+function showRewardPopup(habit){
+  document.getElementById("rpTitle").textContent=T.rewardEarned;
+  document.getElementById("rpHabit").textContent=T.targetReached+' "'+habit.name+'"';
+  document.getElementById("rpReward").textContent=habit.reward||'—';
+  document.getElementById("rewardOverlay").classList.add("show");
+  document.getElementById("rewardPopup").classList.add("show");
+}
+function closeRewardPopup(){
+  document.getElementById("rewardOverlay").classList.remove("show");
+  document.getElementById("rewardPopup").classList.remove("show");
 }
 
 /* ===== TODAY VIEW ===== */
@@ -1348,8 +1546,9 @@ function renderToday(){
     grouped[tid].forEach(h=>{
       const done=!!getChecks(m,h.id)[d]||frozen;
       const streak=longestStreak(m,h.id);
-      html+=`<div class="today-item" data-h="${h.id}">
-        <div><div class="ti-name">${escapeHtml(h.name)}</div>
+      html+=`<div class="today-item" draggable="true" data-h="${h.id}">
+        <span class="ti-drag">&#10495;</span>
+        <div style="flex:1"><div class="ti-name">${escapeHtml(h.name)}</div>
         <div class="ti-streak">${T.streak} ${streak} &middot; +${xpForCheck(h.weight)} XP</div></div>
         <div class="ti-check ${done?'done':''}" style="--chkcolor:${tag.color};${done?'background:'+tag.color:''}">
           ${done?'&#10003;':''}</div>
@@ -1358,10 +1557,29 @@ function renderToday(){
     html+=`</div>`;
   }
 
+  const rew=monthRewards(m);
+  if(rew.length){
+    html+=`<div class="card" style="margin-top:14px"><h3>&#127805; ${T.rewardBank}</h3><p class="sub">${T.earnedThisMonth}: ${rew.length}/${hs.length}</p><div class="hlist">`;
+    rew.forEach(h=>{
+      const ck="m"+m+"_"+h.id;
+      const claimed=state.claimedRewards[ck];
+      html+=`<div class="reward-item"><span class="dot" style="background:${getTagColor(h.tagId)}"></span><div class="ri-name">${escapeHtml(h.name)}</div><div class="ri-reward">${escapeHtml(h.reward||'')}</div><button class="ri-claim ${claimed?'claimed':''}" data-ck="${ck}">${claimed?T.claimedLabel:T.claim}</button></div>`;
+    });
+    html+=`</div></div>`;
+  }
+
   el.innerHTML=html;
 
   el.querySelectorAll(".today-item").forEach(item=>{
-    item.onclick=()=>{
+    item.querySelector(".ti-check").onclick=e=>{
+      e.stopPropagation();
+      if(frozen)return;
+      const hid=item.dataset.h;
+      toggleCheck(m,hid,d);
+      renderToday();renderXP();
+    };
+    item.onclick=e=>{
+      if(e.target.classList.contains("ti-drag"))return;
       if(frozen)return;
       const hid=item.dataset.h;
       toggleCheck(m,hid,d);
@@ -1369,10 +1587,32 @@ function renderToday(){
     };
   });
 
+  initTodayDragDrop(el);
+
   const fb=document.getElementById("btnFreezeToday");
   if(fb)fb.onclick=()=>{toggleFreeze(m,d);renderToday()};
   const ub=document.getElementById("btnUnfreezeToday");
   if(ub)ub.onclick=()=>{toggleFreeze(m,d);renderToday()};
+}
+
+function initTodayDragDrop(el){
+  let dragId=null;
+  el.querySelectorAll(".today-item[draggable]").forEach(item=>{
+    item.ondragstart=e=>{dragId=item.dataset.h;item.classList.add("dragging");e.dataTransfer.effectAllowed="move"};
+    item.ondragend=()=>{item.classList.remove("dragging")};
+    item.ondragover=e=>{e.preventDefault();e.dataTransfer.dropEffect="move"};
+    item.ondrop=e=>{
+      e.preventDefault();
+      if(!dragId||dragId===item.dataset.h)return;
+      const from=state.habits.findIndex(h=>h.id===dragId);
+      const to=state.habits.findIndex(h=>h.id===item.dataset.h);
+      if(from<0||to<0)return;
+      const[moved]=state.habits.splice(from,1);
+      state.habits.splice(to,0,moved);
+      state.habits.forEach((h,i)=>h.order=i);
+      save();renderToday();
+    };
+  });
 }
 
 /* ===== TRACK VIEW ===== */
@@ -1684,6 +1924,24 @@ function updatePenaltyBankHint(){
 
 /* ===== STATS VIEW ===== */
 let statScope="year";
+let statFilters={months:null,habits:null,tags:null};
+function initStatFilters(){
+  const hs=activeHabits();
+  if(!statFilters.months)statFilters.months=new Set([0,1,2,3,4,5,6,7,8,9,10,11]);
+  if(!statFilters.habits)statFilters.habits=new Set(hs.map(h=>h.id));
+  if(!statFilters.tags)statFilters.tags=new Set(state.tags.map(t=>t.id));
+  hs.forEach(h=>{if(!statFilters.habits.has(h.id))statFilters.habits.add(h.id)});
+  state.tags.forEach(t=>{if(!statFilters.tags.has(t.id))statFilters.tags.add(t.id)});
+}
+function filteredHabits(){
+  return activeHabits().filter(h=>statFilters.habits.has(h.id)&&statFilters.tags.has(h.tagId));
+}
+function filteredMonths(){return[...statFilters.months].sort((a,b)=>a-b)}
+function fMonthScore(m){
+  const hs=filteredHabits();if(!hs.length)return 0;
+  let s=0;hs.forEach(h=>{const t=effTarget(h,m);s+=t?Math.min(checkedCount(m,h.id)/t,1):0});
+  return Math.round(s/hs.length*100);
+}
 
 function renderStatScope(){
   const el=document.getElementById("statScope");
@@ -1692,7 +1950,53 @@ function renderStatScope(){
   el.innerHTML=html;
   el.querySelectorAll(".m").forEach(b=>b.onclick=()=>{statScope=b.dataset.s==="year"?"year":+b.dataset.s;renderStats()});
 }
-function renderStats(){renderStatScope();const body=document.getElementById("statBody");body.innerHTML=statScope==="year"?yearStatsHTML():monthStatsHTML(statScope)}
+function renderStats(){initStatFilters();renderStatScope();const body=document.getElementById("statBody");body.innerHTML=statScope==="year"?yearStatsHTML():monthStatsHTML(statScope);wireStatFilters()}
+
+function renderStatFiltersHTML(){
+  const hs=activeHabits();
+  let html=`<details class="stat-filters"><summary>${T.filterTitle}</summary>`;
+  html+=`<div class="sf-section"><div class="sf-label">${T.filterMonths}</div><div class="sf-row" id="sfMonths">`;
+  for(let i=0;i<12;i++){
+    html+=`<div class="sf-chip ${statFilters.months.has(i)?'active':''}" data-sf="month" data-v="${i}">${T.monthsShort[i]}</div>`;
+  }
+  html+=`</div><div class="sf-actions"><button data-sfa="months-all">${T.selectAll}</button><button data-sfa="months-none">${T.deselectAll}</button></div></div>`;
+  html+=`<div class="sf-section"><div class="sf-label">${T.filterHabits}</div><div class="sf-row" id="sfHabits">`;
+  hs.forEach(h=>{
+    html+=`<div class="sf-chip ${statFilters.habits.has(h.id)?'active':''}" data-sf="habit" data-v="${h.id}">${escapeHtml(h.name.slice(0,15))}</div>`;
+  });
+  html+=`</div><div class="sf-actions"><button data-sfa="habits-all">${T.selectAll}</button><button data-sfa="habits-none">${T.deselectAll}</button></div></div>`;
+  html+=`<div class="sf-section"><div class="sf-label">${T.filterTags}</div><div class="sf-row" id="sfTags">`;
+  state.tags.forEach(t=>{
+    html+=`<div class="sf-chip tag-chip ${statFilters.tags.has(t.id)?'active':''}" data-sf="tag" data-v="${t.id}" style="--tag-color:${t.color}">${escapeHtml(t.name)}</div>`;
+  });
+  html+=`</div><div class="sf-actions"><button data-sfa="tags-all">${T.selectAll}</button><button data-sfa="tags-none">${T.deselectAll}</button></div></div>`;
+  html+=`</details>`;
+  return html;
+}
+function wireStatFilters(){
+  document.querySelectorAll("[data-sf]").forEach(chip=>{
+    chip.onclick=()=>{
+      const type=chip.dataset.sf,val=chip.dataset.v;
+      let set=type==="month"?statFilters.months:type==="habit"?statFilters.habits:statFilters.tags;
+      const key=type==="month"?+val:val;
+      if(set.has(key))set.delete(key);else set.add(key);
+      renderStats();
+    };
+  });
+  document.querySelectorAll("[data-sfa]").forEach(btn=>{
+    btn.onclick=()=>{
+      const[type,action]=btn.dataset.sfa.split("-");
+      if(type==="months"){
+        statFilters.months=action==="all"?new Set([0,1,2,3,4,5,6,7,8,9,10,11]):new Set();
+      }else if(type==="habits"){
+        statFilters.habits=action==="all"?new Set(activeHabits().map(h=>h.id)):new Set();
+      }else{
+        statFilters.tags=action==="all"?new Set(state.tags.map(t=>t.id)):new Set();
+      }
+      renderStats();
+    };
+  });
+}
 
 function barChart(values,labels,unit,colorFn,maxOverride){
   const W=Math.max(values.length*40,320),H=160,pad=24,bw=W/values.length*0.55;
@@ -1756,22 +2060,30 @@ function monthStatsHTML(m){
 }
 
 function yearStatsHTML(){
-  const scores=T.months.map((_,m)=>monthScore(m));
-  const avg=Math.round(scores.reduce((a,b)=>a+b,0)/12);
-  const totalRew=T.months.reduce((s,_,m)=>s+monthRewards(m).length,0);
-  const totalPen=T.months.reduce((s,_,m)=>s+monthPenalty(m),0);
-  const totalKept=T.months.reduce((s,_,m)=>{const inc=getIncome(m);return s+Math.max(0,inc-monthPenalty(m))},0);
-  const best=scores.indexOf(Math.max(...scores)),worst=scores.indexOf(Math.min(...scores));
-  const chart=barChart(scores,T.monthsShort,"%",(v)=>v>=80?"var(--green)":v>=50?"var(--accent2)":"var(--red)",100);
+  const fm=filteredMonths(),fh=filteredHabits();
+  const scores=fm.map(m=>fMonthScore(m));
+  const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
+  const totalRew=fm.reduce((s,m)=>s+fh.filter(h=>metTarget(h,m)).length,0);
+  const totalPen=fm.reduce((s,m)=>{let p=0;fh.forEach(h=>{if(!metTarget(h,m))p+=habitPenalty(h,m)});return s+p},0);
+  const totalKept=fm.reduce((s,m)=>{const inc=getIncome(m);let p=0;fh.forEach(h=>{if(!metTarget(h,m))p+=habitPenalty(h,m)});return s+Math.max(0,inc-p)},0);
+  const bestIdx=scores.length?scores.indexOf(Math.max(...scores)):0;
+  const fmLabels=fm.map(m=>T.monthsShort[m]);
+  const chart=scores.length?barChart(scores,fmLabels,"%",(v)=>v>=80?"var(--green)":v>=50?"var(--accent2)":"var(--red)",100):"";
 
-  const keptArr=T.months.map((_,m)=>{const inc=getIncome(m);return Math.round(Math.max(0,inc-monthPenalty(m))/1000)});
-  const hasIncome=T.months.some((_,m)=>getIncome(m)>0);
-  const moneyChart=hasIncome?barChart(keptArr,T.monthsShort,"k","var(--accent)"):"";
+  const keptArr=fm.map(m=>{const inc=getIncome(m);let p=0;fh.forEach(h=>{if(!metTarget(h,m))p+=habitPenalty(h,m)});return Math.round(Math.max(0,inc-p)/1000)});
+  const hasIncome=fm.some(m=>getIncome(m)>0);
+  const moneyChart=hasIncome&&keptArr.length?barChart(keptArr,fmLabels,"k","var(--accent)"):"";
 
-  const charityTotal=T.months.reduce((s,_,m)=>s+monthCharityAmount(m),0);
+  const charityTotal=fm.reduce((s,m)=>s+monthCharityAmount(m),0);
   const ach=achievementsForYear();
 
+  const weeklyHTML=weeklyPatternHTML(fm,fh);
+  const tagPerfHTML=tagPerformanceHTML(fm,fh);
+  const streaksHTML=streaksLeaderboardHTML(fm,fh);
+  const heatmapHTML=habitHeatmapHTML(fm,fh);
+
   return`
+  ${renderStatFiltersHTML()}
   <div class="hero">
     <div class="ringbox"><svg width="108" height="108" viewBox="0 0 108 108">
       <circle cx="54" cy="54" r="48" fill="none" stroke="var(--line)" stroke-width="9"/>
@@ -1780,7 +2092,7 @@ function yearStatsHTML(){
       </svg><div class="pct"><b>${avg}%</b><span>2026</span></div></div>
     <div class="herostats">
       <div class="stat"><div class="lab">${T.rewardsYear}</div><div class="val" style="color:var(--pink)">${totalRew}</div></div>
-      <div class="stat"><div class="lab">${T.bestMonth}</div><div class="val" style="color:var(--accent)">${T.monthsShort[best]}</div></div>
+      <div class="stat"><div class="lab">${T.bestMonth}</div><div class="val" style="color:var(--accent)">${fm.length?T.monthsShort[fm[bestIdx]]:'—'}</div></div>
       <div class="stat"><div class="lab">${T.keptYear}</div><div class="val" style="color:var(--accent)">${hasIncome?rub(totalKept):'—'}</div></div>
       <div class="stat"><div class="lab">${T.toCharity}</div><div class="val" style="color:var(--accent2)">${hasIncome?rub(charityTotal):'—'}</div></div>
     </div>
@@ -1791,8 +2103,102 @@ function yearStatsHTML(){
   <div class="card"><h3>${T.disciplineByMonth}</h3><p class="sub">${T.avgCompletion}</p>${chart}
     <div class="legend"><span><i style="background:var(--green)"></i>80%+</span><span><i style="background:var(--accent2)"></i>50-79%</span><span><i style="background:var(--red)"></i>&lt;50%</span></div>
   </div>
+
+  ${weeklyHTML}
+  ${tagPerfHTML}
+  ${heatmapHTML}
+  ${streaksHTML}
+
   ${hasIncome?`<div class="card"><h3>${T.moneyOnHand}</h3><p class="sub">${T.kPerMonth}</p>${moneyChart}</div>`:''}
   <div class="card"><h3>${T.achievementsTitle}</h3><div class="achwrap">${ach.map(achCard).join("")}</div></div>`;
+}
+
+/* ===== ANALYTICS WIDGETS ===== */
+function weeklyPatternHTML(months,habits){
+  if(!habits.length||!months.length)return'';
+  const dayCounts=new Array(7).fill(0),dayTotals=new Array(7).fill(0);
+  months.forEach(m=>{
+    const N=daysInMonth(m);
+    for(let d=1;d<=N;d++){
+      const wd=weekday(m,d);
+      habits.forEach(h=>{
+        dayTotals[wd]++;
+        if(getChecks(m,h.id)[d])dayCounts[wd]++;
+      });
+    }
+  });
+  const pcts=dayCounts.map((c,i)=>dayTotals[i]?Math.round(c/dayTotals[i]*100):0);
+  const max=Math.max(1,...pcts);
+  let bars='';
+  pcts.forEach((p,i)=>{
+    const h=Math.round(p/max*90);
+    const col=p>=80?'var(--green)':p>=50?'var(--accent2)':'var(--red)';
+    bars+=`<div class="wc-bar"><div class="wc-val">${p}%</div><div class="wc-fill" style="height:${h}px;background:${col}"></div><div class="wc-label">${T.daysShort[i]}</div></div>`;
+  });
+  return`<div class="card"><h3>${T.weeklyPattern}</h3><p class="sub">${T.avgByDay}</p><div class="week-chart">${bars}</div></div>`;
+}
+
+function tagPerformanceHTML(months,habits){
+  if(!habits.length||!months.length)return'';
+  const tagMap={};
+  habits.forEach(h=>{
+    const tid=h.tagId||"none";
+    if(!tagMap[tid])tagMap[tid]={done:0,total:0};
+    months.forEach(m=>{
+      const t=effTarget(h,m);
+      tagMap[tid].total+=t;
+      tagMap[tid].done+=Math.min(checkedCount(m,h.id),t);
+    });
+  });
+  const entries=Object.entries(tagMap).map(([tid,v])=>({tag:getTag(tid),pct:v.total?Math.round(v.done/v.total*100):0})).sort((a,b)=>b.pct-a.pct);
+  if(!entries.length)return'';
+  let items=entries.map(e=>`<div class="tag-perf-item">
+    <span class="tag-dot" style="background:${e.tag.color}"></span>
+    <div class="tag-perf-name">${escapeHtml(e.tag.name)}</div>
+    <div class="tag-perf-bar"><div class="tag-perf-fill" style="width:${e.pct}%;background:${e.tag.color}"></div></div>
+    <div class="tag-perf-pct">${e.pct}%</div>
+  </div>`).join("");
+  return`<div class="card"><h3>${T.tagPerformance}</h3><p class="sub">${T.perfByTag}</p>${items}</div>`;
+}
+
+function streaksLeaderboardHTML(months,habits){
+  if(!habits.length||!months.length)return'';
+  const streaks=[];
+  habits.forEach(h=>{
+    let best=0,bestM=0;
+    months.forEach(m=>{const s=longestStreak(m,h.id);if(s>best){best=s;bestM=m}});
+    if(best>0)streaks.push({habit:h,streak:best,month:bestM});
+  });
+  streaks.sort((a,b)=>b.streak-a.streak);
+  const top=streaks.slice(0,10);
+  if(!top.length)return'';
+  const items=top.map((s,i)=>`<div class="streak-item">
+    <div class="streak-rank">${i<3?['&#129351;','&#129352;','&#129353;'][i]:(i+1)}</div>
+    <div class="streak-name">${escapeHtml(s.habit.name)}</div>
+    <div class="streak-val">${s.streak} ${T.daysLabel}</div>
+  </div>`).join("");
+  return`<div class="card"><h3>${T.streaksBoard}</h3><p class="sub">${T.topStreaks}</p>${items}</div>`;
+}
+
+function habitHeatmapHTML(months,habits){
+  if(!habits.length||!months.length)return'';
+  let head='<tr><th></th>';
+  for(let m=0;m<12;m++)head+=`<th>${T.monthsShort[m]}</th>`;
+  head+='</tr>';
+  let body='';
+  habits.slice(0,15).forEach(h=>{
+    body+='<tr>';
+    body+=`<th style="text-align:left;max-width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escapeHtml(h.name.slice(0,10))}</th>`;
+    for(let m=0;m<12;m++){
+      if(!months.includes(m)){body+='<td class="hm-0"></td>';continue;}
+      const t=effTarget(h,m),cnt=checkedCount(m,h.id);
+      const pct=t?cnt/t:0;
+      const cls=pct>=0.8?'hm-3':pct>=0.5?'hm-2':pct>0?'hm-1':'hm-0';
+      body+=`<td class="${cls}" title="${h.name}: ${Math.round(pct*100)}% ${T.months[m]}"></td>`;
+    }
+    body+='</tr>';
+  });
+  return`<div class="card"><h3>${T.habitHeatmap}</h3><p class="sub">${T.heatmapDesc}</p><div class="heatmap-grid"><table class="heatmap-table"><thead>${head}</thead><tbody>${body}</tbody></table></div></div>`;
 }
 
 /* ===== CORRELATIONS ===== */
@@ -2249,6 +2655,14 @@ function init(){
   // notes
   document.getElementById("btnSaveNote").onclick=()=>{setNote(noteMonth,noteDay,document.getElementById("noteText").value);closeNote();renderGrid();toast(T.noteSaved)};
   document.getElementById("btnCloseNote").onclick=closeNote;
+
+  // level modal
+  document.getElementById("btnCloseLevel").onclick=closeLevelModal;
+  document.getElementById("levelModal").onclick=e=>{if(e.target===document.getElementById("levelModal"))closeLevelModal()};
+
+  // reward popup
+  document.getElementById("btnCloseReward").onclick=closeRewardPopup;
+  document.getElementById("rewardOverlay").onclick=closeRewardPopup;
 
   // sync
   document.getElementById("btnSyncConnect").onclick=()=>{
