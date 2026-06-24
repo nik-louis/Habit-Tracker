@@ -1,0 +1,20 @@
+name: Attach HTML to Release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+
+jobs:
+  upload-html:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Attach index.html to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: index.html
