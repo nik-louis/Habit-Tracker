@@ -1596,13 +1596,14 @@ function migrate(){
 }
 let saveTimer=null;
 function persistLocal(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){memFallback=true}}
-let _initMode=true; // true during startup: save() won't update _t or cloudPush
+let _initMode=true;
 function save(){
   clearTimeout(saveTimer);
   saveTimer=setTimeout(()=>{
+    if(applyingRemote)return;
     syncLiveToYear();
     if(!_initMode){state._t=Date.now();persistLocal();cloudPush();}
-    else persistLocal(); // during init: persist locally only, no timestamp update, no cloud push
+    else persistLocal();
     autoVersion();
   },350);
 }
@@ -2635,7 +2636,7 @@ function yearStatsHTML(){
       <circle cx="54" cy="54" r="48" fill="none" stroke="var(--line)" stroke-width="9"/>
       <circle cx="54" cy="54" r="48" fill="none" stroke="var(--accent)" stroke-width="9"
         stroke-linecap="round" stroke-dasharray="${2*Math.PI*48}" stroke-dashoffset="${2*Math.PI*48*(1-avg/100)}" transform="rotate(-90 54 54)"/>
-      </svg><div class="pct"><b>${avg}%</b><span>2026</span></div></div>
+      </svg><div class="pct"><b>${avg}%</b><span>${activeYear()}</span></div></div>
     <div class="herostats">
       <div class="stat"><div class="lab">${T.rewardsYear}</div><div class="val" style="color:var(--pink)">${totalRew}</div></div>
       <div class="stat"><div class="lab">${T.bestMonth}</div><div class="val" style="color:var(--accent)">${fm.length?T.monthsShort[fm[bestIdx]]:'—'}</div></div>
@@ -3475,7 +3476,7 @@ function exportPNG(){
 /* ===== CLOUD SYNC ===== */
 const SYNC_KEY="rt_sync_cfg_2026";
 let sync={url:"",code:"",pass:"",on:false};
-let es=null,pushTimer2=null,applyingRemote=false;
+let es=null,pushTimer2=null,applyingRemote=false,_lastPushT=0;
 
 /* ===== ENCRYPTION (AES-256-GCM, key via PBKDF2) ===== */
 let _cryptoKeyCache={pass:null,key:null};
@@ -3533,12 +3534,13 @@ function connectSync(){
   if(!sync.pass){setSyncStatus("off");toast(ru?"Введите пароль шифрования":"Enter encryption password");return}
   sync.on=true;saveSyncCfg();
   if(es){es.close();es=null}
+  clearTimeout(saveTimer);clearTimeout(pushTimer2);
   setSyncStatus("connecting");
   fetch(syncUrl()).then(r=>r.json()).then(remote=>{
-    // remote may be encrypted envelope or null
     const remoteT=(remote&&typeof remote==="object")?(remote._t||0):0;
     if(remote&&typeof remote==="object"&&(remote.enc===1||remote.habits)){
-      const localT=state._t||0; if(remoteT>0&&(remoteT>=localT||localT-remoteT<5000)){
+      const localT=state._t||0;
+      if(remoteT>localT){
         decryptPayload(remote).then(obj=>{
           if(obj&&obj.habits)adoptRemote(obj); else cloudPushNow();
           startStream();toast(T.syncConnected);
@@ -3547,7 +3549,8 @@ function connectSync(){
           if(err.message==="ENC_BAD_PASS")toast(ru?"Неверный пароль шифрования":"Wrong encryption password");
           else toast(ru?"Нужен пароль для этих данных":"Password required for this data");
         });
-      }else{cloudPushNow();startStream();toast(T.syncConnected);}
+      }else if(remoteT<localT){cloudPushNow();startStream();toast(T.syncConnected);
+      }else{startStream();toast(T.syncConnected);}
     }else{cloudPushNow();startStream();toast(T.syncConnected);}
   }).catch(()=>{setSyncStatus("off");toast(T.connectionFailed)});
 }
@@ -3562,29 +3565,34 @@ function startStream(){
 }
 function onStreamEvent(e){
   let p;try{p=JSON.parse(e.data)}catch(_){return}
-  // p.data can be encrypted envelope or plain; _t exposed at top of envelope
   if(p&&p.path==="/"&&p.data&&(p.data.enc===1||p.data.habits)){
-    if((p.data._t||0)>=(state._t||0)||((state._t||0)-(p.data._t||0)<2000)){
+    const remoteT=p.data._t||0;
+    if(remoteT&&remoteT===_lastPushT){setSyncStatus("live");return;}
+    if(remoteT>(state._t||0)){
       decryptPayload(p.data).then(obj=>{if(obj&&obj.habits)adoptRemote(obj);setSyncStatus("live");}).catch(()=>{});
     }else setSyncStatus("live");
     return;
   }
   fetch(syncUrl()).then(r=>r.json()).then(remote=>{
-    if(remote&&(remote.enc===1||remote.habits)&&((remote._t||0)>=(state._t||0)||(state._t||0)-(remote._t||0)<2000)){
+    if(!remote)return setSyncStatus("live");
+    const remoteT=remote._t||0;
+    if(remoteT&&remoteT===_lastPushT){setSyncStatus("live");return;}
+    if(remote&&(remote.enc===1||remote.habits)&&remoteT>(state._t||0)){
       decryptPayload(remote).then(obj=>{if(obj&&obj.habits)adoptRemote(obj);setSyncStatus("live");}).catch(()=>{});
     }else setSyncStatus("live");
   }).catch(()=>{});
 }
 function adoptRemote(remote){
-  // Apply remote state locally only — NO cloudPush to avoid ping-pong.
-  // _t is intentionally kept from remote so comparison stays accurate.
-  const prevSync=syncLiveToYear; syncLiveToYear=()=>{}; // suppress year-sync during apply
+  applyingRemote=true;
+  clearTimeout(saveTimer);clearTimeout(pushTimer2);
+  const prevSync=syncLiveToYear; syncLiveToYear=()=>{};
   state=remote;
   migrate();
   bindYear(state,state.currentYear);
   persistLocal();
   syncLiveToYear=prevSync;
   rerenderActive();
+  setTimeout(()=>{applyingRemote=false},600);
 }
 function cloudPush(){
   if(!sync.on||!sync.url||!sync.code||applyingRemote)return;
@@ -3592,6 +3600,7 @@ function cloudPush(){
 }
 function cloudPushNow(){
   if(!sync.url||!sync.code)return;
+  _lastPushT=state._t||0;
   encryptState(state).then(body=>{
     return fetch(syncUrl(),{method:"PUT",headers:{"Content-Type":"application/json"},body});
   }).then(()=>{if(sync.on)setSyncStatus("live")}).catch(()=>setSyncStatus("connecting"));
@@ -3652,8 +3661,8 @@ function hardReset(){
   if(!confirm("⚠️ ПОЛНЫЙ СБРОС\n\nВсе галочки, пряники, XP, штрафы, история, снимки наград — будут удалены безвозвратно.\nПривычки вернутся к 19 дефолтным.\n\nКод приложения не тронут.\n\nПродолжить?"))return;
   // Wipe Firebase if configured
   try{
-    if(state.syncCfg&&state.syncCfg.url&&state.syncCfg.secret){
-      fetch(state.syncCfg.url+".json?auth="+state.syncCfg.secret,{method:"DELETE"}).catch(()=>{});
+    if(sync.url&&sync.code){
+      fetch(syncUrl(),{method:"DELETE"}).catch(()=>{});
     }
   }catch(e){}
   localStorage.removeItem(STORE_KEY);
@@ -4026,7 +4035,8 @@ function init(){
 
   const ls=document.getElementById("langSelect");if(ls)ls.value=state.lang||"ru";
   applyLang();
-  _initMode=false; // init complete — now saves update _t and push to cloud
+  clearTimeout(saveTimer);
+  _initMode=false;
   if(sync.on&&sync.url&&sync.code)connectSync();
 }
 init();
