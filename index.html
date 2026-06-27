@@ -1524,6 +1524,7 @@ function switchYear(year){
   if(year===state.currentYear)return;
   syncLiveToYear();          // save current year first
   bindYear(state,year);      // load target year into live fields
+  recalcXP();
   // reset the visible month to Jan (or real month if switching to the calendar year)
   curMonth=(todayDate.getFullYear()===year)?todayDate.getMonth():0;
   reconcileSnapshots();
@@ -1593,6 +1594,7 @@ function migrate(){
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
   T=I18N[state.lang]||I18N.en;
+  recalcXP();
 }
 let saveTimer=null;
 function persistLocal(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){memFallback=true}}
@@ -1704,6 +1706,18 @@ function toggleFreeze(m,d){
   else if(arr.length<MAX_FREEZES)arr.push(d);
   else{toast(T.maxFreezesMsg.replace("{0}",MAX_FREEZES));return}
   save();
+}
+function recalcXP(){
+  let xp=0;
+  (state.habits||[]).forEach(h=>{
+    for(let m=0;m<12;m++){
+      const mk="m"+m;
+      const bucket=state.checks[mk]&&state.checks[mk][h.id];
+      if(bucket)xp+=Object.keys(bucket).length*xpForCheck(h.weight);
+    }
+  });
+  state.xp=xp;
+  if(state.years&&state.years[state.currentYear])state.years[state.currentYear].xp=xp;
 }
 function toggleCheck(m,hid,day){
   const c=getChecks(m,hid);
@@ -1834,7 +1848,7 @@ function autoVersion(){
 }
 function restoreVersion(idx){
   if(!confirm(T.confirmRestore))return;
-  try{state=JSON.parse(versions[idx].data);migrate();save();rerenderActive();toast(T.versionRestored)}
+  try{state=JSON.parse(versions[idx].data);migrate();recalcXP();save();rerenderActive();toast(T.versionRestored)}
   catch(e){toast(T.errorRestoring)}
 }
 
@@ -3341,7 +3355,7 @@ function importData(file){
   r.onload=()=>{
     try{const obj=JSON.parse(r.result);
       if(!obj.habits&&!obj.checks){toast(T.invalidFile);return}
-      state=obj;migrate();save();switchView("today");toast(T.dataImported);
+      state=obj;migrate();recalcXP();save();switchView("today");toast(T.dataImported);
     }catch(e){toast(T.errorReading)}
   };
   r.readAsText(file);
@@ -3588,6 +3602,7 @@ function adoptRemote(remote){
   const prevSync=syncLiveToYear; syncLiveToYear=()=>{};
   state=remote;
   migrate();
+  recalcXP();
   bindYear(state,state.currentYear);
   persistLocal();
   syncLiveToYear=prevSync;
