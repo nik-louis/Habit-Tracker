@@ -2636,7 +2636,7 @@ function yearStatsHTML(){
       <circle cx="54" cy="54" r="48" fill="none" stroke="var(--line)" stroke-width="9"/>
       <circle cx="54" cy="54" r="48" fill="none" stroke="var(--accent)" stroke-width="9"
         stroke-linecap="round" stroke-dasharray="${2*Math.PI*48}" stroke-dashoffset="${2*Math.PI*48*(1-avg/100)}" transform="rotate(-90 54 54)"/>
-      </svg><div class="pct"><b>${avg}%</b><span>2026</span></div></div>
+      </svg><div class="pct"><b>${avg}%</b><span>${activeYear()}</span></div></div>
     <div class="herostats">
       <div class="stat"><div class="lab">${T.rewardsYear}</div><div class="val" style="color:var(--pink)">${totalRew}</div></div>
       <div class="stat"><div class="lab">${T.bestMonth}</div><div class="val" style="color:var(--accent)">${fm.length?T.monthsShort[fm[bestIdx]]:'—'}</div></div>
@@ -3661,8 +3661,8 @@ function hardReset(){
   if(!confirm("⚠️ ПОЛНЫЙ СБРОС\n\nВсе галочки, пряники, XP, штрафы, история, снимки наград — будут удалены безвозвратно.\nПривычки вернутся к 19 дефолтным.\n\nКод приложения не тронут.\n\nПродолжить?"))return;
   // Wipe Firebase if configured
   try{
-    if(state.syncCfg&&state.syncCfg.url&&state.syncCfg.secret){
-      fetch(state.syncCfg.url+".json?auth="+state.syncCfg.secret,{method:"DELETE"}).catch(()=>{});
+    if(sync.url&&sync.code){
+      fetch(syncUrl(),{method:"DELETE"}).catch(()=>{});
     }
   }catch(e){}
   localStorage.removeItem(STORE_KEY);
