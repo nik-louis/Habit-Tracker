@@ -15,7 +15,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create or update release and attach index.html
+      - name: Create ZIP archive
+        run: |
+          zip release.zip \
+            icon-192.png \
+            icon-512.png \
+            index.html \
+            manifest.json \
+            sw.js
+
+      - name: Create or update release and attach ZIP
         uses: softprops/action-gh-release@v2
         with:
-          files: index.html
+          files: release.zip
