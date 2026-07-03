@@ -1425,7 +1425,9 @@ function xpForCheck(weight){return(weight||1)*10}
 function xpForLevel(lv){
   if(lv<=1)return 0;
   let total=0;
-  for(let l=2;l<=lv;l++){total+=Math.ceil(l/5)*100}
+  // ×15 vs the original curve — full daily completion across ~19 default-weight habits now
+  // takes roughly 3+ years to reach level 100 instead of well under a week.
+  for(let l=2;l<=lv;l++){total+=Math.ceil(l/5)*1500}
   return total;
 }
 function levelFromXp(xp){let lv=1;while(lv<100&&xpForLevel(lv+1)<=xp)lv++;return lv}
@@ -1488,17 +1490,19 @@ function spendableSmallPryanics(){
 let state=null,memFallback=false;
 // Per-year data lives in state.years[YYYY]; shared data (habits/tags/bigRewards/theme...) at top level.
 function freshYearData(){
-  return{checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[]};
+  return{checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{}};
 }
-const YEAR_FIELDS=["checks","notes","xp","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases"];
+const YEAR_FIELDS=["checks","notes","xp","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs"];
 function freshState(){
   const startYear=Math.min(LAST_YEAR,Math.max(FIRST_YEAR,new Date().getFullYear()));
   const s={
     globalZonePct:{reward:85,nothing:65,knut1:45,knut2:25},tags:defaultTags(),habits:defaultHabits(),
     bigRewards:defaultBigRewards(),reminders:[],notifPermAsked:false,theme:"dark",accentColor:"#ffd400",lang:"ru",
     currentYear:startYear,years:{},
+    // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger)
+    points:0,purchases:[],
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
-    checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,
+    checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},
     _t:Date.now()
   };
   s.years[startYear]=freshYearData();
@@ -1524,7 +1528,7 @@ function switchYear(year){
   if(year===state.currentYear)return;
   syncLiveToYear();          // save current year first
   bindYear(state,year);      // load target year into live fields
-  recalcXP();
+  recalcXP();recalcPoints();
   // reset the visible month to Jan (or real month if switching to the calendar year)
   curMonth=(todayDate.getFullYear()===year)?todayDate.getMonth():0;
   reconcileSnapshots();
@@ -1567,6 +1571,17 @@ function migrate(){
   // ensure bigPurchases array in every year + migrate legacy r.claimed counters into purchase records
   if(state.years){Object.keys(state.years).forEach(y=>{ if(!Array.isArray(state.years[y].bigPurchases))state.years[y].bigPurchases=[]; });}
   if(!Array.isArray(state.bigPurchases))state.bigPurchases=[];
+  // Lifetime points-currency ledger: flatten every year's bigPurchases into one lifetime list (idempotent, id-deduped).
+  // Old shop UI still writes into state.years[y].bigPurchases during the transition — this merge keeps the lifetime
+  // ledger in sync without needing a one-time migration flag.
+  if(!Array.isArray(state.purchases))state.purchases=[];
+  if(typeof state.points!=="number")state.points=0;
+  if(state.years){
+    const seenPurchase=new Set(state.purchases.map(p=>p.id));
+    Object.keys(state.years).forEach(y=>{
+      (state.years[y].bigPurchases||[]).forEach(p=>{ if(p&&p.id&&!seenPurchase.has(p.id)){state.purchases.push(p);seenPurchase.add(p.id);} });
+    });
+  }
   if(!Array.isArray(state.tags))state.tags=defaultTags();
   if(!Array.isArray(state.habits))state.habits=defaultHabits();
   if(typeof state.income!=="number")state.income=Number(state.income)||0;
@@ -1590,11 +1605,16 @@ function migrate(){
     if(h.zoneMode===undefined)h.zoneMode="pct";
     if(h.zonePct===undefined)h.zonePct=null;
     if(h.zoneAbs===undefined)h.zoneAbs=null;
+    // New points-economy fields (additive, default reproduces current behavior untouched)
+    if(h.type===undefined)h.type=h.everyday?"daily":"event";
+    if(!Array.isArray(h.sinDays))h.sinDays=[];
+    if(!Array.isArray(h.violationTiers))h.violationTiers=[];
   });
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
   T=I18N[state.lang]||I18N.en;
   recalcXP();
+  recalcPoints();
 }
 let saveTimer=null;
 function persistLocal(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){memFallback=true}}
@@ -1687,6 +1707,139 @@ function monthPenalty(m){
   let p=0;activeHabits().forEach(h=>{p+=habitPenalty(h,m)});return p;
 }
 function monthCharityAmount(m){return monthPenalty(m)}
+
+/* ===== POINTS ECONOMY (new, additive — runs alongside the zone system above during the migration) =====
+   Lifetime, derived-not-stored: recalcPoints() rebuilds state.points from scratch every time,
+   the same way recalcXP() rebuilds XP — so import/sync/reset can never leave a stale balance
+   (that was exactly the class of bug we fixed for XP earlier). */
+function daysInMonthY(year,m){return new Date(year,m+1,0).getDate()}
+function realTodayParts(){const n=new Date();return{y:n.getFullYear(),m:n.getMonth(),d:n.getDate()}}
+// How many days of (year,m) have fully elapsed and are eligible for a miss-penalty.
+// Today itself never counts as a miss yet — there's still time left to check it.
+function elapsedDaysInMonthY(year,m){
+  const rt=realTodayParts();
+  if(year<rt.y||(year===rt.y&&m<rt.m))return daysInMonthY(year,m);
+  if(year>rt.y||(year===rt.y&&m>rt.m))return 0;
+  return rt.d-1;
+}
+function effTargetForYear(h,year,m,yd){
+  const mk="m"+m;
+  const frozen=((yd.freezesUsed&&yd.freezesUsed[mk])||[]).length;
+  const mt=h.monthTargets&&h.monthTargets[mk];
+  let base;
+  if(mt!==undefined&&mt!==null&&mt!==""){base=Math.min(+mt,daysInMonthY(year,m));}
+  else{base=h.type==="daily"?daysInMonthY(year,m):Math.min(h.target||0,daysInMonthY(year,m));}
+  return Math.max(0,base-frozen);
+}
+// Daily habit: check=+weight; an elapsed miss=-3×weight, or -1×weight if pre-declared as a sin
+// on one of the habit's configured sin-days, or the habit's own tier ladder if the miss was
+// explicitly logged with a softer tier (escalates past a tier's freeLimit to the next-harshest tier).
+function dailyHabitPointsForMonth(h,year,m,yd){
+  const totalDays=daysInMonthY(year,m);
+  const elapsed=elapsedDaysInMonthY(year,m);
+  const rt=realTodayParts();
+  const isCurMonth=(year===rt.y&&m===rt.m);
+  if(elapsed<=0&&!isCurMonth)return 0;
+  const mk="m"+m;
+  const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
+  const sinBucket=(yd.declaredSins&&yd.declaredSins[mk]&&yd.declaredSins[mk][h.id])||{};
+  const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
+  const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const upper=isCurMonth?rt.d:totalDays;
+  const tierUse={};
+  let pts=0;
+  for(let d=1;d<=upper;d++){
+    if(checksBucket[d]){pts+=h.weight;continue}
+    if(frozen.includes(d))continue;
+    const isPast=isCurMonth?d<rt.d:true;
+    if(!isPast)continue;
+    const weekday=new Date(year,m,d).getDay();
+    const loggedTier=tierBucket[d];
+    if(loggedTier!==undefined&&h.violationTiers&&h.violationTiers[loggedTier]){
+      let idx=loggedTier;
+      tierUse[idx]=(tierUse[idx]||0)+1;
+      while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+        idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+      }
+      pts+=h.violationTiers[idx].deltaMult*h.weight;
+    }else if(sinBucket[d]&&(h.sinDays||[]).includes(weekday)){
+      pts+=-1*h.weight;
+    }else{
+      pts+=-3*h.weight;
+    }
+  }
+  return pts;
+}
+// Event habit: "minimum pace line" — Мин(D)=floor(D/daysInMonth×N). Below the line, a missed
+// day costs -3×weight; at/above it, skipping is free. Completions always +weight, capped at N/month.
+function eventHabitPointsForMonth(h,year,m,yd){
+  const totalDays=daysInMonthY(year,m);
+  const rt=realTodayParts();
+  const isCurMonth=(year===rt.y&&m===rt.m);
+  if(year>rt.y||(year===rt.y&&m>rt.m))return 0;
+  const N=effTargetForYear(h,year,m,yd);
+  const mk="m"+m;
+  const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
+  const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const upper=isCurMonth?rt.d:totalDays;
+  let doneSoFar=0,pts=0;
+  for(let d=1;d<=upper;d++){
+    if(frozen.includes(d))continue;
+    if(checksBucket[d]){
+      doneSoFar++;
+      if(doneSoFar<=N)pts+=h.weight;
+      continue;
+    }
+    const isPast=isCurMonth?d<rt.d:true;
+    if(!isPast||totalDays<=0||N<=0)continue;
+    const minRequired=Math.floor(d/totalDays*N);
+    if(doneSoFar<minRequired)pts+=-3*h.weight;
+  }
+  return pts;
+}
+function habitPointsForMonth(h,year,m,yd){
+  return h.type==="event"?eventHabitPointsForMonth(h,year,m,yd):dailyHabitPointsForMonth(h,year,m,yd);
+}
+// Current-month balance for the ACTIVE (bound) year — used by the money pool & UI previews.
+function habitMonthBalance(h,m){return habitPointsForMonth(h,activeYear(),m,state)}
+// Rebuilds the lifetime points balance from scratch: every habit × every month × every year the
+// user has ever touched, minus everything ever spent in the shop. Never patched incrementally.
+function recalcPoints(){
+  syncLiveToYear();
+  let pts=0;
+  if(state.years){
+    Object.keys(state.years).forEach(y=>{
+      const yd=state.years[y],yNum=+y;
+      (state.habits||[]).forEach(h=>{
+        for(let m=0;m<12;m++)pts+=habitPointsForMonth(h,yNum,m,yd);
+      });
+    });
+  }
+  pts-=(state.purchases||[]).reduce((s,p)=>s+(p.cost||0),0);
+  state.points=pts;
+}
+/* ===== MONEY POOL (weighted, no cliff — replaces per-habit zone-rate escalation) =====
+   pool = income × ratePct; each failed habit owes pool × (weight / Σ weight of active habits).
+   Failing every active habit costs exactly the pool, never more — no matter how many habits exist. */
+function activeMoneyWeight(){return activeHabits().reduce((s,h)=>s+(h.weight||1),0)}
+function getEffectiveRatePct(m){
+  let rate=+(state.penaltyRate||15);
+  const inc=+(state.rateIncrement||1);
+  for(let prev=0;prev<m;prev++){
+    const failed=activeHabits().filter(h=>habitMonthBalance(h,prev)<=0).length;
+    if(failed>5)rate+=inc;
+  }
+  return Math.min(rate,99);
+}
+function moneyPool(m){return getIncome(m)*getEffectiveRatePct(m)/100}
+function habitMoneyOwed(h,m){
+  if(habitMonthBalance(h,m)>0)return 0;
+  const tw=activeMoneyWeight();if(!tw)return 0;
+  return moneyPool(m)*(h.weight||1)/tw;
+}
+function monthMoneyOwed(m){
+  let p=0;activeHabits().forEach(h=>{p+=habitMoneyOwed(h,m)});return p;
+}
 
 /* ===== CHECKS / STREAKS ===== */
 function getChecks(m,hid){
@@ -1848,7 +2001,7 @@ function autoVersion(){
 }
 function restoreVersion(idx){
   if(!confirm(T.confirmRestore))return;
-  try{state=JSON.parse(versions[idx].data);migrate();recalcXP();save();rerenderActive();toast(T.versionRestored)}
+  try{state=JSON.parse(versions[idx].data);migrate();recalcXP();recalcPoints();save();rerenderActive();toast(T.versionRestored)}
   catch(e){toast(T.errorRestoring)}
 }
 
@@ -3355,7 +3508,7 @@ function importData(file){
   r.onload=()=>{
     try{const obj=JSON.parse(r.result);
       if(!obj.habits&&!obj.checks){toast(T.invalidFile);return}
-      state=obj;migrate();recalcXP();save();switchView("today");toast(T.dataImported);
+      state=obj;migrate();recalcXP();recalcPoints();save();switchView("today");toast(T.dataImported);
     }catch(e){toast(T.errorReading)}
   };
   r.readAsText(file);
@@ -3602,7 +3755,7 @@ function adoptRemote(remote){
   const prevSync=syncLiveToYear; syncLiveToYear=()=>{};
   state=remote;
   migrate();
-  recalcXP();
+  recalcXP();recalcPoints();
   bindYear(state,state.currentYear);
   persistLocal();
   syncLiveToYear=prevSync;
