@@ -470,7 +470,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="tab active" data-view="today">&#9889; Today</button>
       <button class="tab" data-view="track">&#128197; Months</button>
       <button class="tab" data-view="habits">&#127919; Habits</button>
-      <button class="tab" data-view="rewards">&#127805; Пряники</button>
+      <button class="tab" data-view="rewards">&#127942; Shop</button>
       <button class="tab" data-view="stats">&#128200; Analytics</button>
       <button class="tab" data-view="settings">&#9881; Settings</button>
     </nav>
@@ -600,7 +600,7 @@ textarea.inp{resize:vertical;min-height:60px}
 
     <div class="card" style="border:1px solid var(--red)">
       <h3 style="color:var(--red)">⚠️ Полный сброс</h3>
-      <p class="sub">Удалить ВСЕ данные: галочки, пряники, XP, штрафы, историю. Привычки вернутся к дефолтным. Код приложения не затронут. Действие необратимо.</p>
+      <p class="sub">Удалить ВСЕ данные: галочки, очки, XP, штрафы, историю. Привычки вернутся к дефолтным. Код приложения не затронут. Действие необратимо.</p>
       <button class="btn" id="btnHardReset" style="background:var(--red);color:#fff;width:100%">🗑 Стереть все данные и начать заново</button>
     </div>
   </section>
@@ -805,7 +805,7 @@ appTitle:"Realization 2026",
 months:["January","February","March","April","May","June","July","August","September","October","November","December"],
 monthsShort:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
 daysShort:["Su","Mo","Tu","We","Th","Fr","Sa"],dayNames:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
-tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabAnalytics:"Analytics",tabSettings:"Settings",
+tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabRewards:"Shop",tabAnalytics:"Analytics",tabSettings:"Settings",
 syncLocal:"○ local",syncOnline:"● online",syncConnecting:"● connecting...",
 lvls:["Beginner","Practitioner","Expert","Master","Guru","Legend"],
 ranks:["Novice","Apprentice","Seeker","Guardian","Pathfinder","Warrior","Knight","Mystic","Sage","Hunter","Berserker","Paladin","Sorcerer","Titan","Phoenix","Dragon","Archon","Immortal","Legend","God"],
@@ -830,6 +830,7 @@ weightLabel:"Weight (1-10)",rewardLabel:"Reward for hitting target",rewardPH:"e.
 sinDaysTitle:"Conscious skip days",sinDaysHint:"A pre-declared skip on these days costs −1×weight instead of −3×weight.",
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight).",
 sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",pointsLabel:"pts",
+paceOnTrack:"on track",paceObligatory:"catch-up day",paceThisMonth:"this month",
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
 myHabits:"My Habits",habitListDesc:"Tap edit to change. Drag ⠿ to reorder.",
 active:"Active",archived:"Archived",deleted:"Deleted",empty:"Empty",
@@ -905,7 +906,7 @@ appTitle:"Реализация 2026",
 months:["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
 monthsShort:["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
 daysShort:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],dayNames:["Вск","Пон","Вт","Ср","Чт","Пт","Сб"],
-tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabAnalytics:"Аналитика",tabSettings:"Настройки",
+tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabRewards:"Магазин",tabAnalytics:"Аналитика",tabSettings:"Настройки",
 syncLocal:"○ локально",syncOnline:"● онлайн",syncConnecting:"● подключение...",
 lvls:["Новичок","Практик","Эксперт","Мастер","Гуру","Легенда"],
 ranks:["Новичок","Ученик","Искатель","Страж","Следопыт","Воин","Рыцарь","Мистик","Мудрец","Охотник","Берсерк","Паладин","Чародей","Титан","Феникс","Дракон","Архонт","Бессмертный","Легенда","Бог"],
@@ -930,6 +931,7 @@ weightLabel:"Вес (1-10)",rewardLabel:"Награда за выполнени�
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.",
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).",
 sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",pointsLabel:"очк.",
+paceOnTrack:"по графику",paceObligatory:"обязательно сегодня",paceThisMonth:"в этом месяце",
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
 myHabits:"Мои привычки",habitListDesc:"Нажмите ✎ для изменения. Перетащите ⠿ для сортировки.",
 active:"Активные",archived:"Архив",deleted:"Удалённые",empty:"Пусто",
@@ -1005,7 +1007,7 @@ appTitle:"Realización 2026",
 months:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
 monthsShort:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
 daysShort:["Do","Lu","Ma","Mi","Ju","Vi","Sá"],dayNames:["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],
-tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabAnalytics:"Análisis",tabSettings:"Ajustes",
+tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabRewards:"Tienda",tabAnalytics:"Análisis",tabSettings:"Ajustes",
 syncLocal:"○ local",syncOnline:"● en línea",syncConnecting:"● conectando...",
 lvls:["Principiante","Practicante","Experto","Maestro","Gurú","Leyenda"],
 ranks:["Novato","Aprendiz","Buscador","Guardián","Explorador","Guerrero","Caballero","Místico","Sabio","Cazador","Berserker","Paladín","Hechicero","Titán","Fénix","Dragón","Arconte","Inmortal","Leyenda","Dios"],
@@ -1030,6 +1032,7 @@ weightLabel:"Peso (1-10)",rewardLabel:"Recompensa por cumplir meta",rewardPH:"ej
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con antelación en estos días cuesta −1×peso en vez de −3×peso.",
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave.",
 sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",pointsLabel:"pts",
+paceOnTrack:"al día",paceObligatory:"día obligatorio",paceThisMonth:"este mes",
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
 myHabits:"Mis hábitos",habitListDesc:"Toca ✎ para editar. Arrastra ⠿ para reordenar.",
 active:"Activos",archived:"Archivados",deleted:"Eliminados",empty:"Vacío",
@@ -1105,7 +1108,7 @@ appTitle:"实现 2026",
 months:["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
 monthsShort:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
 daysShort:["日","一","二","三","四","五","六"],dayNames:["周日","周一","周二","周三","周四","周五","周六"],
-tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabAnalytics:"分析",tabSettings:"设置",
+tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabRewards:"商店",tabAnalytics:"分析",tabSettings:"设置",
 syncLocal:"○ 本地",syncOnline:"● 在线",syncConnecting:"● 连接中...",
 lvls:["初学者","修行者","专家","大师","导师","传奇"],
 ranks:["新手","学徒","探索者","守护者","探路者","战士","骑士","神秘者","贤者","猎人","狂战士","圣骑士","术士","泰坦","凤凰","龙","执政官","不朽者","传说","神"],
@@ -1130,6 +1133,7 @@ weightLabel:"权重 (1-10)",rewardLabel:"达标奖励",rewardPH:"例如 看电�
 sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子只扣 −1×权重,而不是 −3×权重。",
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。",
 sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",pointsLabel:"分",
+paceOnTrack:"进度正常",paceObligatory:"今天必须完成",paceThisMonth:"本月",
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
 myHabits:"我的习惯",habitListDesc:"点击 ✎ 编辑。拖动 ⠿ 排序。",
 active:"活跃",archived:"已归档",deleted:"已删除",empty:"空",
@@ -1205,7 +1209,7 @@ appTitle:"Réalisation 2026",
 months:["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
 monthsShort:["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"],
 daysShort:["Di","Lu","Ma","Me","Je","Ve","Sa"],dayNames:["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"],
-tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabAnalytics:"Analyse",tabSettings:"Paramètres",
+tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabRewards:"Boutique",tabAnalytics:"Analyse",tabSettings:"Paramètres",
 syncLocal:"○ local",syncOnline:"● en ligne",syncConnecting:"● connexion...",
 lvls:["Débutant","Praticien","Expert","Maître","Gourou","Légende"],
 ranks:["Novice","Apprenti","Chercheur","Gardien","Éclaireur","Guerrier","Chevalier","Mystique","Sage","Chasseur","Berserker","Paladin","Sorcier","Titan","Phénix","Dragon","Archonte","Immortel","Légende","Dieu"],
@@ -1230,6 +1234,7 @@ weightLabel:"Poids (1-10)",rewardLabel:"Récompense pour atteindre l'objectif",r
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'avance ces jours-là coûte −1×poids au lieu de −3×poids.",
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur.",
 sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",pointsLabel:"pts",
+paceOnTrack:"à jour",paceObligatory:"jour de rattrapage",paceThisMonth:"ce mois",
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
 myHabits:"Mes habitudes",habitListDesc:"Appuyez ✎ pour modifier. Glissez ⠿ pour réordonner.",
 active:"Actives",archived:"Archivées",deleted:"Supprimées",empty:"Vide",
@@ -1309,7 +1314,7 @@ function applyLang(){
   document.title=T.appTitle;
   const tvs=["today","track","habits","rewards","stats","settings"];
   const tls=[T.tabToday,T.tabMonths,T.tabHabits,(T.tabRewards||"Пряники"),T.tabAnalytics,T.tabSettings];
-  const tic=["⚡","📅","🎯","🥕","📈","⚙"];
+  const tic=["⚡","📅","🎯","🏆","📈","⚙"];
   document.querySelectorAll(".tab").forEach(t=>{const i=tvs.indexOf(t.dataset.view);if(i>=0)t.textContent=tic[i]+" "+tls[i]});
   const ids={lDarkMode:T.darkMode,lAccentColor:T.accentColor,lLanguage:T.language,
     lAppearance:T.appearance,lTagsTitle:T.tagsTitle,lTagsDesc:T.tagsDesc,lBtnAddTag:T.addTag,
@@ -1436,48 +1441,22 @@ function rankName(lv){
 }
 
 function defaultBigRewards(){
-  const R=(name,cost,emo)=>({id:uid(),name,cost,emo,claimed:0});
+  // Prices are in the points currency (see POINTS ECONOMY below) — generic template values,
+  // scaled for a fresh install's default habit weights. Names stay generic on purpose: this file
+  // is a shared template, personal reward catalogs are configured per-install, not hardcoded here.
+  const R=(name,cost,emo)=>({id:uid(),name,cost,emo,tagId:null,linkedHabitId:null,convertsDay:false});
   return[
-    R("Большая награда 1",3,"🎁"),
-    R("Большая награда 2",6,"🎁"),
-    R("Большая награда 3",9,"🎁"),
-    R("Большая награда 4",12,"🎁"),
-    R("Большая награда 5",15,"🎁"),
-    R("Большая награда 6",18,"🎁"),
-    R("Большая награда 7",21,"🎁"),
-    R("Большая награда 8",24,"🎁"),
-    R("Большая награда 9",27,"🎁"),
-    R("Большая награда 10",30,"🎁"),
+    R("Большая награда 1",100,"🎁"),
+    R("Большая награда 2",200,"🎁"),
+    R("Большая награда 3",300,"🎁"),
+    R("Большая награда 4",400,"🎁"),
+    R("Большая награда 5",500,"🎁"),
+    R("Большая награда 6",600,"🎁"),
+    R("Большая награда 7",700,"🎁"),
+    R("Большая награда 8",800,"🎁"),
+    R("Большая награда 9",900,"🎁"),
+    R("Большая награда 10",1000,"🎁"),
   ];
-}
-function totalEarnedPryanics(){
-  let n=0;
-  state.habits.filter(h=>!h.deleted).forEach(h=>{for(let m2=0;m2<12;m2++)if(habitZone(h,m2)==='reward')n++;});
-  return n;
-}
-function totalSpentPryanics(){
-  // sum of all small-pryanic allocations across purchases
-  return(state.bigPurchases||[]).reduce((s,p)=>s+((p.spentCks&&p.spentCks.length)||0),0);
-}
-// Available currency = small pryanics that are neither used (claimed) nor allocated to a purchase
-function availablePryanics(){return spendableSmallPryanics().length}
-// Set of small-pryanic keys currently allocated to a big-reward purchase (locked)
-function spentCkSet(){
-  const set={};
-  (state.bigPurchases||[]).forEach(p=>(p.spentCks||[]).forEach(ck=>set[ck]=p.id));
-  return set;
-}
-// All earned small pryanics that are NOT used (claimed) and NOT allocated to a purchase → spendable
-function spendableSmallPryanics(){
-  const spent=spentCkSet();
-  const out=[];
-  state.habits.filter(h=>!h.deleted).forEach(h=>{for(let m=0;m<12;m++){
-    if(habitZone(h,m)==='reward'){
-      const ck=rewardCK(m,h.id);
-      if(!state.claimedRewards[ck]&&!spent[ck]) out.push({ck,m,name:h.name,tagId:h.tagId,text:rewardText(m,h.id)});
-    }
-  }});
-  return out;
 }
 
 /* ===== STATE ===== */
@@ -1525,7 +1504,6 @@ function switchYear(year){
   recalcXP();recalcPoints();
   // reset the visible month to Jan (or real month if switching to the calendar year)
   curMonth=(todayDate.getFullYear()===year)?todayDate.getMonth():0;
-  reconcileSnapshots();
   state._t=Date.now();persistLocal();cloudPush();
   renderXP();switchView(currentView);
   const ru=state.lang!=="en";
@@ -1561,6 +1539,11 @@ function migrate(){
 
   if(!state.globalZonePct)state.globalZonePct={reward:85,nothing:65,knut1:45,knut2:25};
   if(!state.bigRewards||!Array.isArray(state.bigRewards))state.bigRewards=defaultBigRewards();
+  state.bigRewards.forEach(r=>{
+    if(r.tagId===undefined)r.tagId=null;
+    if(r.linkedHabitId===undefined)r.linkedHabitId=null;
+    if(r.convertsDay===undefined)r.convertsDay=false;
+  });
   if(!Array.isArray(state.reminders))state.reminders=[];
   // ensure bigPurchases array in every year + migrate legacy r.claimed counters into purchase records
   if(state.years){Object.keys(state.years).forEach(y=>{ if(!Array.isArray(state.years[y].bigPurchases))state.years[y].bigPurchases=[]; });}
@@ -1639,45 +1622,6 @@ function visibleHabits(filter){
   return activeHabits();
 }
 
-/* ===== PENALTY SYSTEM (zone-based %) ===== */
-/*  Zones driven by done/effTarget*100 vs % thresholds (or abs days if h.zoneMode==='abs')
-    🥕 reward    ≥ z.reward  (default 90%)
-    ⚪ nothing   ≥ z.nothing (default 70%) — buffer
-    🟠 knut×1   ≥ z.knut1  (default 60%)
-    🔴 knut×2   ≥ z.knut2  (default 50%)
-    ⛔ knut×2+Δ  < z.knut2               — rate increase next month
-*/
-function getZonePct(h){
-  return(h&&h.zonePct)?h.zonePct:(state.globalZonePct||{reward:85,nothing:65,knut1:45,knut2:25});
-}
-function pctToAbsZ(pctZ,T){
-  return{reward:Math.round(T*pctZ.reward/100),nothing:Math.round(T*pctZ.nothing/100),
-         knut1:Math.round(T*pctZ.knut1/100),knut2:Math.round(T*pctZ.knut2/100)};
-}
-function absZToPct(absZ,T){
-  if(!T)return{reward:85,nothing:65,knut1:45,knut2:25};
-  return{reward:Math.round(absZ.reward/T*100),nothing:Math.round(absZ.nothing/T*100),
-         knut1:Math.round(absZ.knut1/T*100),knut2:Math.round(absZ.knut2/T*100)};
-}
-function habitZone(h,m){
-  const done=checkedCount(m,h.id);
-  const T=effTarget(h,m);if(T<=0)return'nothing';
-  if(h.zoneMode==='abs'&&h.zoneAbs){
-    const z=h.zoneAbs;
-    if(done>=z.reward)return'reward';
-    if(done>=z.nothing)return'nothing';
-    if(done>=z.knut1)return'knut1';
-    if(done>=z.knut2)return'knut2';
-    return'knut2_rate';
-  }
-  const pct=done/T*100;
-  const z=getZonePct(h);
-  if(pct>=z.reward)return'reward';
-  if(pct>=z.nothing)return'nothing';
-  if(pct>=z.knut1)return'knut1';
-  if(pct>=z.knut2)return'knut2';
-  return'knut2_rate';
-}
 function monthCharityAmount(m){return monthMoneyOwed(m)}
 
 /* ===== POINTS ECONOMY (new, additive — runs alongside the zone system above during the migration) =====
@@ -1774,6 +1718,19 @@ function habitPointsForMonth(h,year,m,yd){
 }
 // Current-month balance for the ACTIVE (bound) year — used by the money pool & UI previews.
 function habitMonthBalance(h,m){return habitPointsForMonth(h,activeYear(),m,state)}
+// UI-facing pace-line status for an event habit on a specific day (mirrors eventHabitPointsForMonth's
+// running count exactly, but exposed as data instead of a point delta, for the Today-view badge).
+function eventPaceStatus(h,m,d){
+  const totalDays=daysInMonth(m);
+  const N=effTarget(h,m);
+  const c=getChecks(m,h.id);
+  const frozen=getFreezes(m);
+  let doneSoFar=0;
+  for(let i=1;i<d;i++){ if(!frozen.includes(i)&&c[i])doneSoFar++; }
+  const minRequired=(totalDays>0&&N>0)?Math.floor(d/totalDays*N):0;
+  const doneToday=!!c[d];
+  return{doneSoFar,totalDone:doneSoFar+(doneToday?1:0),minRequired,N,obligatory:!doneToday&&doneSoFar<minRequired};
+}
 // Rebuilds the lifetime points balance from scratch: every habit × every month × every year the
 // user has ever touched, minus everything ever spent in the shop. Never patched incrementally.
 function recalcPoints(){
@@ -1847,72 +1804,15 @@ function recalcXP(){
 function toggleCheck(m,hid,day){
   const c=getChecks(m,hid);
   const h=state.habits.find(x=>x.id===hid);
-  const prevZone=h?habitZone(h,m):null;
+  const prevSucceeded=h?metTarget(h,m):null;
   if(c[day]){delete c[day];state.xp=Math.max(0,(state.xp||0)-xpForCheck(h?h.weight:1))}
   else{c[day]=true;state.xp=(state.xp||0)+xpForCheck(h?h.weight:1)}
   recalcPoints(); // full re-derive: a single check can shift many other elapsed days for event habits
   save();
   if(h){
-    const newZone=habitZone(h,m);
-    if(prevZone!==newZone){
-      if(newZone==='reward'){snapshotReward(m,hid);showRewardPopup(h)}
-      else if(prevZone==='reward'){clearReward(m,hid)}
-      showZoneNotification(h,prevZone,newZone);
-    }
+    const nowSucceeded=metTarget(h,m);
+    if(nowSucceeded&&!prevSucceeded)showRewardPopup(h);
   }
-}
-function showZoneNotification(h,prev,next){
-  const ru=state.lang!=="en";
-  const nm=h.name.length>18?h.name.slice(0,16)+'…':h.name;
-  const WORSE=(prev,next)=>{
-    const ord=['reward','nothing','knut1','knut2','knut2_rate'];
-    return ord.indexOf(next)>ord.indexOf(prev);
-  };
-  if(next==='reward')return; // popup handles it
-  if(WORSE(prev,next)){
-    if(next==='knut1')         toast('🟠 '+nm+': '+(ru?'зона штрафа ×1':'penalty zone ×1'),3000);
-    else if(next==='knut2')    toast('🔴 '+nm+': '+(ru?'двойной кнут!':'double penalty!'),3500);
-    else if(next==='knut2_rate')toast('⛔ '+nm+': '+(ru?'ставка вырастет в следующем месяце!':'rate will increase next month!'),4000);
-  }else{
-    if(prev==='knut2_rate')    toast('✅ '+nm+': '+(ru?'вышли из зоны повышения ставки!':'out of rate-increase zone!'),3500);
-    else if(prev==='knut2')    toast('🟠 '+nm+': '+(ru?'одинарный кнут — лучше!':'down to single penalty!'),3000);
-    else if(prev==='knut1')    toast('⚪ '+nm+': '+(ru?'зона буфера, штрафа нет':'buffer zone, no penalty'),3000);
-    else if(prev==='nothing')  toast('🥕 '+nm+': '+(ru?'норма почти выполнена!':'almost at target!'),2500);
-  }
-}
-/* ===== REWARD SNAPSHOTS (preserve earned reward text even if habit reward changes later) ===== */
-function rewardCK(m,hid){return"m"+m+"_"+hid}
-function snapshotReward(m,hid){
-  const ck=rewardCK(m,hid);
-  if(state.rewardSnapshots[ck]===undefined){
-    const h=state.habits.find(x=>x.id===hid);
-    state.rewardSnapshots[ck]=((h&&h.reward)||"").trim();
-    save();
-  }
-}
-function clearSnapshotIfUnclaimed(m,hid){
-  const ck=rewardCK(m,hid);
-  if(state.rewardSnapshots[ck]!==undefined&&!state.claimedRewards[ck]){delete state.rewardSnapshots[ck];save()}
-}
-/* Full reward removal — clears snapshot AND claimed status (used when target drops) */
-function clearReward(m,hid){
-  const ck=rewardCK(m,hid);
-  delete state.rewardSnapshots[ck];
-  if(state.claimedRewards)delete state.claimedRewards[ck];
-  save();
-}
-function rewardText(m,hid){
-  const ck=rewardCK(m,hid);
-  const snap=state.rewardSnapshots[ck];
-  if(snap!==undefined&&snap!=="")return snap;
-  const h=state.habits.find(x=>x.id===hid);
-  return((h&&h.reward)||"").trim();
-}
-function reconcileSnapshots(){
-  state.habits.forEach(h=>{for(let m=0;m<12;m++){
-    if(metTarget(h,m))snapshotReward(m,h.id);
-    else clearReward(m,h.id);
-  }});
 }
 function checkedCount(m,hid){return Object.keys(getChecks(m,hid)).length}
 function effTarget(h,m){
@@ -1926,7 +1826,7 @@ function effTarget(h,m){
   }
   return Math.max(0,base-frozen);
 }
-function metTarget(h,m){return habitZone(h,m)==='reward'}
+function metTarget(h,m){return habitMonthBalance(h,m)>0}
 function longestStreak(m,hid){
   const c=getChecks(m,hid),N=daysInMonth(m),frozen=getFreezes(m);
   let best=0,cur=0;
@@ -2102,11 +2002,21 @@ function renderToday(){
     grouped[tid].forEach(h=>{
       const done=!!getChecks(m,h.id)[d]||frozen;
       const streak=longestStreak(m,h.id);
+      let metaLine;
+      if(h.type==="event"){
+        const p=eventPaceStatus(h,m,d);
+        const paceBadge=done?`<span style="color:var(--green)">${T.paceOnTrack}</span>`
+          :p.obligatory?`<b style="color:var(--red)">&#9888; ${T.paceObligatory}</b>`
+          :`<span style="color:var(--dim)">${T.paceOnTrack}</span>`;
+        metaLine=`${p.totalDone}/${p.N} ${T.paceThisMonth} &middot; ${paceBadge} &middot; +${xpForCheck(h.weight)} XP`;
+      }else{
+        metaLine=`${T.streak} ${streak} &middot; +${xpForCheck(h.weight)} XP`;
+      }
       html+=`<div class="today-item" draggable="true" data-h="${h.id}">
         <span class="ti-drag">&#10495;</span>
         <div class="move-col"><button class="move-btn" data-mvup="${h.id}">&#9650;</button><button class="move-btn" data-mvdn="${h.id}">&#9660;</button></div>
         <div style="flex:1"><div class="ti-name">${escapeHtml(h.name)}</div>
-        <div class="ti-streak">${T.streak} ${streak} &middot; +${xpForCheck(h.weight)} XP</div></div>
+        <div class="ti-streak">${metaLine}</div></div>
         <div class="ti-check ${done?'done':''}" style="--chkcolor:${tag.color};${done?'background:'+tag.color:''}">
           ${done?'&#10003;':''}</div>
       </div>`;
@@ -2114,16 +2024,6 @@ function renderToday(){
     html+=`</div>`;
   }
 
-  const rew=monthRewards(m);
-  if(rew.length){
-    html+=`<div class="card" style="margin-top:14px"><h3>&#127805; ${T.rewardBank}</h3><p class="sub">${T.earnedThisMonth}: ${rew.length}/${hs.length}</p><div class="hlist">`;
-    rew.forEach(h=>{
-      const ck="m"+m+"_"+h.id;
-      const claimed=state.claimedRewards[ck];
-      html+=`<div class="reward-item"><span class="dot" style="background:${getTagColor(h.tagId)}"></span><div class="ri-name">${escapeHtml(h.name)}</div><div class="ri-reward">${escapeHtml(rewardText(m,h.id))}</div><button class="ri-claim ${claimed?'claimed':''}" data-ck="${ck}">${claimed?T.claimedLabel:T.claim}</button></div>`;
-    });
-    html+=`</div></div>`;
-  }
 
   el.innerHTML=html;
 
@@ -2370,28 +2270,16 @@ function renderMonthNorms(){
       <div class="nm2">${escapeHtml(h.name)}</div>
       <div style="text-align:right">
         <input class="nnum" type="number" inputmode="numeric" data-mh="${h.id}" value="${val}" placeholder="${def}">
-        <div class="norm-zone-hint" id="nzh_${h.id}"></div>
       </div></div>`;
   }).join("");
-  function updateNormZoneHint(h){
-    const hintEl=document.getElementById('nzh_'+h.id);if(!hintEl)return;
-    const T=effTarget(h,m);if(!T){hintEl.textContent='';return;}
-    const z=getZonePct(h);
-    const rD=Math.round(T*z.reward/100),k2D=Math.round(T*z.knut2/100);
-    hintEl.textContent=`🥕≥${rD} ⛔<${k2D}`;
-  }
-  hs.forEach(h=>updateNormZoneHint(h));
   body.querySelectorAll(".nnum").forEach(inp=>{
-    updateNormZoneHint(state.habits.find(x=>x.id===inp.dataset.mh)||{});
     inp.oninput=()=>{
       const hid=inp.dataset.mh,h=state.habits.find(x=>x.id===hid);
       if(!h.monthTargets)h.monthTargets={};
       if(inp.value.trim()==="")delete h.monthTargets["m"+m];
       else h.monthTargets["m"+m]=+inp.value;
-      save();
-      if(metTarget(h,m))snapshotReward(m,hid);else clearReward(m,hid);
-      updateNormZoneHint(h);
-      renderHero();renderMonthTabs();
+      recalcPoints();save();
+      renderHero();renderMonthTabs();renderXP();
       const tr=[...document.querySelectorAll("#gridScroll tr")].find(t=>t.querySelector(`.chk[data-h="${hid}"]`));
       if(tr)updateRowMeta(tr,hid);
     };
@@ -2645,7 +2533,6 @@ function saveHabit(){
     state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,reward,monthTargets,archived:false,deleted:false,deletedAt:null,order:state.habits.length});
     toast(T.habitAdded);
   }
-  reconcileSnapshots();
   recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
   save();clearForm();renderHabitsManager();
 }
@@ -2796,12 +2683,6 @@ function monthStatsHTML(m){
   ${inc?`<div class="charity-box"><div class="cb-title">${T.charityBank}</div><div class="cb-amount">${rub(pen)}</div><div class="cb-sub">${T.penaltyFromHabits}</div></div>`:''}
 
   <div class="card"><h3>${T.completionByHabit}</h3><p class="sub">${T.pctOfTarget} ${T.months[m]}</p>${chart||`<div class="empty">${T.noHabits}</div>`}</div>
-
-  ${rew.length?`<div class="card"><h3>&#127805; ${T.rewardBank}</h3><p class="sub">${T.earnedThisMonth}</p><div class="hlist">${rew.map(h=>{
-    const ck="m"+m+"_"+h.id;
-    const claimed=state.claimedRewards[ck];
-    return`<div class="reward-item"><span class="dot" style="background:${getTagColor(h.tagId)}"></span><div class="ri-name">${escapeHtml(h.name)}</div><div class="ri-reward">${escapeHtml(rewardText(m,h.id))}</div><button class="ri-claim ${claimed?'claimed':''}" data-ck="${ck}">${claimed?T.claimedLabel:T.claim}</button></div>`;
-  }).join("")}</div></div>`:''}
 
   ${corr.length?`<div class="card"><h3>&#128279; ${T.correlationsTitle}</h3><p class="sub">${T.corrDesc}</p>${corr.map(c=>`<div class="corr-item">
     <div class="corr-arrow">${c.strength>0?'&#8593;':'&#8595;'}</div>
@@ -3015,43 +2896,49 @@ function achievementsForYear(){
   ];
 }
 
-/* ===== REWARDS VIEW (big shop + small ledger) ===== */
+/* ===== REWARDS VIEW (unified points shop) ===== */
 let bigRewardEditId=null; // null=off, 'new'=adding, id=editing
 function renderRewards(){
   const body=document.getElementById("rewardsBody");
   const ru=state.lang!=="en";
-  const earned=totalEarnedPryanics();
-  const avail=availablePryanics();
+  const avail=state.points||0;
   const bigR=(state.bigRewards||[]);
+  const purchases=(state.purchases||[]).slice().sort((a,b)=>b.date-a.date);
 
-  /* ---- inline edit form ---- */
+  /* ---- inline edit form (name/emoji/cost + optional tag + optional linked-habit day-buyout) ---- */
   function editForm(r){
     const id=r?r.id:'new';
     const emo=r?escapeHtml(r.emo||''):'';
     const nm=r?escapeHtml(r.name):'';
     const co=r?r.cost:'';
-    return`<div class="br-edit-row">
+    const tagOpts=`<option value="">${ru?'Без тега':'No tag'}</option>`+state.tags.map(t=>`<option value="${t.id}" ${r&&r.tagId===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
+    const habitOpts=`<option value="">${ru?'Не привязано':'Not linked'}</option>`+activeHabits().map(h=>`<option value="${h.id}" ${r&&r.linkedHabitId===h.id?'selected':''}>${escapeHtml(h.name)}</option>`).join('');
+    return`<div class="br-edit-row" style="flex-wrap:wrap">
       <input class="inp br-inp-emo" id="brfEmo_${id}" value="${emo}" placeholder="🎁">
       <input class="inp br-inp-name" id="brfName_${id}" value="${nm}" placeholder="${ru?'Название':'Name'}">
-      <input class="inp br-inp-cost" type="number" id="brfCost_${id}" value="${co}" min="1" placeholder="🥕">
+      <input class="inp br-inp-cost" type="number" id="brfCost_${id}" value="${co}" min="1" placeholder="${T.pointsLabel}">
       <button class="usebtn" data-brsave="${id}">✓</button>
       <button class="usebtn used" data-brcancel>✕</button>
+      <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfTag_${id}">${tagOpts}</select></div>
+      <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfHabit_${id}">${habitOpts}</select></div>
+      <label style="flex:1 1 100%;margin-top:6px;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px">
+        <input type="checkbox" id="brfConverts_${id}" ${r&&r.convertsDay?'checked':''}> ${ru?'Покупка выкупает пропущенный день привычки (превращает в успех)':'Purchase buys out a missed day of the linked habit (turns it into a success)'}
+      </label>
     </div>`;
   }
 
-  /* ---- big rewards shop ---- */
   const shopRows=bigR.map(r=>{
     if(bigRewardEditId===r.id) return editForm(r);
     const canBuy=avail>=r.cost;
-    const owned=(state.bigPurchases||[]).filter(p=>p.rewardId===r.id).length;
+    const owned=(state.purchases||[]).filter(p=>p.rewardId===r.id).length;
+    const tag=r.tagId?getTag(r.tagId):null;
     return`<div class="br-item">
       <span class="br-emo">${r.emo||'🎁'}</span>
-      <div class="br-info"><div class="br-name">${escapeHtml(r.name)}</div>
-        <div class="br-cost">${r.cost} 🥕${owned?' · получено '+owned+'×':''}</div>
+      <div class="br-info"><div class="br-name">${tag?`<span class="dot" style="background:${tag.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px"></span>`:''}${escapeHtml(r.name)}</div>
+        <div class="br-cost">${r.cost} ${T.pointsLabel}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${r.linkedHabitId?' · &#128260; '+(ru?'выкуп дня':'day buyout'):''}</div>
       </div>
       <div class="br-btns">
-        <button class="usebtn ${canBuy?'':'used'}" data-brbuy="${r.id}" ${canBuy?'':'disabled'}>${canBuy?(ru?'купить':'buy'):(ru?'мало 🥕':'not enough')}</button>
-        ${owned>0?`<button class="usebtn used" data-brret="${r.id}" title="${ru?'Вернуть последнюю':'Refund last'}">↺</button>`:''}
+        <button class="usebtn ${canBuy?'':'used'}" data-brbuy="${r.id}" ${canBuy?'':'disabled'}>${canBuy?(ru?'купить':'buy'):(ru?'мало очков':'not enough')}</button>
         <button class="move-btn" data-bredit="${r.id}" title="${ru?'Изменить':'Edit'}">✎</button>
         <button class="move-btn" data-brdel="${r.id}" title="${ru?'Удалить':'Delete'}">✕</button>
       </div>
@@ -3060,79 +2947,46 @@ function renderRewards(){
 
   const addSection=bigRewardEditId==='new'
     ?editForm(null)
-    :`<button class="btn ghost" id="brAddBtn" style="margin-top:10px;width:100%">+ ${ru?'Добавить большую награду':'Add big reward'}</button>`;
+    :`<button class="btn ghost" id="brAddBtn" style="margin-top:10px;width:100%">+ ${ru?'Добавить награду':'Add reward'}</button>`;
 
-  /* ---- small rewards ledger ---- */
-  const spentMap=spentCkSet();
-  const items=[];
-  state.habits.filter(h=>!h.deleted).forEach(h=>{for(let m=0;m<12;m++){
-    if(habitZone(h,m)==='reward'){
-      const ck=rewardCK(m,h.id);
-      items.push({m,ck,text:rewardText(m,h.id)||(ru?"Норма закрыта":"Target reached"),
-        tagId:h.tagId,name:h.name,claimed:!!state.claimedRewards[ck],spentOn:spentMap[ck]||null,archived:h.archived});
-    }
-  }});
-  const availSmall=items.filter(i=>!i.claimed&&!i.spentOn).length;
-  const usedSmall=items.filter(i=>i.claimed).length;
-  const lockedSmall=items.filter(i=>i.spentOn).length;
-  const groups={};
-  items.forEach(i=>{(groups[i.text]=groups[i.text]||[]).push(i)});
-  const orderK=Object.keys(groups).sort((a,b)=>groups[b].filter(i=>!i.claimed&&!i.spentOn).length-groups[a].filter(i=>!i.claimed&&!i.spentOn).length);
-  const smallCards=orderK.map(text=>{
-    const list=groups[text].sort((a,b)=>((a.claimed||a.spentOn?1:0)-(b.claimed||b.spentOn?1:0))||(a.m-b.m));
-    const av=list.filter(i=>!i.claimed&&!i.spentOn).length,allUsed=av===0,color=getTagColor(list[0].tagId);
-    const inst=list.map(i=>{
-      const badge=i.archived?` <span class="archived-badge">${ru?"архив":"arch"}</span>`:"";
-      if(i.spentOn){
-        return`<div class="rinst"><span class="dot" style="background:${getTagColor(i.tagId)}"></span>
-          <span class="src" style="opacity:.55">${escapeHtml(i.name)}${badge} · ${T.monthsShort[i.m]}</span>
-          <span class="usebtn used" style="cursor:default">🔒 ${ru?'в награде':'in reward'}</span></div>`;
-      }
-      return`<div class="rinst"><span class="dot" style="background:${getTagColor(i.tagId)}"></span>
-        <span class="src">${escapeHtml(i.name)}${badge} · ${T.monthsShort[i.m]}</span>
-        <button class="usebtn ${i.claimed?'used':''}" data-ck="${i.ck}">${i.claimed?'↺ '+(ru?'вернуть':'return'):(ru?'использовать':'use')}</button></div>`;
-    }).join('');
-    return`<div class="card rgroup"><div class="rhead"><span class="dot" style="background:${color}"></span>
-      <div class="rtext ${allUsed?'done':''}">${escapeHtml(text)}</div>
-      <span class="qty ${allUsed?'zero':''}">${allUsed?(ru?'нет':'none'):'×'+av}</span></div>${inst}</div>`;
-  }).join('');
+  const historyRows=purchases.slice(0,20).map(p=>
+    `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${T.pointsLabel}</div></div>`
+  ).join('');
 
   body.innerHTML=`
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-        <h3 style="margin:0">🏆 ${ru?'Большие награды':'Big Rewards'}</h3>
-        <div style="display:flex;gap:10px">
-          <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Заработано':'Earned'}</div><div class="val" style="color:var(--dim)">${earned} 🥕</div></div>
-          <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Доступно':'Available'}</div><div class="val" style="color:var(--accent)">${avail} 🥕</div></div>
-        </div>
+        <h3 style="margin:0">🏆 ${ru?'Магазин':'Shop'}</h3>
+        <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Баланс':'Balance'}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail} ${T.pointsLabel}</div></div>
       </div>
-      <p class="sub" style="margin:4px 0 10px">${ru?'Каждая закрытая норма = 1 🥕. Копи и трать здесь.':'Each monthly target hit = 1 🥕. Save and spend here.'}</p>
       <div class="br-list">${shopRows}</div>
       ${addSection}
     </div>
-    <div class="rsummary" style="margin-bottom:10px;${lockedSmall?'grid-template-columns:1fr 1fr 1fr':''}">
-      <div class="stat"><div class="lab">🥕 ${ru?'Свободно':'Free'}</div><div class="val" style="color:var(--pink)">${availSmall}</div></div>
-      <div class="stat"><div class="lab">${ru?'Использовано':'Used'}</div><div class="val" style="color:var(--accent)">${usedSmall}</div></div>
-      ${lockedSmall?`<div class="stat"><div class="lab">🔒 ${ru?'В наградах':'In rewards'}</div><div class="val" style="color:var(--dim)">${lockedSmall}</div></div>`:''}
-    </div>
-    ${items.length?smallCards:`<div class="card"><div class="empty"><b>${ru?'Пряников пока нет':'No rewards yet'}</b><br><span style="font-size:13px">${ru?'Закрой норму по привычке — появится здесь':'Hit any habit target — shows up here'}</span></div></div>`}`;
+    ${purchases.length?`<div class="card"><h3 style="margin-top:0">${ru?'История покупок':'Purchase history'}</h3>${historyRows}</div>`
+      :`<div class="card"><div class="empty"><b>${ru?'Пока нет покупок':'No purchases yet'}</b></div></div>`}`;
 
   /* ---- wire edit form save/cancel ---- */
   function saveEditForm(id){
     const emoEl=document.getElementById('brfEmo_'+id);
     const nmEl=document.getElementById('brfName_'+id);
     const coEl=document.getElementById('brfCost_'+id);
+    const tagEl=document.getElementById('brfTag_'+id);
+    const habitEl=document.getElementById('brfHabit_'+id);
+    const convEl=document.getElementById('brfConverts_'+id);
     if(!nmEl||!nmEl.value.trim()){toast(ru?'Введите название':'Enter a name');return}
     const emo=emoEl?emoEl.value.trim():'🎁';
     const name=nmEl.value.trim();
     const cost=Math.max(1,+coEl.value||1);
+    const tagId=tagEl&&tagEl.value?tagEl.value:null;
+    const linkedHabitId=habitEl&&habitEl.value?habitEl.value:null;
+    const convertsDay=!!(linkedHabitId&&convEl&&convEl.checked);
     if(id==='new'){
       if(!state.bigRewards)state.bigRewards=[];
-      state.bigRewards.push({id:uid(),name,cost,emo,claimed:0});
+      state.bigRewards.push({id:uid(),name,cost,emo,tagId,linkedHabitId,convertsDay});
       toast(ru?'Награда добавлена':'Reward added');
     }else{
       const r=state.bigRewards.find(x=>x.id===id);
-      if(r)Object.assign(r,{name,cost,emo});
+      if(r)Object.assign(r,{name,cost,emo,tagId,linkedHabitId,convertsDay});
       toast(ru?'Обновлено':'Updated');
     }
     bigRewardEditId=null;save();renderRewards();
@@ -3149,45 +3003,48 @@ function renderRewards(){
   });
   const addBtn=document.getElementById('brAddBtn');
   if(addBtn)addBtn.onclick=()=>{bigRewardEditId='new';renderRewards()};
-  /* ---- wire buy (opens selection modal) / refund ---- */
   body.querySelectorAll('[data-brbuy]').forEach(b=>{
     if(b.disabled)return;
     b.onclick=()=>{
       const r=state.bigRewards.find(x=>x.id===b.dataset.brbuy);
       if(!r)return;
-      if(availablePryanics()<r.cost){toast(ru?'Не хватает 🥕':'Not enough 🥕');return}
-      openBuyModal(r);
+      if((state.points||0)<r.cost){toast(ru?'Не хватает очков':'Not enough points');return}
+      if(r.linkedHabitId&&r.convertsDay)openBuyModal(r);
+      else buyRewardFlat(r);
     };
   });
-  body.querySelectorAll('[data-brret]').forEach(b=>b.onclick=()=>{
-    const r=state.bigRewards.find(x=>x.id===b.dataset.brret);
-    if(!r)return;
-    // refund the most recent purchase of this reward → release its small pryanics
-    const mine=(state.bigPurchases||[]).filter(p=>p.rewardId===r.id);
-    if(!mine.length)return;
-    const last=mine[mine.length-1];
-    if(!confirm(ru?`Вернуть «${r.name}»? ${(last.spentCks||[]).length} 🥕 снова станут свободными.`:`Refund "${r.name}"? ${(last.spentCks||[]).length} pryanics will be freed.`))return;
-    state.bigPurchases=state.bigPurchases.filter(p=>p.id!==last.id);
-    save();renderRewards();
-    toast(ru?'Возвращено, пряники освобождены':'Refunded, pryanics freed');
-  });
-  /* ---- wire small reward use/return ---- */
-  body.querySelectorAll('.usebtn[data-ck]').forEach(b=>b.onclick=()=>{
-    const ck=b.dataset.ck;
-    state.claimedRewards[ck]=!state.claimedRewards[ck];
-    if(!state.claimedRewards[ck])delete state.claimedRewards[ck];
-    save();renderRewards();
-    toast(state.claimedRewards[ck]?(ru?'Пряник использован 🎉':'Reward used 🎉'):(ru?'Возвращён':'Back to available'));
-  });
+}
+function buyRewardFlat(r){
+  const ru=state.lang!=="en";
+  if(!confirm(ru?`Купить «${r.name}» за ${r.cost} ${T.pointsLabel}?`:`Buy "${r.name}" for ${r.cost} ${T.pointsLabel}?`))return;
+  if(!state.purchases)state.purchases=[];
+  state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now()});
+  recalcPoints();save();renderRewards();renderXP();
+  toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${T.pointsLabel})`);
 }
 
-/* ===== BIG-REWARD PURCHASE (Variant V: pick exact small pryanics) ===== */
-let _buyState=null; // {reward, selected:Set}
+/* ===== DAY-BUYOUT PURCHASE (reward linked to a habit: pick a missed day to convert into a success) =====
+   Converting = simply checking that day's box for the linked habit, then recalcPoints() picks it up
+   through the exact same math as any other success — no special-cased point bypass needed. */
+let _buyState=null; // {reward, candidates, picked:{m,d}|null}
+function recentMissedDays(hid,limit){
+  const h=state.habits.find(x=>x.id===hid);if(!h)return[];
+  const rt=realTodayParts(),ay=activeYear();
+  const out=[];
+  for(let back=0;back<62&&out.length<(limit||14);back++){
+    const dt=new Date(rt.y,rt.m,rt.d-1-back); // strictly before today, walking backwards
+    if(dt.getFullYear()!==ay)continue; // only the currently bound year has live check data
+    const m=dt.getMonth(),d=dt.getDate();
+    if(getFreezes(m).includes(d))continue;
+    if(!getChecks(m,h.id)[d])out.push({m,d,label:T.monthsShort[m]+" "+d});
+  }
+  return out;
+}
 function openBuyModal(reward){
   const ru=state.lang!=="en";
-  const pool=spendableSmallPryanics();
-  if(pool.length<reward.cost){toast(ru?'Не хватает свободных 🥕':'Not enough free pryanics');return}
-  _buyState={reward,selected:new Set()};
+  const candidates=recentMissedDays(reward.linkedHabitId,14);
+  if(!candidates.length){toast(ru?'Нет подходящих пропущенных дней за последнее время':'No recent missed days to convert');return}
+  _buyState={reward,candidates,picked:null};
   renderBuyModal();
   document.getElementById('buyOverlay').style.display='block';
   document.getElementById('buyModal').classList.add('show');
@@ -3200,52 +3057,41 @@ function closeBuyModal(){
 function renderBuyModal(){
   if(!_buyState)return;
   const ru=state.lang!=="en";
-  const r=_buyState.reward, need=r.cost, sel=_buyState.selected;
-  const pool=spendableSmallPryanics();
+  const{reward:r,candidates,picked}=_buyState;
+  const h=state.habits.find(x=>x.id===r.linkedHabitId);
   document.getElementById('buyModalHead').innerHTML=`
     <div style="display:flex;align-items:center;gap:10px">
       <span style="font-size:30px">${r.emo||'🎁'}</span>
       <div><div style="font-size:17px;font-weight:800">${escapeHtml(r.name)}</div>
-      <div class="sub" style="margin:2px 0 0">${ru?'Выбери':'Pick'} ${need} 🥕 ${ru?'для оплаты':'to pay'}</div></div>
-    </div>
-    <div style="margin-top:10px;font-weight:800;font-size:14px" id="buyCounter"></div>`;
-  // list pool grouped by reward text for readability
-  document.getElementById('buyModalList').innerHTML=pool.map(p=>{
-    const on=sel.has(p.ck);
-    return`<label class="buy-row ${on?'on':''}" data-bck="${p.ck}">
+      <div class="sub" style="margin:2px 0 0">${ru?'Выбери день':'Pick a day'} — ${escapeHtml(h?h.name:'')} (&minus;${r.cost} ${T.pointsLabel})</div></div>
+    </div>`;
+  document.getElementById('buyModalList').innerHTML=candidates.map(c=>{
+    const on=picked&&picked.m===c.m&&picked.d===c.d;
+    return`<label class="buy-row ${on?'on':''}" data-bm="${c.m}" data-bd="${c.d}">
       <span class="buy-check">${on?'✓':''}</span>
-      <span class="dot" style="background:${getTagColor(p.tagId)}"></span>
-      <span style="flex:1;min-width:0"><b style="font-size:13px">${escapeHtml(p.text||p.name)}</b>
-      <span style="display:block;font-size:11px;color:var(--dim)">${escapeHtml(p.name)} · ${T.monthsShort[p.m]}</span></span>
+      <span style="flex:1;min-width:0"><b style="font-size:13px">${c.label}</b></span>
     </label>`;
   }).join('');
   document.getElementById('buyModalFoot').innerHTML=`
     <div style="display:flex;gap:8px;margin-top:6px">
       <button class="btn ghost" style="flex:1" onclick="closeBuyModal()">${ru?'Отмена':'Cancel'}</button>
-      <button class="btn primary" style="flex:1" id="buyConfirmBtn">${ru?'Получить награду':'Claim reward'}</button>
+      <button class="btn primary" style="flex:1;${picked?'':'opacity:.5'}" id="buyConfirmBtn" ${picked?'':'disabled'}>${ru?'Купить':'Buy'}</button>
     </div>`;
-  // wire rows
-  document.querySelectorAll('#buyModalList .buy-row').forEach(el=>el.onclick=(e)=>{
-    e.preventDefault();
-    const ck=el.dataset.bck;
-    if(sel.has(ck))sel.delete(ck);
-    else{ if(sel.size>=need){toast(ru?`Нужно ровно ${need}`:`Exactly ${need} needed`);return} sel.add(ck); }
+  document.querySelectorAll('#buyModalList .buy-row').forEach(el=>el.onclick=()=>{
+    _buyState.picked={m:+el.dataset.bm,d:+el.dataset.bd};
     renderBuyModal();
   });
-  const cnt=document.getElementById('buyCounter');
-  if(cnt)cnt.innerHTML=`${ru?'Выбрано':'Selected'}: <span style="color:${sel.size===need?'var(--green)':'var(--accent)'}">${sel.size}/${need}</span>`;
   const cbtn=document.getElementById('buyConfirmBtn');
-  if(cbtn){
-    cbtn.disabled=sel.size!==need;
-    cbtn.style.opacity=sel.size===need?'1':'.5';
-    cbtn.onclick=()=>{
-      if(sel.size!==need)return;
-      if(!state.bigPurchases)state.bigPurchases=[];
-      state.bigPurchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,spentCks:Array.from(sel),date:Date.now()});
-      save();closeBuyModal();renderRewards();
-      toast(`${r.emo||'🎁'} ${r.name} — ${ru?'получено!':'claimed!'} (−${need}🥕)`);
-    };
-  }
+  if(cbtn)cbtn.onclick=()=>{
+    if(!_buyState.picked)return;
+    const{m,d}=_buyState.picked;
+    const c=getChecks(m,r.linkedHabitId);
+    c[d]=true;
+    if(!state.purchases)state.purchases=[];
+    state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now(),convertedDay:{year:activeYear(),month:m,day:d,habitId:r.linkedHabitId}});
+    recalcPoints();save();closeBuyModal();renderRewards();renderXP();
+    toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${T.pointsLabel})`);
+  };
 }
 
 /* ===== MONTHLY SUMMARY ===== */
@@ -3740,7 +3586,7 @@ function renderMonthTargetsGrid(){
 }
 
 function hardReset(){
-  if(!confirm("⚠️ ПОЛНЫЙ СБРОС\n\nВсе галочки, пряники, XP, штрафы, история, снимки наград — будут удалены безвозвратно.\nПривычки вернутся к 19 дефолтным.\n\nКод приложения не тронут.\n\nПродолжить?"))return;
+  if(!confirm("⚠️ ПОЛНЫЙ СБРОС\n\nВсе галочки, очки, XP, штрафы, покупки в магазине, история — будут удалены безвозвратно.\nПривычки вернутся к 19 дефолтным.\n\nКод приложения не тронут.\n\nПродолжить?"))return;
   // Wipe Firebase if configured
   try{
     if(sync.url&&sync.code){
@@ -3981,7 +3827,6 @@ function init(){
   load();
   loadSyncCfg();
   loadVersions();
-  reconcileSnapshots();
   if(!sync.code){sync.code=genCode();saveSyncCfg()}
   applyTheme();
   renderMonthTargetsGrid();
@@ -4093,18 +3938,6 @@ function init(){
   document.getElementById("btnSyncOff").onclick=disconnectSync;
   document.getElementById("syncPill").onclick=()=>{switchView("settings");document.getElementById("syncCard").scrollIntoView({behavior:"smooth"})};
   document.getElementById("btnGear").onclick=()=>switchView("settings");
-
-  // claim rewards
-  document.addEventListener("click",e=>{
-    if(e.target.classList.contains("ri-claim")){
-      const ck=e.target.dataset.ck;
-      state.claimedRewards[ck]=!state.claimedRewards[ck];
-      if(!state.claimedRewards[ck])delete state.claimedRewards[ck];
-      save();
-      e.target.classList.toggle("claimed");
-      e.target.textContent=state.claimedRewards[ck]?T.claimedLabel:T.claim;
-    }
-  });
 
   // wipe
   document.getElementById("btnWipeAll").onclick=()=>{
