@@ -829,7 +829,7 @@ monthTargetsLabel:"Per-month targets (empty = default)",
 weightLabel:"Weight (1-10)",rewardLabel:"Reward for hitting target",rewardPH:"e.g. Cinema night",
 sinDaysTitle:"Conscious skip days",sinDaysHint:"A pre-declared skip on these days costs −1×weight instead of −3×weight.",
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight).",
-sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",pointsLabel:"pts",
+sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",
 paceOnTrack:"on track",paceObligatory:"catch-up day",paceThisMonth:"this month",
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
 myHabits:"My Habits",habitListDesc:"Tap edit to change. Drag ⠿ to reorder.",
@@ -930,7 +930,7 @@ monthTargetsLabel:"Норма по месяцам (пусто = по умолч�
 weightLabel:"Вес (1-10)",rewardLabel:"Награда за выполнение цели",rewardPH:"напр. Поход в кино",
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.",
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).",
-sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",pointsLabel:"очк.",
+sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",
 paceOnTrack:"по графику",paceObligatory:"обязательно сегодня",paceThisMonth:"в этом месяце",
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
 myHabits:"Мои привычки",habitListDesc:"Нажмите ✎ для изменения. Перетащите ⠿ для сортировки.",
@@ -1031,7 +1031,7 @@ monthTargetsLabel:"Metas por mes (vacío = predeterminado)",
 weightLabel:"Peso (1-10)",rewardLabel:"Recompensa por cumplir meta",rewardPH:"ej. Noche de cine",
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con antelación en estos días cuesta −1×peso en vez de −3×peso.",
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave.",
-sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",pointsLabel:"pts",
+sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",
 paceOnTrack:"al día",paceObligatory:"día obligatorio",paceThisMonth:"este mes",
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
 myHabits:"Mis hábitos",habitListDesc:"Toca ✎ para editar. Arrastra ⠿ para reordenar.",
@@ -1132,7 +1132,7 @@ monthTargetsLabel:"每月目标（空=默认）",
 weightLabel:"权重 (1-10)",rewardLabel:"达标奖励",rewardPH:"例如 看电影",
 sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子只扣 −1×权重,而不是 −3×权重。",
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。",
-sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",pointsLabel:"分",
+sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",
 paceOnTrack:"进度正常",paceObligatory:"今天必须完成",paceThisMonth:"本月",
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
 myHabits:"我的习惯",habitListDesc:"点击 ✎ 编辑。拖动 ⠿ 排序。",
@@ -1233,7 +1233,7 @@ monthTargetsLabel:"Objectifs par mois (vide = défaut)",
 weightLabel:"Poids (1-10)",rewardLabel:"Récompense pour atteindre l'objectif",rewardPH:"ex. Soirée cinéma",
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'avance ces jours-là coûte −1×poids au lieu de −3×poids.",
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur.",
-sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",pointsLabel:"pts",
+sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",
 paceOnTrack:"à jour",paceObligatory:"jour de rattrapage",paceThisMonth:"ce mois",
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
 myHabits:"Mes habitudes",habitListDesc:"Appuyez ✎ pour modifier. Glissez ⠿ pour réordonner.",
@@ -1365,6 +1365,9 @@ function activeYear(){
   return Math.min(LAST_YEAR,Math.max(FIRST_YEAR,now));
 }
 const MAX_FREEZES=2;
+// Points-economy currency name — a proper noun, deliberately NOT localized (same in every language).
+const CURRENCY_NAME="Inlounity";
+const CURRENCY_TICKER="INLI";
 
 const ACCENT_COLORS=["#ffd400","#ff7a00","#ff3d86","#4A90D9","#2ecc71","#9B59B6","#e74c3c","#00bcd4","#ff6b6b","#1abc9c"];
 const COLOR_PALETTE=[
@@ -1902,7 +1905,8 @@ function renderXP(){
 function renderPoints(){
   const el=document.getElementById("pointsPill");if(!el)return;
   const p=state.points||0;
-  el.innerHTML=`<b style="color:${p>=0?'var(--accent)':'var(--red)'}">${p>=0?'+':''}${p}</b> ${T.pointsLabel||'pts'}`;
+  el.title=CURRENCY_NAME;
+  el.innerHTML=`<b style="color:${p>=0?'var(--accent)':'var(--red)'}">${p>=0?'+':''}${p}</b> ${CURRENCY_TICKER}`;
 }
 
 /* ===== LEVEL PROGRESSION MODAL ===== */
@@ -2916,7 +2920,7 @@ function renderRewards(){
     return`<div class="br-edit-row" style="flex-wrap:wrap">
       <input class="inp br-inp-emo" id="brfEmo_${id}" value="${emo}" placeholder="🎁">
       <input class="inp br-inp-name" id="brfName_${id}" value="${nm}" placeholder="${ru?'Название':'Name'}">
-      <input class="inp br-inp-cost" type="number" id="brfCost_${id}" value="${co}" min="1" placeholder="${T.pointsLabel}">
+      <input class="inp br-inp-cost" type="number" id="brfCost_${id}" value="${co}" min="1" placeholder="${CURRENCY_TICKER}">
       <button class="usebtn" data-brsave="${id}">✓</button>
       <button class="usebtn used" data-brcancel>✕</button>
       <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfTag_${id}">${tagOpts}</select></div>
@@ -2935,7 +2939,7 @@ function renderRewards(){
     return`<div class="br-item">
       <span class="br-emo">${r.emo||'🎁'}</span>
       <div class="br-info"><div class="br-name">${tag?`<span class="dot" style="background:${tag.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px"></span>`:''}${escapeHtml(r.name)}</div>
-        <div class="br-cost">${r.cost} ${T.pointsLabel}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${r.linkedHabitId?' · &#128260; '+(ru?'выкуп дня':'day buyout'):''}</div>
+        <div class="br-cost">${r.cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${r.linkedHabitId?' · &#128260; '+(ru?'выкуп дня':'day buyout'):''}</div>
       </div>
       <div class="br-btns">
         <button class="usebtn ${canBuy?'':'used'}" data-brbuy="${r.id}" ${canBuy?'':'disabled'}>${canBuy?(ru?'купить':'buy'):(ru?'мало очков':'not enough')}</button>
@@ -2950,14 +2954,14 @@ function renderRewards(){
     :`<button class="btn ghost" id="brAddBtn" style="margin-top:10px;width:100%">+ ${ru?'Добавить награду':'Add reward'}</button>`;
 
   const historyRows=purchases.slice(0,20).map(p=>
-    `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${T.pointsLabel}</div></div>`
+    `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${CURRENCY_TICKER}</div></div>`
   ).join('');
 
   body.innerHTML=`
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h3 style="margin:0">🏆 ${ru?'Магазин':'Shop'}</h3>
-        <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Баланс':'Balance'}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail} ${T.pointsLabel}</div></div>
+        <div class="stat" style="flex:0 0 auto"><div class="lab" title="${CURRENCY_NAME}">${ru?'Баланс':'Balance'} ${CURRENCY_TICKER}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail}</div></div>
       </div>
       <div class="br-list">${shopRows}</div>
       ${addSection}
@@ -3016,11 +3020,11 @@ function renderRewards(){
 }
 function buyRewardFlat(r){
   const ru=state.lang!=="en";
-  if(!confirm(ru?`Купить «${r.name}» за ${r.cost} ${T.pointsLabel}?`:`Buy "${r.name}" for ${r.cost} ${T.pointsLabel}?`))return;
+  if(!confirm(ru?`Купить «${r.name}» за ${r.cost} ${CURRENCY_TICKER}?`:`Buy "${r.name}" for ${r.cost} ${CURRENCY_TICKER}?`))return;
   if(!state.purchases)state.purchases=[];
   state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now()});
   recalcPoints();save();renderRewards();renderXP();
-  toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${T.pointsLabel})`);
+  toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${CURRENCY_TICKER})`);
 }
 
 /* ===== DAY-BUYOUT PURCHASE (reward linked to a habit: pick a missed day to convert into a success) =====
@@ -3063,7 +3067,7 @@ function renderBuyModal(){
     <div style="display:flex;align-items:center;gap:10px">
       <span style="font-size:30px">${r.emo||'🎁'}</span>
       <div><div style="font-size:17px;font-weight:800">${escapeHtml(r.name)}</div>
-      <div class="sub" style="margin:2px 0 0">${ru?'Выбери день':'Pick a day'} — ${escapeHtml(h?h.name:'')} (&minus;${r.cost} ${T.pointsLabel})</div></div>
+      <div class="sub" style="margin:2px 0 0">${ru?'Выбери день':'Pick a day'} — ${escapeHtml(h?h.name:'')} (&minus;${r.cost} ${CURRENCY_TICKER})</div></div>
     </div>`;
   document.getElementById('buyModalList').innerHTML=candidates.map(c=>{
     const on=picked&&picked.m===c.m&&picked.d===c.d;
@@ -3090,7 +3094,7 @@ function renderBuyModal(){
     if(!state.purchases)state.purchases=[];
     state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now(),convertedDay:{year:activeYear(),month:m,day:d,habitId:r.linkedHabitId}});
     recalcPoints();save();closeBuyModal();renderRewards();renderXP();
-    toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${T.pointsLabel})`);
+    toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${CURRENCY_TICKER})`);
   };
 }
 
