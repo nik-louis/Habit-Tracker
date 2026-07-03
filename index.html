@@ -96,9 +96,14 @@ tbody tr{border-bottom:1px solid var(--line)}
 td.cell{border-left:1px solid var(--line)}
 .chk{width:30px;height:30px;margin:6px auto;border-radius:8px;border:1.5px solid var(--line);
   background:var(--panel2);cursor:pointer;display:flex;align-items:center;justify-content:center;
-  font-size:14px;color:#000;transition:transform .08s}
+  font-size:14px;color:#000;transition:transform .08s;position:relative}
 .chk:active{transform:scale(.86)}
 .chk.on{border-color:var(--chkcolor,var(--accent))}
+.cell-mark{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;
+  background:var(--panel);border:1.5px solid var(--line);font-size:9px;line-height:12px;
+  text-align:center;color:var(--dim);cursor:pointer;z-index:1}
+.cell-mark.sin-on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a}
+.cell-mark.tier-set{background:var(--red);border-color:var(--red);color:#fff}
 td.today-col,th.today-col{box-shadow:inset 0 0 0 2px var(--accent)}
 .rowmeta{font-size:10px;color:var(--dim);margin-top:2px;font-weight:600}
 .rowmeta b.ok{color:var(--green)} .rowmeta b.bad{color:var(--accent2)}
@@ -460,6 +465,7 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
     </div>
     <div class="xpwrap" id="xpBar"></div>
+    <div id="pointsPill" style="font-size:11px;color:var(--dim);padding:0 0 6px;text-align:right"></div>
     <nav class="tabs">
       <button class="tab active" data-view="today">&#9889; Today</button>
       <button class="tab" data-view="track">&#128197; Months</button>
@@ -549,38 +555,22 @@ textarea.inp{resize:vertical;min-height:60px}
         <input class="inp" type="number" inputmode="numeric" id="fWeight" placeholder="5" min="1" max="10">
       </div>
       <p class="hint" id="penaltyPreview" style="margin:4px 0 8px"></p>
-      <!-- Zone thresholds editor -->
-      <div class="zone-editor" id="fZoneSection">
+      <!-- Sin-days: pre-declared skip on these weekdays costs -1×weight instead of -3×weight -->
+      <div class="zone-editor" id="fSinDaysSection">
         <div class="zone-ed-header">
-          <span style="font-size:13px;font-weight:700">Зоны штрафов</span>
-          <div style="display:flex;gap:6px">
-            <button type="button" class="mini" id="fZoneModeBtn">% → Дни</button>
-            <button type="button" class="mini" id="fZoneResetBtn">↺ Глобальные</button>
-          </div>
+          <span style="font-size:13px;font-weight:700" id="lSinDaysTitle">Дни осознанного пропуска</span>
         </div>
-        <!-- PCT mode -->
-        <div id="fZonePctMode">
-          <div class="row2" style="gap:6px;margin-bottom:0">
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🥕 Награда ≥%</label><input class="inp" type="number" id="fZrP" placeholder="85" min="0" max="100"></div>
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">⚪ Буфер ≥%</label><input class="inp" type="number" id="fZnP" placeholder="65" min="0" max="100"></div>
-          </div>
-          <div class="row2" style="gap:6px;margin-bottom:0">
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🟠 Кнут×1 ≥%</label><input class="inp" type="number" id="fZk1P" placeholder="45" min="0" max="100"></div>
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🔴 Кнут×2 ≥%</label><input class="inp" type="number" id="fZk2P" placeholder="25" min="0" max="100"></div>
-          </div>
-          <p class="hint" id="fZonePctHint" style="margin:2px 0 0;font-size:11px"></p>
+        <p class="hint" id="lSinDaysHint" style="margin:0 0 8px">Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.</p>
+        <div id="fSinDays" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+      </div>
+      <!-- Optional violation-tier ladder (daily habits only): default miss is always -3×weight -->
+      <div class="zone-editor" id="fTiersSection">
+        <div class="zone-ed-header">
+          <span style="font-size:13px;font-weight:700" id="lTiersTitle">Уровни срыва (необязательно)</span>
+          <button type="button" class="mini" id="fTierAdd">+ <span id="lTierAdd">уровень</span></button>
         </div>
-        <!-- ABS mode -->
-        <div id="fZoneAbsMode" style="display:none">
-          <div class="row2" style="gap:6px;margin-bottom:0">
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🥕 Награда ≥ дн.</label><input class="inp" type="number" id="fZrA" placeholder="26" min="0"></div>
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">⚪ Буфер ≥ дн.</label><input class="inp" type="number" id="fZnA" placeholder="20" min="0"></div>
-          </div>
-          <div class="row2" style="gap:6px;margin-bottom:0">
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🟠 Кнут×1 ≥ дн.</label><input class="inp" type="number" id="fZk1A" placeholder="14" min="0"></div>
-            <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🔴 Кнут×2 ≥ дн.</label><input class="inp" type="number" id="fZk2A" placeholder="8" min="0"></div>
-          </div>
-        </div>
+        <p class="hint" id="lTiersHint" style="margin:0 0 8px">По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).</p>
+        <div id="fTiersList"></div>
       </div>
       <div class="field">
         <label id="lRewardLabel">Reward for hitting target</label>
@@ -600,20 +590,6 @@ textarea.inp{resize:vertical;min-height:60px}
         <span class="r" id="totalPenalty">0 &#8381;</span>
       </div>
       <p class="hint" id="weightHint"></p>
-    </div>
-
-    <div class="card">
-      <h3>⚙️ Зоны штрафов — глобальные %</h3>
-      <p class="sub">Применяются ко всем привычкам без индивидуальных настроек.</p>
-      <div class="row2" style="gap:6px">
-        <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🥕 Награда ≥%</label><input class="inp" type="number" id="gZrP" placeholder="85" min="0" max="100"></div>
-        <div class="field" style="margin-bottom:6px"><label class="zone-lbl">⚪ Буфер ≥%</label><input class="inp" type="number" id="gZnP" placeholder="65" min="0" max="100"></div>
-      </div>
-      <div class="row2" style="gap:6px">
-        <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🟠 Кнут×1 ≥%</label><input class="inp" type="number" id="gZk1P" placeholder="45" min="0" max="100"></div>
-        <div class="field" style="margin-bottom:6px"><label class="zone-lbl">🔴 Кнут×2 ≥%</label><input class="inp" type="number" id="gZk2P" placeholder="25" min="0" max="100"></div>
-      </div>
-      <button class="btn ghost" id="btnApplyGlobalZone" style="width:100%;margin-top:4px">↺ Сбросить все привычки к этим %</button>
     </div>
 
     <div class="card">
@@ -851,6 +827,9 @@ nameLabel:"Name",namePH:"e.g. Morning workout",tagLabel:"Tag",
 targetEveryDay:"Target: every day of the month",targetDays:"Target days per month",
 monthTargetsLabel:"Per-month targets (empty = default)",
 weightLabel:"Weight (1-10)",rewardLabel:"Reward for hitting target",rewardPH:"e.g. Cinema night",
+sinDaysTitle:"Conscious skip days",sinDaysHint:"A pre-declared skip on these days costs −1×weight instead of −3×weight.",
+tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight).",
+sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",pointsLabel:"pts",
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
 myHabits:"My Habits",habitListDesc:"Tap edit to change. Drag ⠿ to reorder.",
 active:"Active",archived:"Archived",deleted:"Deleted",empty:"Empty",
@@ -948,6 +927,9 @@ nameLabel:"Название",namePH:"напр. Утренняя зарядка",
 targetEveryDay:"Цель: каждый день месяца",targetDays:"Целевых дней в месяц",
 monthTargetsLabel:"Норма по месяцам (пусто = по умолчанию)",
 weightLabel:"Вес (1-10)",rewardLabel:"Награда за выполнение цели",rewardPH:"напр. Поход в кино",
+sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.",
+tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).",
+sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",pointsLabel:"очк.",
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
 myHabits:"Мои привычки",habitListDesc:"Нажмите ✎ для изменения. Перетащите ⠿ для сортировки.",
 active:"Активные",archived:"Архив",deleted:"Удалённые",empty:"Пусто",
@@ -1045,6 +1027,9 @@ nameLabel:"Nombre",namePH:"ej. Ducha fría",tagLabel:"Etiqueta",
 targetEveryDay:"Meta: todos los días del mes",targetDays:"Días objetivo por mes",
 monthTargetsLabel:"Metas por mes (vacío = predeterminado)",
 weightLabel:"Peso (1-10)",rewardLabel:"Recompensa por cumplir meta",rewardPH:"ej. Noche de cine",
+sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con antelación en estos días cuesta −1×peso en vez de −3×peso.",
+tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave.",
+sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",pointsLabel:"pts",
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
 myHabits:"Mis hábitos",habitListDesc:"Toca ✎ para editar. Arrastra ⠿ para reordenar.",
 active:"Activos",archived:"Archivados",deleted:"Eliminados",empty:"Vacío",
@@ -1142,6 +1127,9 @@ nameLabel:"名称",namePH:"例如 冷水澡",tagLabel:"标签",
 targetEveryDay:"目标：每月每天",targetDays:"每月目标天数",
 monthTargetsLabel:"每月目标（空=默认）",
 weightLabel:"权重 (1-10)",rewardLabel:"达标奖励",rewardPH:"例如 看电影",
+sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子只扣 −1×权重,而不是 −3×权重。",
+tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。",
+sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",pointsLabel:"分",
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
 myHabits:"我的习惯",habitListDesc:"点击 ✎ 编辑。拖动 ⠿ 排序。",
 active:"活跃",archived:"已归档",deleted:"已删除",empty:"空",
@@ -1239,6 +1227,9 @@ nameLabel:"Nom",namePH:"ex. Douche froide",tagLabel:"Étiquette",
 targetEveryDay:"Objectif : chaque jour du mois",targetDays:"Jours cibles par mois",
 monthTargetsLabel:"Objectifs par mois (vide = défaut)",
 weightLabel:"Poids (1-10)",rewardLabel:"Récompense pour atteindre l'objectif",rewardPH:"ex. Soirée cinéma",
+sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'avance ces jours-là coûte −1×poids au lieu de −3×poids.",
+tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur.",
+sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",pointsLabel:"pts",
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
 myHabits:"Mes habitudes",habitListDesc:"Appuyez ✎ pour modifier. Glissez ⠿ pour réordonner.",
 active:"Actives",archived:"Archivées",deleted:"Supprimées",empty:"Vide",
@@ -1336,6 +1327,8 @@ function applyLang(){
     lNameLabel:T.nameLabel,lTagLabel:T.tagLabel,lTargetEveryDay:T.targetEveryDay,
     lTargetDays:T.targetDays,lMonthTargets:T.monthTargetsLabel,
     lWeightLabel:T.weightLabel,lRewardLabel:T.rewardLabel,
+    lSinDaysTitle:T.sinDaysTitle,lSinDaysHint:T.sinDaysHint,
+    lTiersTitle:T.tiersTitle,lTierAdd:T.tierAdd,lTiersHint:T.tiersHint,
     lMyHabits:T.myHabits,lHabitListDesc:T.habitListDesc,
     lPenaltyBankLabel:T.penaltyBankLabel,
     lResetTitle:T.resetTitle,lResetDesc:T.resetDesc,lBtnResetHabits:T.loadDefaults,
@@ -1351,6 +1344,7 @@ function applyLang(){
   const ls=document.getElementById("langSelect");if(ls)ls.value=state.lang;
   setSyncStatus(sync.on?(es?"live":"off"):"off");
   renderMonthTargetsGrid();
+  renderSinDaysChips(readSinDaysChips());renderTiersList();
   rerenderActive();
 }
 
@@ -1684,29 +1678,7 @@ function habitZone(h,m){
   if(pct>=z.knut2)return'knut2';
   return'knut2_rate';
 }
-function habitPenaltyMult(h,m){
-  const z=habitZone(h,m);
-  return(z==='nothing'||z==='reward')?0:z==='knut1'?1:2;
-}
-function getEffectivePenaltyRate(m){
-  let rate=+(state.penaltyRate||15);
-  const inc=+(state.rateIncrement||1);
-  for(let prev=0;prev<m;prev++){
-    activeHabits().forEach(h=>{if(habitZone(h,prev)==='knut2_rate')rate+=inc;});
-  }
-  return Math.min(rate,99);
-}
-function penaltyBank(m){return getIncome(m)*getEffectivePenaltyRate(m)/100}
-function totalWeight(){return activeHabits().reduce((s,h)=>s+(h.weight||1),0)}
-function habitPenalty(h,m){
-  const tw=totalWeight();if(!tw)return 0;
-  const mult=habitPenaltyMult(h,m);if(!mult)return 0;
-  return penaltyBank(m)*(h.weight||1)/tw*mult;
-}
-function monthPenalty(m){
-  let p=0;activeHabits().forEach(h=>{p+=habitPenalty(h,m)});return p;
-}
-function monthCharityAmount(m){return monthPenalty(m)}
+function monthCharityAmount(m){return monthMoneyOwed(m)}
 
 /* ===== POINTS ECONOMY (new, additive — runs alongside the zone system above during the migration) =====
    Lifetime, derived-not-stored: recalcPoints() rebuilds state.points from scratch every time,
@@ -1878,6 +1850,7 @@ function toggleCheck(m,hid,day){
   const prevZone=h?habitZone(h,m):null;
   if(c[day]){delete c[day];state.xp=Math.max(0,(state.xp||0)-xpForCheck(h?h.weight:1))}
   else{c[day]=true;state.xp=(state.xp||0)+xpForCheck(h?h.weight:1)}
+  recalcPoints(); // full re-derive: a single check can shift many other elapsed days for event habits
   save();
   if(h){
     const newZone=habitZone(h,m);
@@ -2024,6 +1997,12 @@ function renderXP(){
     <div class="xptrack"><div class="xpfill" style="width:${pct}%"></div></div>
     <div class="xptext">${state.xp||0} XP</div>`;
   document.getElementById("xpBar").onclick=openLevelModal;
+  renderPoints();
+}
+function renderPoints(){
+  const el=document.getElementById("pointsPill");if(!el)return;
+  const p=state.points||0;
+  el.innerHTML=`<b style="color:${p>=0?'var(--accent)':'var(--red)'}">${p>=0?'+':''}${p}</b> ${T.pointsLabel||'pts'}`;
 }
 
 /* ===== LEVEL PROGRESSION MODAL ===== */
@@ -2208,22 +2187,20 @@ function renderMonthTabs(){
 
 function renderHero(){
   const m=curMonth,sc=monthScore(m);
-  const pen=monthPenalty(m),rew=monthRewards(m).length;
+  const pen=monthMoneyOwed(m),rew=monthRewards(m).length;
   const inc=getIncome(m);
   const kept=Math.max(0,inc-pen);
   const C=2*Math.PI*48,off=C*(1-sc/100);
   const rc=sc>=80?"var(--green)":sc>=50?"var(--accent2)":"var(--red)";
   const hs=activeHabits();
-  const zones={reward:0,nothing:0,knut1:0,knut2:0,knut2_rate:0};
-  hs.forEach(h=>{const z=habitZone(h,m);if(zones[z]!==undefined)zones[z]++;});
-  const effRate=getEffectivePenaltyRate(m);
+  let goodCount=0,badCount=0;
+  hs.forEach(h=>{if(habitMonthBalance(h,m)>0)goodCount++;else badCount++;});
+  const effRate=getEffectiveRatePct(m);
   const baseRate=+(state.penaltyRate||15);
   const rateAdj=+(effRate-baseRate).toFixed(1);
   const zoneBar=hs.length?`<div class="hero-zones">
-    ${zones.reward?`<span class="zone-chip zr">🥕 ${zones.reward}</span>`:''}
-    ${zones.nothing?`<span class="zone-chip zn">— ${zones.nothing}</span>`:''}
-    ${zones.knut1?`<span class="zone-chip zk1">🟠 ${zones.knut1}</span>`:''}
-    ${(zones.knut2+zones.knut2_rate)?`<span class="zone-chip zk2">🔴 ${zones.knut2+zones.knut2_rate}</span>`:''}
+    ${goodCount?`<span class="zone-chip zr">🥕 ${goodCount}</span>`:''}
+    ${badCount?`<span class="zone-chip zk2">🔴 ${badCount}</span>`:''}
     ${rateAdj>0?`<span class="zone-chip zrate">⬆${rateAdj}%</span>`:''}
   </div>`:'';
   document.getElementById("monthHero").innerHTML=`
@@ -2277,14 +2254,15 @@ function renderGrid(){
       <span class="arrow">&#9660;</span></div></td></tr>`;
 
     if(!collapsed){
+      const rt=realTodayParts(),ay=activeYear();
       grouped[tid].forEach(h=>{
         const c=getChecks(m,h.id),cnt=Object.keys(c).length,t=effTarget(h,m);
-        const z=habitZone(h,m);
-        const zbadge={'reward':'<span class="zbadge zr">🥕</span>','nothing':'','knut1':'<span class="zbadge zk1">🟠</span>','knut2':'<span class="zbadge zk2">🔴</span>','knut2_rate':'<span class="zbadge zk2">🔴⬆</span>'}[z]||'';
+        const bal=habitMonthBalance(h,m);
+        const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
         body+=`<tr><td class="cname"><div class="rowname">
           <span class="dot" style="background:${tag.color}"></span>
           <div><div>${escapeHtml(h.name)}</div>
-          <div class="rowmeta"><b class="${z==='reward'?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(m,h.id)} ${zbadge}</div>
+          <div class="rowmeta"><b class="${bal>0?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(m,h.id)} ${balBadge}</div>
           </div></div></td>`;
         for(let d=1;d<=N;d++){
           const fr=frozen.includes(d);
@@ -2293,7 +2271,19 @@ function renderGrid(){
             body+=`<td class="cell ${td?'today-col':''} frozen-cell"><div class="freeze-icon">&#10052;</div></td>`;
           }else{
             const on=!!c[d];
-            body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${on?'&#10003;':''}</div></td>`;
+            const isFutureOrToday=(ay>rt.y)||(ay===rt.y&&m>rt.m)||(ay===rt.y&&m===rt.m&&d>=rt.d);
+            const isPastDay=(ay<rt.y)||(ay===rt.y&&m<rt.m)||(ay===rt.y&&m===rt.m&&d<rt.d);
+            const wd=weekday(m,d);
+            let mark="";
+            if(!on&&h.type==="daily"&&isFutureOrToday&&(h.sinDays||[]).includes(wd)){
+              const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
+              mark=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${T.sinDeclareHint}">🙏</span>`;
+            }else if(!on&&h.type==="daily"&&isPastDay&&(h.violationTiers||[]).length>0){
+              const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
+              const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
+              mark=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
+            }
+            body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${on?'&#10003;':''}${mark}</div></td>`;
           }
         }
         body+="</tr>";
@@ -2318,6 +2308,33 @@ function renderGrid(){
     };
   });
 
+  document.querySelectorAll(".sin-mark").forEach(el=>{
+    el.onclick=e=>{
+      e.stopPropagation();
+      const hid=el.dataset.sinH,d=+el.dataset.sinD,mk="m"+m;
+      if(!state.declaredSins[mk])state.declaredSins[mk]={};
+      if(!state.declaredSins[mk][hid])state.declaredSins[mk][hid]={};
+      const bucket=state.declaredSins[mk][hid];
+      if(bucket[d])delete bucket[d];else bucket[d]=true;
+      recalcPoints();save();renderGrid();renderHero();renderXP();
+    };
+  });
+  document.querySelectorAll(".tier-mark").forEach(el=>{
+    el.onclick=e=>{
+      e.stopPropagation();
+      const hid=el.dataset.tierH,d=+el.dataset.tierD,mk="m"+m;
+      const h=state.habits.find(x=>x.id===hid);if(!h||!h.violationTiers||!h.violationTiers.length)return;
+      if(!state.violationLogs[mk])state.violationLogs[mk]={};
+      if(!state.violationLogs[mk][hid])state.violationLogs[mk][hid]={};
+      const bucket=state.violationLogs[mk][hid];
+      const cur=bucket[d];
+      if(cur===undefined)bucket[d]=0;
+      else if(cur+1<h.violationTiers.length)bucket[d]=cur+1;
+      else delete bucket[d];
+      recalcPoints();save();renderGrid();renderHero();renderXP();
+    };
+  });
+
   document.querySelectorAll(".tag-group-header").forEach(hdr=>{
     hdr.onclick=()=>{
       const tid=hdr.dataset.tag;
@@ -2332,9 +2349,11 @@ function renderGrid(){
 }
 function updateRowMeta(tr,hid){
   const h=state.habits.find(x=>x.id===hid);if(!h)return;
-  const cnt=checkedCount(curMonth,hid),t=effTarget(h,curMonth),ok=cnt>=t&&t>0;
+  const cnt=checkedCount(curMonth,hid),t=effTarget(h,curMonth);
+  const bal=habitMonthBalance(h,curMonth);
+  const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
   const meta=tr.querySelector(".rowmeta");
-  if(meta)meta.innerHTML=`<b class="${ok?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(curMonth,hid)}`;
+  if(meta)meta.innerHTML=`<b class="${bal>0?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(curMonth,hid)} ${balBadge}`;
 }
 function renderMonthNorms(){
   const m=curMonth,ru=state.lang==="ru";
@@ -2396,7 +2415,7 @@ function renderHabitsManager(){
 function updateDynamicRateHint(){
   const el=document.getElementById("dynamicRateHint");if(!el)return;
   const base=+(state.penaltyRate||15);
-  const eff=getEffectivePenaltyRate(curMonth);
+  const eff=getEffectiveRatePct(curMonth);
   const adj=+(eff-base).toFixed(1);
   const ru=state.lang!=="en";
   if(adj>0)el.textContent=`${ru?'Факт. ставка':'Eff. rate'} ${eff.toFixed(1)}% (база ${base}% +${adj}% коррекции)`;
@@ -2443,7 +2462,7 @@ function renderHabitList(){
       const hasMT=h.monthTargets&&Object.keys(h.monthTargets).length>0;
       const norm=h.everyday?T.everyDay:(hasMT?T.varies:(h.target+" "+T.daysPerMo));
       const inc=getIncome(curMonth);
-      const pen=inc?(" &middot; "+rub(habitPenalty(h,curMonth))):"";
+      const pen=inc?(" &middot; "+rub(habitMoneyOwed(h,curMonth))):"";
       const badge=h.deleted?`<span class="deleted-badge">${T.deletedBadge}</span>`:h.archived?`<span class="archived-badge">${T.archivedBadge}</span>`:"";
       return`<div class="hitem" draggable="true" data-id="${h.id}">
         <span class="drag-handle">&#10495;</span>
@@ -2480,7 +2499,7 @@ function renderHabitList(){
     initDragDrop(el);
   }
 
-  const bank=penaltyBank(curMonth);
+  const bank=moneyPool(curMonth);
   document.getElementById("totalPenalty").textContent=state.income?rub(bank):T.setIncome;
   document.getElementById("totalPenalty").style.color=bank>0?"var(--accent2)":"var(--dim)";
   const hint=document.getElementById("weightHint");
@@ -2509,12 +2528,57 @@ function initDragDrop(el){
   });
 }
 
+// Sin-days + violation-tiers only make sense for daily-type habits (event habits use the pace-line instead).
+function updateTypeSectionVisibility(){
+  const sinSec=document.getElementById("fSinDaysSection");
+  const tierSec=document.getElementById("fTiersSection");
+  if(sinSec)sinSec.style.display=fEveryday?"":"none";
+  if(tierSec)tierSec.style.display=fEveryday?"":"none";
+}
+function renderSinDaysChips(selected){
+  const dayNames=T.daysShort;
+  const sel=new Set(selected||[]);
+  const box=document.getElementById("fSinDays");if(!box)return;
+  box.innerHTML=dayNames.map((d,i)=>`<button type="button" class="day-chip ${sel.has(i)?'on':''}" data-day="${i}">${d}</button>`).join("");
+  box.querySelectorAll(".day-chip").forEach(c=>c.onclick=()=>{c.classList.toggle("on")});
+}
+function readSinDaysChips(){
+  const box=document.getElementById("fSinDays");if(!box)return[];
+  return[...box.querySelectorAll(".day-chip.on")].map(c=>+c.dataset.day);
+}
+function tierRowHTML(t,idx){
+  const ru=state.lang!=="en";
+  return`<div class="br-edit-row tier-row" data-idx="${idx}">
+    <input class="inp tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
+    <input class="inp tier-delta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'×вес':'×weight'}">
+    <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Бесплатных раз/мес':'Free uses/mo'}">
+    <button type="button" class="mini tier-del" data-tierdel="${idx}">✕</button>
+  </div>`;
+}
+let editTiers=[];
+function renderTiersList(){
+  const box=document.getElementById("fTiersList");if(!box)return;
+  box.innerHTML=editTiers.map((t,i)=>tierRowHTML(t,i)).join("");
+  box.querySelectorAll("[data-tierdel]").forEach(b=>b.onclick=()=>{
+    editTiers.splice(+b.dataset.tierdel,1);renderTiersList();
+  });
+}
+function readTiersFromForm(){
+  // sync any edited text back into editTiers before reading (inputs aren't bound live)
+  document.querySelectorAll("#fTiersList .tier-row").forEach(row=>{
+    const i=+row.dataset.idx;
+    if(!editTiers[i])return;
+    editTiers[i].label=row.querySelector(".tier-label").value.trim();
+    editTiers[i].deltaMult=Math.min(0,+row.querySelector(".tier-delta").value||-1);
+    const fl=row.querySelector(".tier-free").value;
+    editTiers[i].freeLimit=fl===""?null:Math.max(0,+fl);
+  });
+  return editTiers.filter(t=>t.label);
+}
 function clearForm(){
   editId=null;
   document.getElementById("fName").value="";
   document.getElementById("fWeight").value="";
-  fZoneMode="pct";fZonePctBackup=null;refreshZoneEditor();
-  ["fZrP","fZnP","fZk1P","fZk2P","fZrA","fZnA","fZk1A","fZk2A"].forEach(id=>{const e=document.getElementById(id);if(e)e.value="";});
   document.getElementById("fReward").value="";
   document.getElementById("fTarget").value="";
   document.getElementById("fTag").selectedIndex=0;
@@ -2526,6 +2590,9 @@ function clearForm(){
   document.getElementById("btnCancelEdit").style.display="none";
   document.getElementById("monthTargetsRow").style.display="none";
   renderMonthTargetsGrid();
+  renderSinDaysChips([]);
+  editTiers=[];renderTiersList();
+  updateTypeSectionVisibility();
   updatePenaltyPreview();
 }
 function startEdit(id){
@@ -2533,21 +2600,6 @@ function startEdit(id){
   editId=id;
   document.getElementById("fName").value=h.name;
   document.getElementById("fWeight").value=h.weight;
-  fZoneMode=h.zoneMode||'pct';
-  fZonePctBackup=null; // clear backup when loading a habit to edit
-  const gl=state.globalZonePct||{reward:85,nothing:65,knut1:45,knut2:25};
-  const ePct=h.zonePct||gl;
-  document.getElementById('fZrP').value=ePct.reward;
-  document.getElementById('fZnP').value=ePct.nothing;
-  document.getElementById('fZk1P').value=ePct.knut1;
-  document.getElementById('fZk2P').value=ePct.knut2;
-  if(h.zoneAbs){
-    document.getElementById('fZrA').value=h.zoneAbs.reward;
-    document.getElementById('fZnA').value=h.zoneAbs.nothing;
-    document.getElementById('fZk1A').value=h.zoneAbs.knut1;
-    document.getElementById('fZk2A').value=h.zoneAbs.knut2;
-  }
-  refreshZoneEditor();
   document.getElementById("fReward").value=h.reward;
   document.getElementById("fTarget").value=h.target||"";
   document.getElementById("fTag").value=h.tagId;
@@ -2560,6 +2612,9 @@ function startEdit(id){
   document.getElementById("monthTargetsRow").style.display=fEveryday?"none":"block";
   renderMonthTargetsGrid();
   if(h.monthTargets){for(let i=0;i<12;i++){const inp=document.getElementById("mt_"+i);if(inp&&h.monthTargets["m"+i]!==undefined)inp.value=h.monthTargets["m"+i]}}
+  renderSinDaysChips(h.sinDays||[]);
+  editTiers=(h.violationTiers||[]).map(t=>({...t}));renderTiersList();
+  updateTypeSectionVisibility();
   updatePenaltyPreview();
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -2568,27 +2623,10 @@ function saveHabit(){
   if(!name){toast(T.enterName);return}
   const weight=Math.max(1,Math.min(10,+document.getElementById("fWeight").value||5));
   const reward=document.getElementById("fReward").value.trim();
-  const zoneMode=fZoneMode||'pct';
-  let zonePct=null,zoneAbs=null;
-  if(zoneMode==='pct'){
-    const zrp=+document.getElementById('fZrP').value||85;
-    const znp=+document.getElementById('fZnP').value||65;
-    const zk1=+document.getElementById('fZk1P').value||45;
-    const zk2=+document.getElementById('fZk2P').value||25;
-    const gl=state.globalZonePct||{reward:85,nothing:65,knut1:45,knut2:25};
-    // Only store if differs from global
-    const isGlobal=zrp===gl.reward&&znp===gl.nothing&&zk1===gl.knut1&&zk2===gl.knut2;
-    zonePct=isGlobal?null:{reward:zrp,nothing:znp,knut1:zk1,knut2:zk2};
-  }else{
-    zoneAbs={
-      reward:+document.getElementById('fZrA').value||27,
-      nothing:+document.getElementById('fZnA').value||21,
-      knut1:+document.getElementById('fZk1A').value||18,
-      knut2:+document.getElementById('fZk2A').value||15,
-    };
-  }
   const target=Math.max(0,+document.getElementById("fTarget").value||0);
   const tagId=document.getElementById("fTag").value;
+  const sinDays=readSinDaysChips();
+  const violationTiers=readTiersFromForm();
   const monthTargets={};
   if(!fEveryday){
     // Non-everyday: read from editor grid
@@ -2598,15 +2636,17 @@ function saveHabit(){
     const existing=state.habits.find(x=>x.id===editId);
     if(existing&&existing.monthTargets)Object.assign(monthTargets,existing.monthTargets);
   }
+  const type=fEveryday?"daily":"event";
   if(editId){
     const h=state.habits.find(x=>x.id===editId);
-    Object.assign(h,{name,tagId,everyday:fEveryday,target,weight,zoneMode,zonePct,zoneAbs,reward,monthTargets});
+    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,reward,monthTargets});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,target,weight,zoneMode,zonePct,zoneAbs,reward,monthTargets,archived:false,deleted:false,deletedAt:null,order:state.habits.length});
+    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,reward,monthTargets,archived:false,deleted:false,deletedAt:null,order:state.habits.length});
     toast(T.habitAdded);
   }
   reconcileSnapshots();
+  recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
   save();clearForm();renderHabitsManager();
 }
 function delHabit(id){
@@ -2620,11 +2660,10 @@ function updatePenaltyPreview(){
   const el=document.getElementById("penaltyPreview");
   const inc=getIncome(curMonth);
   if(inc){
-    const tw=totalWeight()+(editId?-((state.habits.find(x=>x.id===editId)||{}).weight||0):0)+w;
-    const share1=tw>0?penaltyBank(curMonth)*w/tw:0;
-    el.textContent=T.penaltyApprox.replace("{0}",rub(share1))+" (×2 = "+rub(share1*2)+" при двойном кнуте)";
+    const tw=activeMoneyWeight()+(editId?-((state.habits.find(x=>x.id===editId)||{}).weight||0):0)+w;
+    const share1=tw>0?moneyPool(curMonth)*w/tw:0;
+    el.textContent=T.penaltyApprox.replace("{0}",rub(share1));
   }else el.textContent=T.setIncomeForP;
-  updateZoneHint();
 }
 function updatePenaltyBankHint(){
   const inc=state.income||0;
@@ -2730,7 +2769,7 @@ function barChart(values,labels,unit,colorFn,maxOverride){
 
 function monthStatsHTML(m){
   const sc=monthScore(m),hs=activeHabits(),inc=getIncome(m);
-  const pen=monthPenalty(m),rew=monthRewards(m);
+  const pen=monthMoneyOwed(m),rew=monthRewards(m);
   const kept=Math.max(0,inc-pen);
   const vals=hs.map(h=>{const t=effTarget(h,m);return t?Math.round(Math.min(checkedCount(m,h.id)/t,1)*100):0});
   const labs=hs.map(h=>h.name.slice(0,4));
@@ -2778,13 +2817,13 @@ function yearStatsHTML(){
   const scores=fm.map(m=>fMonthScore(m));
   const avg=scores.length?Math.round(scores.reduce((a,b)=>a+b,0)/scores.length):0;
   const totalRew=fm.reduce((s,m)=>s+fh.filter(h=>metTarget(h,m)).length,0);
-  const totalPen=fm.reduce((s,m)=>{let p=0;fh.forEach(h=>{if(!metTarget(h,m))p+=habitPenalty(h,m)});return s+p},0);
-  const totalKept=fm.reduce((s,m)=>{const inc=getIncome(m);let p=0;fh.forEach(h=>{if(!metTarget(h,m))p+=habitPenalty(h,m)});return s+Math.max(0,inc-p)},0);
+  const totalPen=fm.reduce((s,m)=>{let p=0;fh.forEach(h=>{p+=habitMoneyOwed(h,m)});return s+p},0);
+  const totalKept=fm.reduce((s,m)=>{const inc=getIncome(m);let p=0;fh.forEach(h=>{p+=habitMoneyOwed(h,m)});return s+Math.max(0,inc-p)},0);
   const bestIdx=scores.length?scores.indexOf(Math.max(...scores)):0;
   const fmLabels=fm.map(m=>T.monthsShort[m]);
   const chart=scores.length?barChart(scores,fmLabels,"%",(v)=>v>=80?"var(--green)":v>=50?"var(--accent2)":"var(--red)",100):"";
 
-  const keptArr=fm.map(m=>{const inc=getIncome(m);let p=0;fh.forEach(h=>{if(!metTarget(h,m))p+=habitPenalty(h,m)});return Math.round(Math.max(0,inc-p)/1000)});
+  const keptArr=fm.map(m=>{const inc=getIncome(m);let p=0;fh.forEach(h=>{p+=habitMoneyOwed(h,m)});return Math.round(Math.max(0,inc-p)/1000)});
   const hasIncome=fm.some(m=>getIncome(m)>0);
   const moneyChart=hasIncome&&keptArr.length?barChart(keptArr,fmLabels,"k","var(--accent)"):"";
 
@@ -2956,7 +2995,7 @@ function achievementsForMonth(m){
     {emo:"&#9889;",title:T.achStreak14,desc:T.achStreak14D,on:anyStreak>=14},
     {emo:"&#129482;",title:T.achCleanMonth,desc:T.achCleanMonthD,on:abstinenceMet(m)},
     {emo:"&#127919;",title:T.ach80,desc:T.ach80D,on:sc>=80},
-    {emo:"&#128176;",title:T.achZeroPenalty,desc:T.achZeroPenaltyD,on:monthPenalty(m)===0&&hs.length>0},
+    {emo:"&#128176;",title:T.achZeroPenalty,desc:T.achZeroPenaltyD,on:monthMoneyOwed(m)===0&&hs.length>0},
   ];
 }
 function achievementsForYear(){
@@ -3213,21 +3252,19 @@ function renderBuyModal(){
 function showMonthSummary(m){
   const ru=state.lang!=="en";
   const hs=state.habits.filter(h=>!h.deleted);
-  const zones={reward:0,nothing:0,knut1:0,knut2:0,knut2_rate:0};
-  hs.forEach(h=>{const z=habitZone(h,m);if(zones[z]!==undefined)zones[z]++;});
-  const pen=monthPenalty(m),inc=getIncome(m),kept=Math.max(0,inc-pen);
-  const effRate=getEffectivePenaltyRate(m),baseRate=+(state.penaltyRate||15);
+  const pryanics=hs.filter(h=>metTarget(h,m)).length;
+  let goodCount=0,badCount=0;
+  hs.forEach(h=>{if(habitMonthBalance(h,m)>0)goodCount++;else badCount++;});
+  const pen=monthMoneyOwed(m),inc=getIncome(m),kept=Math.max(0,inc-pen);
+  const effRate=getEffectiveRatePct(m),baseRate=+(state.penaltyRate||15);
   const rateAdj=+(effRate-baseRate).toFixed(1);
-  const nextRate=m<11?getEffectivePenaltyRate(m+1):effRate;
+  const nextRate=m<11?getEffectiveRatePct(m+1):effRate;
   const rateNext=+(nextRate-baseRate).toFixed(1);
   const newRateInc=+(rateNext-rateAdj).toFixed(1);
-  const pryanics=zones.reward;
   const zRows=[
     pryanics?`<div class="sum-row"><span>🥕 ${ru?'Норма — пряников заработано':'Target zone — pryanics'}</span><b style="color:var(--pink)">${pryanics}</b></div>`:'',
-    zones.nothing?`<div class="sum-row"><span>⚪ ${ru?'Буфер (без штрафа)':'Buffer (no penalty)'}</span><b style="color:var(--dim)">${zones.nothing}</b></div>`:'',
-    zones.knut1?`<div class="sum-row"><span>🟠 ${ru?'Кнут ×1':'Penalty ×1'}</span><b style="color:var(--accent2)">${zones.knut1}</b></div>`:'',
-    zones.knut2?`<div class="sum-row"><span>🔴 ${ru?'Кнут ×2':'Penalty ×2'}</span><b style="color:var(--red)">${zones.knut2}</b></div>`:'',
-    zones.knut2_rate?`<div class="sum-row"><span>⛔ ${ru?'Кнут ×2 + рост ставки':'Penalty ×2 + rate rise'}</span><b style="color:var(--red)">${zones.knut2_rate}</b></div>`:'',
+    goodCount?`<div class="sum-row"><span>✅ ${ru?'Привычки в плюсе':'Habits in the black'}</span><b style="color:var(--green)">${goodCount}</b></div>`:'',
+    badCount?`<div class="sum-row"><span>🔴 ${ru?'Привычки в минусе (штраф)':'Habits in the red (penalty)'}</span><b style="color:var(--red)">${badCount}</b></div>`:'',
   ].filter(Boolean).join('');
   const moneyRows=inc?[
     `<div class="sum-row"><span>💸 ${ru?'Штраф в благотворит.':'Penalty to charity'}</span><b style="color:var(--accent2)">${rub(pen)}</b></div>`,
@@ -3275,125 +3312,6 @@ function renderSummaryButton(){
 }
 
 /* ===== SETTINGS VIEW ===== */
-/* ===== ZONE EDITOR HELPERS ===== */
-let fZoneMode='pct';
-let fZonePctBackup=null; // сохраняем точные % перед конвертацией в дни
-
-/* Получить T для редактора (с учётом everyday/monthTargets/fTarget) */
-function getCurrentEditorT(){
-  const evd=document.getElementById('fEveryday');
-  const isEv=evd&&evd.classList.contains('on');
-  if(isEv)return daysInMonth(curMonth);
-  if(editId){
-    const h=state.habits.find(x=>x.id===editId);
-    if(h){
-      const mt=h.monthTargets&&h.monthTargets["m"+curMonth];
-      if(mt!==undefined&&mt!==null&&mt!=="")return Math.min(+mt,daysInMonth(curMonth));
-      return Math.min(h.target||0,daysInMonth(curMonth));
-    }
-  }
-  return +((document.getElementById('fTarget')||{}).value)||20;
-}
-function refreshZoneEditor(){
-  const pctDiv=document.getElementById('fZonePctMode');
-  const absDiv=document.getElementById('fZoneAbsMode');
-  const btn=document.getElementById('fZoneModeBtn');
-  if(!pctDiv||!absDiv)return;
-  if(fZoneMode==='pct'){
-    pctDiv.style.display='';absDiv.style.display='none';
-    if(btn)btn.textContent='% → Дни';
-  }else{
-    pctDiv.style.display='none';absDiv.style.display='';
-    if(btn)btn.textContent='Дни → %';
-  }
-  updateZoneHint();
-}
-function updateZoneHint(){
-  const hintEl=document.getElementById('fZonePctHint');if(!hintEl)return;
-  const evd=document.getElementById('fEveryday');
-  const isEv=evd&&evd.classList.contains('on');
-  let T;
-  if(isEv){
-    // Everyday toggle ON: always daysInMonth — monthTargets не применяются в этом режиме
-    T=daysInMonth(curMonth);
-  }else if(editId){
-    // Non-everyday editing: effTarget учитывает monthTargets → h.target
-    const h=state.habits.find(x=>x.id===editId);
-    if(h)T=effTarget(h,curMonth);
-  }
-  if(!T||T<=0) T=+((document.getElementById('fTarget')||{}).value)||20;
-  const zr=+((document.getElementById('fZrP')||{}).value)||85;
-  const zn=+((document.getElementById('fZnP')||{}).value)||65;
-  const zk1=+((document.getElementById('fZk1P')||{}).value)||45;
-  const zk2=+((document.getElementById('fZk2P')||{}).value)||25;
-  const rD=Math.round(T*zr/100),nD=Math.round(T*zn/100),k1D=Math.round(T*zk1/100),k2D=Math.round(T*zk2/100);
-  hintEl.textContent=`При норме ${T}: 🥕≥${rD} / ⚪≥${nD} / 🟠≥${k1D} / 🔴≥${k2D} / ⛔<${k2D}`;
-}
-function applyGlobalZoneToAll(){
-  const ru=state.lang!=="en";
-  if(!confirm(ru?'Сбросить зоны ВСЕХ привычек к глобальным % (индивидуальные настройки удалятся)?':'Reset ALL habits to global % thresholds?'))return;
-  state.habits.forEach(h=>{h.zoneMode='pct';h.zonePct=null;h.zoneAbs=null;});
-  reconcileSnapshots();save();
-  toast(ru?'Сброшено к глобальным %':'Reset to global %');renderHero();
-}
-function initZoneEditorWiring(){
-  const modeBtn=document.getElementById('fZoneModeBtn');
-  const resetBtn=document.getElementById('fZoneResetBtn');
-  if(modeBtn)modeBtn.onclick=()=>{
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
-    if(fZoneMode==='pct'){
-      // Backup exact % values BEFORE converting — so we can restore later without rounding loss
-      fZonePctBackup={
-        r:+((document.getElementById('fZrP')||{}).value)||85,
-        n:+((document.getElementById('fZnP')||{}).value)||65,
-        k1:+((document.getElementById('fZk1P')||{}).value)||45,
-        k2:+((document.getElementById('fZk2P')||{}).value)||25,
-      };
-      const T=getCurrentEditorT();
-      set('fZrA',Math.round(T*fZonePctBackup.r/100));
-      set('fZnA',Math.round(T*fZonePctBackup.n/100));
-      set('fZk1A',Math.round(T*fZonePctBackup.k1/100));
-      set('fZk2A',Math.round(T*fZonePctBackup.k2/100));
-      fZoneMode='abs';
-    }else{
-      // Restore exact % from backup — NO rounding loss
-      if(fZonePctBackup){
-        set('fZrP',fZonePctBackup.r);set('fZnP',fZonePctBackup.n);
-        set('fZk1P',fZonePctBackup.k1);set('fZk2P',fZonePctBackup.k2);
-        fZonePctBackup=null;
-      }else{
-        // No backup (shouldn't normally happen): calculate from abs
-        const T=getCurrentEditorT();
-        if(T>0){
-          set('fZrP',Math.round((+((document.getElementById('fZrA')||{}).value)||T)*100/T));
-          set('fZnP',Math.round((+((document.getElementById('fZnA')||{}).value)||0)*100/T));
-          set('fZk1P',Math.round((+((document.getElementById('fZk1A')||{}).value)||0)*100/T));
-          set('fZk2P',Math.round((+((document.getElementById('fZk2A')||{}).value)||0)*100/T));
-        }
-      }
-      fZoneMode='pct';
-    }
-    refreshZoneEditor();
-  };
-  if(resetBtn)resetBtn.onclick=()=>{
-    const gl=state.globalZonePct||{reward:85,nothing:65,knut1:45,knut2:25};
-    const set=(id,v)=>{const e=document.getElementById(id);if(e)e.value=v;};
-    set('fZrP',gl.reward);set('fZnP',gl.nothing);set('fZk1P',gl.knut1);set('fZk2P',gl.knut2);
-    fZoneMode='pct';refreshZoneEditor();
-  };
-  const gInputs={gZrP:'reward',gZnP:'nothing',gZk1P:'knut1',gZk2P:'knut2'};
-  Object.entries(gInputs).forEach(([id,key])=>{
-    const e=document.getElementById(id);if(!e)return;
-    e.oninput=()=>{
-      if(!state.globalZonePct)state.globalZonePct={reward:85,nothing:65,knut1:45,knut2:25};
-      state.globalZonePct[key]=Math.max(0,Math.min(100,+e.value||0));
-      save();renderHero();
-    };
-  });
-  const applyBtn=document.getElementById('btnApplyGlobalZone');
-  if(applyBtn)applyBtn.onclick=applyGlobalZoneToAll;
-}
-
 function renderSettings(){
   renderAccentGrid();renderTagList();renderVersionList();renderRemindersUI();
   // Year selector
@@ -3414,10 +3332,6 @@ function renderSettings(){
     const jan1=new Date(state.currentYear,0,1).toLocaleDateString(ru?"ru-RU":"en-US",{weekday:"long"});
     ysub.textContent=(ru?"1 января — ":"Jan 1 — ")+jan1;
   }
-  const gz=state.globalZonePct||{reward:85,nothing:65,knut1:45,knut2:25};
-  const ids={fZrP:'gZrP',fZnP:'gZnP',fZk1P:'gZk1P',fZk2P:'gZk2P'};
-  const vals={gZrP:gz.reward,gZnP:gz.nothing,gZk1P:gz.knut1,gZk2P:gz.knut2};
-  Object.entries(vals).forEach(([id,v])=>{const e=document.getElementById(id);if(e)e.value=v;});
   document.getElementById("syncUrl").value=sync.url||"";
   document.getElementById("syncCode").value=sync.code||"";
   {const sp=document.getElementById("syncPass");if(sp)sp.value=sync.pass||"";}
@@ -3550,7 +3464,7 @@ function exportPDF(){
   html+=`<h1>${T.realizationReport}</h1><h2>${title}</h2>`;
 
   if(m>=0){
-    const sc=monthScore(m),inc=getIncome(m),pen=monthPenalty(m);
+    const sc=monthScore(m),inc=getIncome(m),pen=monthMoneyOwed(m);
     html+=`<div class="score">${sc}%</div>`;
     html+=`<div class="stat-row">
       <div class="stat-box"><div class="label">Rewards</div><div class="value">${monthRewards(m).length}/${hs.length}</div></div>
@@ -3569,7 +3483,7 @@ function exportPDF(){
     html+=`<table><tr><th>Month</th><th>Score</th><th>Rewards</th><th>Penalty</th></tr>`;
     T.months.forEach((nm,i)=>{
       const inc=getIncome(i);
-      html+=`<tr><td>${nm}</td><td>${monthScore(i)}%</td><td>${monthRewards(i).length}</td><td>${inc?rub(monthPenalty(i)):'—'}</td></tr>`;
+      html+=`<tr><td>${nm}</td><td>${monthScore(i)}%</td><td>${monthRewards(i).length}</td><td>${inc?rub(monthMoneyOwed(i)):'—'}</td></tr>`;
     });
     html+=`</table>`;
   }
@@ -3598,7 +3512,7 @@ function exportPNG(){
     ctx.fillStyle=sc>=80?"#2ecc71":sc>=50?"#ff7a00":"#e74c3c";
     ctx.font="bold 72px sans-serif";ctx.fillText(sc+"%",30,170);
     ctx.fillStyle="#9a9a9a";ctx.font="13px sans-serif";
-    ctx.fillText(`Rewards: ${monthRewards(m).length}/${hs.length}  |  Penalty: ${getIncome(m)?rub(monthPenalty(m)):'—'}`,30,200);
+    ctx.fillText(`Rewards: ${monthRewards(m).length}/${hs.length}  |  Penalty: ${getIncome(m)?rub(monthMoneyOwed(m)):'—'}`,30,200);
 
     const barH=20,gap=6,startY=230;
     hs.forEach((h,i)=>{
@@ -4071,6 +3985,7 @@ function init(){
   if(!sync.code){sync.code=genCode();saveSyncCfg()}
   applyTheme();
   renderMonthTargetsGrid();
+  renderSinDaysChips([]);editTiers=[];renderTiersList();updateTypeSectionVisibility();
 
   if(memFallback)setTimeout(()=>toast(T.previewMode),600);
 
@@ -4083,12 +3998,16 @@ function init(){
     document.getElementById("fEveryday").classList.toggle("on",fEveryday);
     document.getElementById("targetRow").style.display=fEveryday?"none":"grid";
     document.getElementById("monthTargetsRow").style.display=fEveryday?"none":"block";
+    updateTypeSectionVisibility();
+  };
+  document.getElementById("fTierAdd").onclick=()=>{
+    readTiersFromForm(); // capture any in-progress edits before appending a new blank row
+    editTiers.push({label:"",deltaMult:-1,freeLimit:null});
+    renderTiersList();
   };
   document.getElementById("btnSaveHabit").onclick=saveHabit;
   document.getElementById("btnCancelEdit").onclick=clearForm;
   document.getElementById("fWeight").oninput=updatePenaltyPreview;
-  // zone inputs → update hint
-  ["fZrP","fZnP","fZk1P","fZk2P"].forEach(id=>{const e=document.getElementById(id);if(e)e.oninput=()=>updateZoneHint();});
   document.getElementById("incomeInp").oninput=e=>{
     state.income=+e.target.value||0;
     state.incomeHistory["m"+curMonth]=state.income;
@@ -4138,7 +4057,6 @@ function init(){
   // reward popup
   document.getElementById("btnCloseReward").onclick=closeRewardPopup;
   document.getElementById("rewardOverlay").onclick=closeRewardPopup;
-  initZoneEditorWiring();
   initRemindersWiring();
   startReminderLoop();
   // Register service worker for PWA + background notifications
