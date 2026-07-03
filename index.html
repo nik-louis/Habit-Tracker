@@ -627,6 +627,15 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
     </div>
 
+    <div class="card">
+      <h3 id="lTrackingStartTitle">Начало трекинга</h3>
+      <p class="sub" id="lTrackingStartDesc">Дни до этой даты не участвуют в подсчёте очков — ни в плюс, ни в минус. Поставь дату, когда реально начал(а) использовать систему.</p>
+      <div class="setting-row">
+        <div><div class="sr-label" id="lTrackingStartLabel">Дата начала</div></div>
+        <input class="inp" type="date" id="trackingStartInp" style="width:auto">
+      </div>
+    </div>
+
     <div class="card" id="remindersCard">
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap">
         <h3 style="margin:0">🔔 Напоминания</h3>
@@ -831,6 +840,7 @@ sinDaysTitle:"Conscious skip days",sinDaysHint:"A pre-declared skip on these day
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight).",
 sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",
 paceOnTrack:"on track",paceObligatory:"catch-up day",paceThisMonth:"this month",
+trackingStartTitle:"Tracking start date",trackingStartDesc:"Days before this date never enter the points economy — no gains, no penalties. Set it to when you actually started using this system.",trackingStartLabel:"Start date",
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
 myHabits:"My Habits",habitListDesc:"Tap edit to change. Drag ⠿ to reorder.",
 active:"Active",archived:"Archived",deleted:"Deleted",empty:"Empty",
@@ -932,6 +942,7 @@ sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пр�
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).",
 sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",
 paceOnTrack:"по графику",paceObligatory:"обязательно сегодня",paceThisMonth:"в этом месяце",
+trackingStartTitle:"Начало трекинга",trackingStartDesc:"Дни до этой даты не участвуют в подсчёте очков — ни в плюс, ни в минус. Поставь дату, когда реально начал(а) использовать систему.",trackingStartLabel:"Дата начала",
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
 myHabits:"Мои привычки",habitListDesc:"Нажмите ✎ для изменения. Перетащите ⠿ для сортировки.",
 active:"Активные",archived:"Архив",deleted:"Удалённые",empty:"Пусто",
@@ -1033,6 +1044,7 @@ sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con ant
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave.",
 sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",
 paceOnTrack:"al día",paceObligatory:"día obligatorio",paceThisMonth:"este mes",
+trackingStartTitle:"Fecha de inicio",trackingStartDesc:"Los días antes de esta fecha no entran en la economía de puntos — sin ganancias, sin penalizaciones. Ponla en el día que realmente empezaste a usar el sistema.",trackingStartLabel:"Fecha de inicio",
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
 myHabits:"Mis hábitos",habitListDesc:"Toca ✎ para editar. Arrastra ⠿ para reordenar.",
 active:"Activos",archived:"Archivados",deleted:"Eliminados",empty:"Vacío",
@@ -1134,6 +1146,7 @@ sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。",
 sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",
 paceOnTrack:"进度正常",paceObligatory:"今天必须完成",paceThisMonth:"本月",
+trackingStartTitle:"追踪开始日期",trackingStartDesc:"此日期之前的天数不计入积分——无得分，无扣分。请设置为你真正开始使用本系统的日期。",trackingStartLabel:"开始日期",
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
 myHabits:"我的习惯",habitListDesc:"点击 ✎ 编辑。拖动 ⠿ 排序。",
 active:"活跃",archived:"已归档",deleted:"已删除",empty:"空",
@@ -1235,6 +1248,7 @@ sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'av
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur.",
 sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",
 paceOnTrack:"à jour",paceObligatory:"jour de rattrapage",paceThisMonth:"ce mois",
+trackingStartTitle:"Date de début du suivi",trackingStartDesc:"Les jours avant cette date n'entrent pas dans l'économie de points — ni gain, ni pénalité. Mets la date à laquelle tu as vraiment commencé à utiliser ce système.",trackingStartLabel:"Date de début",
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
 myHabits:"Mes habitudes",habitListDesc:"Appuyez ✎ pour modifier. Glissez ⠿ pour réordonner.",
 active:"Actives",archived:"Archivées",deleted:"Supprimées",empty:"Vide",
@@ -1334,6 +1348,7 @@ function applyLang(){
     lWeightLabel:T.weightLabel,lRewardLabel:T.rewardLabel,
     lSinDaysTitle:T.sinDaysTitle,lSinDaysHint:T.sinDaysHint,
     lTiersTitle:T.tiersTitle,lTierAdd:T.tierAdd,lTiersHint:T.tiersHint,
+    lTrackingStartTitle:T.trackingStartTitle,lTrackingStartDesc:T.trackingStartDesc,lTrackingStartLabel:T.trackingStartLabel,
     lMyHabits:T.myHabits,lHabitListDesc:T.habitListDesc,
     lPenaltyBankLabel:T.penaltyBankLabel,
     lResetTitle:T.resetTitle,lResetDesc:T.resetDesc,lBtnResetHabits:T.loadDefaults,
@@ -1469,6 +1484,27 @@ function freshYearData(){
   return{checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{}};
 }
 const YEAR_FIELDS=["checks","notes","xp","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs"];
+function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
+// Scans every year/month/habit's real check data for the earliest date ever marked done —
+// used only as a one-time migration default for trackingStart (see migrate()).
+function findEarliestCheckedDate(){
+  let earliest=null;
+  if(!state.years)return null;
+  Object.keys(state.years).forEach(y=>{
+    const checks=(state.years[y]||{}).checks||{};
+    Object.keys(checks).forEach(mk=>{
+      const m=+mk.slice(1);
+      Object.keys(checks[mk]).forEach(hid=>{
+        Object.keys(checks[mk][hid]).forEach(dStr=>{
+          if(!checks[mk][hid][dStr])return;
+          const ds=y+"-"+String(m+1).padStart(2,"0")+"-"+String(+dStr).padStart(2,"0");
+          if(!earliest||ds<earliest)earliest=ds;
+        });
+      });
+    });
+  });
+  return earliest;
+}
 function freshState(){
   const startYear=Math.min(LAST_YEAR,Math.max(FIRST_YEAR,new Date().getFullYear()));
   const s={
@@ -1477,6 +1513,10 @@ function freshState(){
     currentYear:startYear,years:{},
     // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger)
     points:0,purchases:[],
+    // Days before this (ISO "YYYY-MM-DD") never enter the points economy at all — a brand-new
+    // install starts counting from today, not from Jan 1. Existing installs get a one-time
+    // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
+    trackingStart:todayISO(),
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
     checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},
     _t:Date.now()
@@ -1562,6 +1602,10 @@ function migrate(){
       (state.years[y].bigPurchases||[]).forEach(p=>{ if(p&&p.id&&!seenPurchase.has(p.id)){state.purchases.push(p);seenPurchase.add(p.id);} });
     });
   }
+  // One-time default for installs upgrading from before trackingStart existed: use the earliest
+  // checked day found in their real history (so old months before that never get retroactively
+  // judged), falling back to today for a truly empty install. Editable afterward in Settings.
+  if(!state.trackingStart)state.trackingStart=findEarliestCheckedDate()||todayISO();
   if(!Array.isArray(state.tags))state.tags=defaultTags();
   if(!Array.isArray(state.habits))state.habits=defaultHabits();
   if(typeof state.income!=="number")state.income=Number(state.income)||0;
@@ -1653,6 +1697,14 @@ function effTargetForYear(h,year,m,yd){
 // Daily habit: check=+weight; an elapsed miss=-3×weight, or -1×weight if pre-declared as a sin
 // on one of the habit's configured sin-days, or the habit's own tier ladder if the miss was
 // explicitly logged with a softer tier (escalates past a tier's freeLimit to the next-harshest tier).
+// Days before state.trackingStart are outside the points economy entirely — never earn, never
+// penalize. Lets a brand-new install start clean from today instead of inheriting a debt for
+// every day since Jan 1, and lets existing installs anchor to whenever they actually began.
+function beforeTrackingStart(year,m,d){
+  if(!state.trackingStart)return false;
+  const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  return ds<state.trackingStart;
+}
 function dailyHabitPointsForMonth(h,year,m,yd){
   const totalDays=daysInMonthY(year,m);
   const elapsed=elapsedDaysInMonthY(year,m);
@@ -1668,6 +1720,7 @@ function dailyHabitPointsForMonth(h,year,m,yd){
   const tierUse={};
   let pts=0;
   for(let d=1;d<=upper;d++){
+    if(beforeTrackingStart(year,m,d))continue;
     if(checksBucket[d]){pts+=h.weight;continue}
     if(frozen.includes(d))continue;
     const isPast=isCurMonth?d<rt.d:true;
@@ -1703,6 +1756,7 @@ function eventHabitPointsForMonth(h,year,m,yd){
   const upper=isCurMonth?rt.d:totalDays;
   let doneSoFar=0,pts=0;
   for(let d=1;d<=upper;d++){
+    if(beforeTrackingStart(year,m,d))continue;
     if(frozen.includes(d))continue;
     if(checksBucket[d]){
       doneSoFar++;
@@ -3182,6 +3236,8 @@ function renderSettings(){
     const jan1=new Date(state.currentYear,0,1).toLocaleDateString(ru?"ru-RU":"en-US",{weekday:"long"});
     ysub.textContent=(ru?"1 января — ":"Jan 1 — ")+jan1;
   }
+  const tsInp=document.getElementById("trackingStartInp");
+  if(tsInp)tsInp.value=state.trackingStart||todayISO();
   document.getElementById("syncUrl").value=sync.url||"";
   document.getElementById("syncCode").value=sync.code||"";
   {const sp=document.getElementById("syncPass");if(sp)sp.value=sync.pass||"";}
@@ -3861,6 +3917,12 @@ function init(){
     state.income=+e.target.value||0;
     state.incomeHistory["m"+curMonth]=state.income;
     save();updatePenaltyPreview();updatePenaltyBankHint();renderHabitList();
+  };
+  document.getElementById("trackingStartInp").onchange=e=>{
+    if(!e.target.value)return;
+    state.trackingStart=e.target.value; // does not affect XP — XP has no miss-penalty side to gate
+    recalcPoints();save();renderXP();rerenderActive();
+    toast(state.lang!=="en"?"Дата начала обновлена":"Start date updated");
   };
   document.getElementById("penaltyRateInp").oninput=e=>{
     state.penaltyRate=Math.max(1,Math.min(50,+e.target.value||15));
