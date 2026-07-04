@@ -38,6 +38,8 @@ header{position:sticky;top:0;z-index:30;background:color-mix(in srgb,var(--bg) 9
 #syncPill[data-s=live]{background:var(--green);color:#000;border-color:var(--green)}
 #syncPill[data-s=connecting]{background:var(--accent2);color:#000;border-color:var(--accent2)}
 #syncPill[data-s=off]{color:var(--dim)}
+.notif-badge{position:absolute;top:-6px;right:-6px;background:var(--red);color:#fff;font-size:10px;font-weight:800;
+  min-width:16px;height:16px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;line-height:1}
 
 /* XP BAR */
 .xpwrap{display:flex;align-items:center;gap:10px;padding:6px 0 4px}
@@ -184,7 +186,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .hitem .nm .archived-badge{font-size:10px;color:var(--accent2);margin-left:6px}
 .hitem .nm .deleted-badge{font-size:10px;color:var(--red);margin-left:6px}
 .hitem .meta{font-size:11px;color:var(--dim);margin-top:3px;line-height:1.4}
-.hitem .meta .pr{color:var(--pink)}
 .hitem .acts{display:flex;gap:5px;flex-wrap:wrap}
 .mini{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;
   padding:7px 10px;font-size:12px;font-weight:700;cursor:pointer}
@@ -309,7 +310,7 @@ textarea.inp{resize:vertical;min-height:60px}
 .level-summary .ls .lsv{font-size:18px;font-weight:800;margin-top:3px}
 .xpwrap{cursor:pointer}
 
-/* REWARD POPUP */
+/* REWARD/GENERIC POPUP SHELL — reused by the month-summary modal and the notification center */
 .reward-popup{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%) scale(0);z-index:200;
   background:var(--panel);border:2px solid var(--accent);border-radius:20px;padding:28px 24px;
   text-align:center;max-width:320px;width:90%;box-shadow:0 12px 40px rgba(0,0,0,.5);
@@ -317,11 +318,18 @@ textarea.inp{resize:vertical;min-height:60px}
 .reward-popup.show{transform:translate(-50%,-50%) scale(1)}
 .reward-popup .rp-emoji{font-size:52px;margin-bottom:8px}
 .reward-popup .rp-title{font-size:18px;font-weight:800;color:var(--accent);margin-bottom:4px}
-.reward-popup .rp-habit{font-size:14px;color:var(--dim);margin-bottom:10px}
-.reward-popup .rp-reward{font-size:15px;font-weight:700;padding:12px;background:var(--panel2);border-radius:12px;margin:8px 0;color:var(--pink)}
 .reward-popup .rp-close{margin-top:12px}
 .reward-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:199;display:none}
 .reward-overlay.show{display:block}
+.notif-tabs{display:flex;gap:6px;margin-bottom:10px}
+.notif-tab{opacity:.55}
+.notif-tab.active{opacity:1;background:var(--accent);color:#0a0a0a;border-color:var(--accent)}
+.notif-item{background:var(--panel2);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.notif-item.read{opacity:.55}
+.notif-item .notif-title{font-size:13px;font-weight:800;margin-bottom:2px}
+.notif-item .notif-body{font-size:12px;color:var(--dim);line-height:1.4}
+.notif-item .notif-date{font-size:10px;color:var(--dim);opacity:.7;margin-top:6px}
+.notif-item .notif-acts{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
 
 /* STAT FILTERS */
 .stat-filters{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:14px}
@@ -391,10 +399,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .zbadge{font-size:11px;vertical-align:middle}
 .zone-editor{background:var(--panel2);border-radius:12px;padding:12px;margin-bottom:8px}
 .zone-ed-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
-.buy-row{display:flex;align-items:center;gap:9px;padding:9px 8px;border-radius:10px;border:1px solid var(--line);margin-bottom:6px;cursor:pointer;background:var(--panel)}
-.buy-row.on{border-color:var(--accent);background:rgba(255,212,0,.08)}
-.buy-check{flex:0 0 22px;width:22px;height:22px;border-radius:6px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#0a0a0a;background:var(--panel2)}
-.buy-row.on .buy-check{background:var(--accent);border-color:var(--accent)}
 .rem-item{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--line)}
 .rem-item:last-of-type{border-bottom:none}
 .rem-item.off{opacity:.5}
@@ -461,6 +465,7 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
       <div class="io">
         <button class="icon-btn" id="syncPill" data-s="off">○ local</button>
+        <button class="icon-btn" id="btnNotifBell" style="position:relative">&#128276;<span class="notif-badge" id="notifBadge" style="display:none">0</span></button>
         <button class="icon-btn" id="btnGear">⚙</button>
       </div>
     </div>
@@ -571,10 +576,6 @@ textarea.inp{resize:vertical;min-height:60px}
         </div>
         <p class="hint" id="lTiersHint" style="margin:0 0 8px">По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).</p>
         <div id="fTiersList"></div>
-      </div>
-      <div class="field">
-        <label id="lRewardLabel">Reward for hitting target</label>
-        <input class="inp" id="fReward" placeholder="e.g. Cinema night">
       </div>
       <button class="btn primary" id="btnSaveHabit">Add Habit</button>
       <button class="btn ghost" id="btnCancelEdit" style="margin-top:8px;display:none">Cancel</button>
@@ -783,13 +784,17 @@ textarea.inp{resize:vertical;min-height:60px}
   </div>
 </div>
 
-<div class="reward-overlay" id="rewardOverlay"></div>
-<div class="reward-popup" id="rewardPopup">
-  <div class="rp-emoji">&#127805;</div>
-  <div class="rp-title" id="rpTitle">Reward Earned!</div>
-  <div class="rp-habit" id="rpHabit"></div>
-  <div class="rp-reward" id="rpReward"></div>
-  <button class="btn primary rp-close" id="btnCloseReward">OK</button>
+<div class="reward-overlay" id="notifOverlay" style="display:none" onclick="closeNotifCenter()"></div>
+<div class="reward-popup" id="notifModal" style="max-width:420px;max-height:82vh;overflow-y:auto;padding:18px 16px 20px;text-align:left">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+    <h3 style="margin:0" id="notifModalTitle">Notifications</h3>
+    <button class="mini" onclick="closeNotifCenter()">✕</button>
+  </div>
+  <div class="notif-tabs">
+    <button class="mini notif-tab" id="notifTabNew" data-tab="new">New</button>
+    <button class="mini notif-tab" id="notifTabArchive" data-tab="archive">Archive</button>
+  </div>
+  <div id="notifList"></div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -797,13 +802,6 @@ textarea.inp{resize:vertical;min-height:60px}
 <div class="reward-popup" id="summaryModal" style="max-width:340px;max-height:80vh;overflow-y:auto;padding-bottom:20px">
   <div id="summaryContent"></div>
   <button class="btn primary rp-close" onclick="closeSummaryModal()">OK</button>
-</div>
-
-<div class="reward-overlay" id="buyOverlay" style="display:none" onclick="closeBuyModal()"></div>
-<div class="reward-popup" id="buyModal" style="max-width:380px;max-height:84vh;overflow-y:auto;padding:18px 16px 20px;text-align:left">
-  <div id="buyModalHead"></div>
-  <div id="buyModalList" style="margin:12px 0;max-height:46vh;overflow-y:auto"></div>
-  <div id="buyModalFoot"></div>
 </div>
 
 <script>
@@ -819,12 +817,12 @@ syncLocal:"○ local",syncOnline:"● online",syncConnecting:"● connecting..."
 lvls:["Beginner","Practitioner","Expert","Master","Guru","Legend"],
 ranks:["Novice","Apprentice","Seeker","Guardian","Pathfinder","Warrior","Knight","Mystic","Sage","Hunter","Berserker","Paladin","Sorcerer","Titan","Phoenix","Dragon","Archon","Immortal","Legend","God"],
 levelProgression:"Level Progression",currentLevel:"Current Level",totalXP:"Total XP",xpToNext:"XP to next level",
-rewardEarned:"Reward Earned!",targetReached:"Target reached for",yourReward:"Your reward:",closeBtn2:"Close",
+closeBtn2:"Close",
 filterTitle:"Filters",selectAll:"Select all",deselectAll:"Deselect all",filterMonths:"Months",filterHabits:"Habits",filterTags:"Tags",
 weeklyPattern:"Weekly Pattern",tagPerformance:"Tag Performance",streaksBoard:"Streaks Leaderboard",habitHeatmap:"Habit Heatmap",
 topStreaks:"Top streaks across all months",avgByDay:"Average completion by day of week",perfByTag:"Performance by tag category",
 heatmapDesc:"Daily completion intensity across the year",daysLabel:"days",
-done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",
+done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",bonusFreezes:"Bonus freezes",
 freezeToday:"Freeze today",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
 streak:"streak",notYearYet:"Not {0} yet",xpToday:"XP today",
 habit:"Habit",gridHint:"Tap a cell to mark a day. Yellow frame = today. Notes: click day number in header.",
@@ -835,7 +833,7 @@ newHabit:"New Habit",editHabit:"Edit Habit",formDesc:"Set a goal, weight (1-10),
 nameLabel:"Name",namePH:"e.g. Morning workout",tagLabel:"Tag",
 targetEveryDay:"Target: every day of the month",targetDays:"Target days per month",
 monthTargetsLabel:"Per-month targets (empty = default)",
-weightLabel:"Weight (1-10)",rewardLabel:"Reward for hitting target",rewardPH:"e.g. Cinema night",
+weightLabel:"Weight (1-10)",
 sinDaysTitle:"Conscious skip days",sinDaysHint:"A pre-declared skip on these days costs −1×weight instead of −3×weight.",
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight).",
 sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",
@@ -921,12 +919,12 @@ syncLocal:"○ локально",syncOnline:"● онлайн",syncConnecting:"�
 lvls:["Новичок","Практик","Эксперт","Мастер","Гуру","Легенда"],
 ranks:["Новичок","Ученик","Искатель","Страж","Следопыт","Воин","Рыцарь","Мистик","Мудрец","Охотник","Берсерк","Паладин","Чародей","Титан","Феникс","Дракон","Архонт","Бессмертный","Легенда","Бог"],
 levelProgression:"Прогрессия уровней",currentLevel:"Текущий уровень",totalXP:"Всего XP",xpToNext:"XP до след. уровня",
-rewardEarned:"Награда получена!",targetReached:"Норма выполнена для",yourReward:"Ваша награда:",closeBtn2:"Закрыть",
+closeBtn2:"Закрыть",
 filterTitle:"Фильтры",selectAll:"Выбрать все",deselectAll:"Снять все",filterMonths:"Месяцы",filterHabits:"Привычки",filterTags:"Теги",
 weeklyPattern:"Недельный паттерн",tagPerformance:"Эффективность тегов",streaksBoard:"Рейтинг серий",habitHeatmap:"Тепловая карта",
 topStreaks:"Лучшие серии за все месяцы",avgByDay:"Средний % выполнения по дням недели",perfByTag:"Результативность по категориям тегов",
 heatmapDesc:"Интенсивность выполнения по дням года",daysLabel:"дн.",
-done:"выполнено",todayDone:"Сделано",remaining:"Осталось",freezesLeft:"Заморозок осталось",
+done:"выполнено",todayDone:"Сделано",remaining:"Осталось",freezesLeft:"Заморозок осталось",bonusFreezes:"Бонусных заморозок",
 freezeToday:"Заморозить день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
 streak:"серия",notYearYet:"Ещё не {0} год",xpToday:"XP сегодня",
 habit:"Привычка",gridHint:"Нажмите на ячейку, чтобы отметить день. Жёлтая рамка = сегодня. Заметки: нажмите на номер дня.",
@@ -937,7 +935,7 @@ newHabit:"Новая привычка",editHabit:"Редактировать п�
 nameLabel:"Название",namePH:"напр. Утренняя зарядка",tagLabel:"Тег",
 targetEveryDay:"Цель: каждый день месяца",targetDays:"Целевых дней в месяц",
 monthTargetsLabel:"Норма по месяцам (пусто = по умолчанию)",
-weightLabel:"Вес (1-10)",rewardLabel:"Награда за выполнение цели",rewardPH:"напр. Поход в кино",
+weightLabel:"Вес (1-10)",
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.",
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).",
 sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",
@@ -1023,12 +1021,12 @@ syncLocal:"○ local",syncOnline:"● en línea",syncConnecting:"● conectando.
 lvls:["Principiante","Practicante","Experto","Maestro","Gurú","Leyenda"],
 ranks:["Novato","Aprendiz","Buscador","Guardián","Explorador","Guerrero","Caballero","Místico","Sabio","Cazador","Berserker","Paladín","Hechicero","Titán","Fénix","Dragón","Arconte","Inmortal","Leyenda","Dios"],
 levelProgression:"Progresión de nivel",currentLevel:"Nivel actual",totalXP:"XP total",xpToNext:"XP para siguiente nivel",
-rewardEarned:"¡Recompensa ganada!",targetReached:"Meta alcanzada para",yourReward:"Tu recompensa:",closeBtn2:"Cerrar",
+closeBtn2:"Cerrar",
 filterTitle:"Filtros",selectAll:"Seleccionar todo",deselectAll:"Deseleccionar todo",filterMonths:"Meses",filterHabits:"Hábitos",filterTags:"Etiquetas",
 weeklyPattern:"Patrón semanal",tagPerformance:"Rendimiento por etiqueta",streaksBoard:"Ranking de rachas",habitHeatmap:"Mapa de calor",
 topStreaks:"Mejores rachas de todos los meses",avgByDay:"Promedio de cumplimiento por día de semana",perfByTag:"Rendimiento por categoría",
 heatmapDesc:"Intensidad de cumplimiento diario durante el año",daysLabel:"días",
-done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones rest.",
+done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones rest.",bonusFreezes:"Congelaciones bonus",
 freezeToday:"Congelar hoy",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
 streak:"racha",notYearYet:"Aún no es {0}",xpToday:"XP hoy",
 habit:"Hábito",gridHint:"Toca una celda para marcar un día. Marco amarillo = hoy. Notas: clic en número del día.",
@@ -1039,7 +1037,7 @@ newHabit:"Nuevo hábito",editHabit:"Editar hábito",formDesc:"Establece meta, pe
 nameLabel:"Nombre",namePH:"ej. Ducha fría",tagLabel:"Etiqueta",
 targetEveryDay:"Meta: todos los días del mes",targetDays:"Días objetivo por mes",
 monthTargetsLabel:"Metas por mes (vacío = predeterminado)",
-weightLabel:"Peso (1-10)",rewardLabel:"Recompensa por cumplir meta",rewardPH:"ej. Noche de cine",
+weightLabel:"Peso (1-10)",
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con antelación en estos días cuesta −1×peso en vez de −3×peso.",
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave.",
 sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",
@@ -1125,12 +1123,12 @@ syncLocal:"○ 本地",syncOnline:"● 在线",syncConnecting:"● 连接中..."
 lvls:["初学者","修行者","专家","大师","导师","传奇"],
 ranks:["新手","学徒","探索者","守护者","探路者","战士","骑士","神秘者","贤者","猎人","狂战士","圣骑士","术士","泰坦","凤凰","龙","执政官","不朽者","传说","神"],
 levelProgression:"等级进度",currentLevel:"当前等级",totalXP:"总XP",xpToNext:"距下一级XP",
-rewardEarned:"获得奖励！",targetReached:"已达标：",yourReward:"你的奖励：",closeBtn2:"关闭",
+closeBtn2:"关闭",
 filterTitle:"筛选",selectAll:"全选",deselectAll:"取消全选",filterMonths:"月份",filterHabits:"习惯",filterTags:"标签",
 weeklyPattern:"每周模式",tagPerformance:"标签表现",streaksBoard:"连续排行榜",habitHeatmap:"热力图",
 topStreaks:"所有月份最佳连续记录",avgByDay:"按星期几的平均完成率",perfByTag:"按标签类别的表现",
 heatmapDesc:"全年每日完成强度",daysLabel:"天",
-done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结",
+done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结",bonusFreezes:"奖励冻结",
 freezeToday:"冻结今天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
 streak:"连续",notYearYet:"还不是{0}年",xpToday:"今日XP",
 habit:"习惯",gridHint:"点击单元格标记日期。黄色边框=今天。笔记：点击标题中的日期。",
@@ -1141,7 +1139,7 @@ newHabit:"新习惯",editHabit:"编辑习惯",formDesc:"设置目标、权重(1-
 nameLabel:"名称",namePH:"例如 冷水澡",tagLabel:"标签",
 targetEveryDay:"目标：每月每天",targetDays:"每月目标天数",
 monthTargetsLabel:"每月目标（空=默认）",
-weightLabel:"权重 (1-10)",rewardLabel:"达标奖励",rewardPH:"例如 看电影",
+weightLabel:"权重 (1-10)",
 sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子只扣 −1×权重,而不是 −3×权重。",
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。",
 sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",
@@ -1227,12 +1225,12 @@ syncLocal:"○ local",syncOnline:"● en ligne",syncConnecting:"● connexion...
 lvls:["Débutant","Praticien","Expert","Maître","Gourou","Légende"],
 ranks:["Novice","Apprenti","Chercheur","Gardien","Éclaireur","Guerrier","Chevalier","Mystique","Sage","Chasseur","Berserker","Paladin","Sorcier","Titan","Phénix","Dragon","Archonte","Immortel","Légende","Dieu"],
 levelProgression:"Progression de niveau",currentLevel:"Niveau actuel",totalXP:"XP total",xpToNext:"XP pour le prochain niveau",
-rewardEarned:"Récompense gagnée !",targetReached:"Objectif atteint pour",yourReward:"Votre récompense :",closeBtn2:"Fermer",
+closeBtn2:"Fermer",
 filterTitle:"Filtres",selectAll:"Tout sélectionner",deselectAll:"Tout désélectionner",filterMonths:"Mois",filterHabits:"Habitudes",filterTags:"Étiquettes",
 weeklyPattern:"Modèle hebdomadaire",tagPerformance:"Performance par étiquette",streaksBoard:"Classement des séries",habitHeatmap:"Carte thermique",
 topStreaks:"Meilleures séries de tous les mois",avgByDay:"Moyenne d'achèvement par jour de semaine",perfByTag:"Performance par catégorie",
 heatmapDesc:"Intensité d'achèvement quotidien sur l'année",daysLabel:"jours",
-done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",
+done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",bonusFreezes:"Gels bonus",
 freezeToday:"Geler aujourd'hui",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
 streak:"série",notYearYet:"Pas encore {0}",xpToday:"XP aujourd'hui",
 habit:"Habitude",gridHint:"Appuyez sur une cellule pour marquer un jour. Cadre jaune = aujourd'hui. Notes: cliquez sur le numéro du jour.",
@@ -1243,7 +1241,7 @@ newHabit:"Nouvelle habitude",editHabit:"Modifier l'habitude",formDesc:"Définir 
 nameLabel:"Nom",namePH:"ex. Douche froide",tagLabel:"Étiquette",
 targetEveryDay:"Objectif : chaque jour du mois",targetDays:"Jours cibles par mois",
 monthTargetsLabel:"Objectifs par mois (vide = défaut)",
-weightLabel:"Poids (1-10)",rewardLabel:"Récompense pour atteindre l'objectif",rewardPH:"ex. Soirée cinéma",
+weightLabel:"Poids (1-10)",
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'avance ces jours-là coûte −1×poids au lieu de −3×poids.",
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur.",
 sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",
@@ -1345,7 +1343,7 @@ function applyLang(){
     lPenaltyRate:T.penaltyRateLabel,lFormDesc:T.formDesc,
     lNameLabel:T.nameLabel,lTagLabel:T.tagLabel,lTargetEveryDay:T.targetEveryDay,
     lTargetDays:T.targetDays,lMonthTargets:T.monthTargetsLabel,
-    lWeightLabel:T.weightLabel,lRewardLabel:T.rewardLabel,
+    lWeightLabel:T.weightLabel,
     lSinDaysTitle:T.sinDaysTitle,lSinDaysHint:T.sinDaysHint,
     lTiersTitle:T.tiersTitle,lTierAdd:T.tierAdd,lTiersHint:T.tiersHint,
     lTrackingStartTitle:T.trackingStartTitle,lTrackingStartDesc:T.trackingStartDesc,lTrackingStartLabel:T.trackingStartLabel,
@@ -1358,7 +1356,7 @@ function applyLang(){
     gridHintText:T.gridHint,lHowToCreate:T.howToCreate,
     lLevelProgression:T.levelProgression,lBtnCloseLevel:T.closeBtn2||T.closeBtn};
   for(const[id,text]of Object.entries(ids)){const el=document.getElementById(id);if(el)el.textContent=text}
-  const phs={fName:T.namePH,fReward:T.rewardPH,syncUrl:"https://...firebasedatabase.app",
+  const phs={fName:T.namePH,syncUrl:"https://...firebasedatabase.app",
     syncPaste:T.pasteKeyPH,noteText:T.notePH,tagNameInp:T.tagNamePH};
   for(const[id,ph]of Object.entries(phs)){const el=document.getElementById(id);if(el)el.placeholder=ph}
   const ls=document.getElementById("langSelect");if(ls)ls.value=state.lang;
@@ -1379,7 +1377,7 @@ function activeYear(){
   const now=new Date().getFullYear();
   return Math.min(LAST_YEAR,Math.max(FIRST_YEAR,now));
 }
-const MAX_FREEZES=2;
+const MAX_FREEZES=3;
 // Points-economy currency name — a proper noun, deliberately NOT localized (same in every language).
 const CURRENCY_NAME="Inlounity";
 const CURRENCY_TICKER="INLI";
@@ -1462,7 +1460,7 @@ function defaultBigRewards(){
   // Prices are in the points currency (see POINTS ECONOMY below) — generic template values,
   // scaled for a fresh install's default habit weights. Names stay generic on purpose: this file
   // is a shared template, personal reward catalogs are configured per-install, not hardcoded here.
-  const R=(name,cost,emo)=>({id:uid(),name,cost,emo,tagId:null,linkedHabitId:null,convertsDay:false});
+  const R=(name,cost,emo)=>({id:uid(),name,cost,emo,tagId:null,linkedHabitId:null});
   return[
     R("Большая награда 1",100,"🎁"),
     R("Большая награда 2",200,"🎁"),
@@ -1481,9 +1479,11 @@ function defaultBigRewards(){
 let state=null,memFallback=false;
 // Per-year data lives in state.years[YYYY]; shared data (habits/tags/bigRewards/theme...) at top level.
 function freshYearData(){
-  return{checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{}};
+  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{}};
 }
-const YEAR_FIELDS=["checks","notes","xp","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs"];
+// xp intentionally NOT per-year (see below) — it's a lifetime field like points, sitting alongside
+// state.years rather than inside it.
+const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs"];
 function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
 // Scans every year/month/habit's real check data for the earliest date ever marked done —
 // used only as a one-time migration default for trackingStart (see migrate()).
@@ -1511,14 +1511,19 @@ function freshState(){
     globalZonePct:{reward:85,nothing:65,knut1:45,knut2:25},tags:defaultTags(),habits:defaultHabits(),
     bigRewards:defaultBigRewards(),reminders:[],notifPermAsked:false,theme:"dark",accentColor:"#ffd400",lang:"ru",
     currentYear:startYear,years:{},
-    // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger)
-    points:0,purchases:[],
-    // Days before this (ISO "YYYY-MM-DD") never enter the points economy at all — a brand-new
-    // install starts counting from today, not from Jan 1. Existing installs get a one-time
+    // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger,
+    // and XP/level progression — both derived fresh by recalcPoints()/recalcXP(), never patched)
+    points:0,purchases:[],xp:0,
+    // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
+    // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
     trackingStart:todayISO(),
+    // Notification center: a user-managed log (like purchases), NOT derived/recalculated — deleting
+    // a notification must actually stick. tierWarningKeys is an internal dedup ledger (never shown
+    // in the UI) so the end-of-month tier-ambiguity warning fires exactly once per month per habit.
+    notifications:[],tierWarningKeys:[],
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
-    checks:{},notes:{},xp:0,freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},
+    checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},
     _t:Date.now()
   };
   s.years[startYear]=freshYearData();
@@ -1555,6 +1560,7 @@ function switchYear(year){
 function load(){
   try{const raw=localStorage.getItem(STORE_KEY);if(raw){state=JSON.parse(raw);migrate();return;}}catch(e){memFallback=true}
   state=freshState();
+  T=I18N[state.lang]||I18N.en; // migrate() normally sets this — a brand-new install skips migrate() entirely
 }
 function migrate(){
   // ── Multi-year migration ──
@@ -1585,7 +1591,6 @@ function migrate(){
   state.bigRewards.forEach(r=>{
     if(r.tagId===undefined)r.tagId=null;
     if(r.linkedHabitId===undefined)r.linkedHabitId=null;
-    if(r.convertsDay===undefined)r.convertsDay=false;
   });
   if(!Array.isArray(state.reminders))state.reminders=[];
   // ensure bigPurchases array in every year + migrate legacy r.claimed counters into purchase records
@@ -1637,8 +1642,11 @@ function migrate(){
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
   T=I18N[state.lang]||I18N.en;
+  if(!Array.isArray(state.notifications))state.notifications=[];
+  if(!Array.isArray(state.tierWarningKeys))state.tierWarningKeys=[];
   recalcXP();
   recalcPoints();
+  scanTierWarnings();
 }
 let saveTimer=null;
 function persistLocal(){try{localStorage.setItem(STORE_KEY,JSON.stringify(state))}catch(e){memFallback=true}}
@@ -1705,7 +1713,36 @@ function beforeTrackingStart(year,m,d){
   const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
   return ds<state.trackingStart;
 }
-function dailyHabitPointsForMonth(h,year,m,yd){
+// A tier is "available" for the NEXT use if it has no free-use cap, or hasn't hit its cap yet.
+function tierAvailableIdxs(h,tierUse){
+  const out=[];
+  for(let ti=0;ti<h.violationTiers.length;ti++){
+    const t=h.violationTiers[ti],used=tierUse[ti]||0;
+    if(t.freeLimit==null||used<t.freeLimit)out.push(ti);
+  }
+  return out;
+}
+// Resolves an elapsed miss that has NO explicit tier log:
+//  - habit has no tiers configured  -> null (caller applies its own flat default, e.g. -3×weight)
+//  - exactly one tier still available -> auto-applied (charged + marked used), no ambiguity
+//  - 2+ tiers still available -> unresolved: contributes 0, caller should flag the day for review
+//  - 0 tiers still available (all capped, incl. the last) -> fall back to the harshest tier anyway
+function resolveUnloggedTierMiss(h,tierUse){
+  if(!h.violationTiers||!h.violationTiers.length)return null;
+  const avail=tierAvailableIdxs(h,tierUse);
+  const idx=avail.length===1?avail[0]:avail.length===0?h.violationTiers.length-1:null;
+  if(idx===null)return{delta:0,unresolved:true};
+  tierUse[idx]=(tierUse[idx]||0)+1;
+  return{delta:h.violationTiers[idx].deltaMult*h.weight,unresolved:false};
+}
+// Daily habit: check=+weight; an elapsed miss=-3×weight (or the habit's tier ladder if configured),
+// or -1×weight if pre-declared as a sin on one of the habit's configured sin-days.
+// unresolvedOut, if passed an array, gets pushed the day numbers that ended up ambiguous (2+ tiers
+// still available, nothing explicitly logged) — used by the end-of-month review notification.
+// tierUseOut, if passed an object, is mutated in place with the running per-tier usage count — lets
+// the UI ask "what's still available as of day D" without duplicating this whole loop.
+// stopBeforeDay, if set, halts the walk before processing that day (for the same "as of day D" ask).
+function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay){
   const totalDays=daysInMonthY(year,m);
   const elapsed=elapsedDaysInMonthY(year,m);
   const rt=realTodayParts();
@@ -1717,9 +1754,10 @@ function dailyHabitPointsForMonth(h,year,m,yd){
   const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
   const upper=isCurMonth?rt.d:totalDays;
-  const tierUse={};
+  const tierUse=tierUseOut||{};
   let pts=0;
   for(let d=1;d<=upper;d++){
+    if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(checksBucket[d]){pts+=h.weight;continue}
     if(frozen.includes(d))continue;
@@ -1737,14 +1775,17 @@ function dailyHabitPointsForMonth(h,year,m,yd){
     }else if(sinBucket[d]&&(h.sinDays||[]).includes(weekday)){
       pts+=-1*h.weight;
     }else{
-      pts+=-3*h.weight;
+      const r=resolveUnloggedTierMiss(h,tierUse);
+      if(r===null)pts+=-3*h.weight;
+      else{pts+=r.delta;if(r.unresolved&&unresolvedOut)unresolvedOut.push(d);}
     }
   }
   return pts;
 }
 // Event habit: "minimum pace line" — Мин(D)=floor(D/daysInMonth×N). Below the line, a missed
-// day costs -3×weight; at/above it, skipping is free. Completions always +weight, capped at N/month.
-function eventHabitPointsForMonth(h,year,m,yd){
+// day costs -3×weight (or the habit's tier ladder if configured); at/above it, skipping is free.
+// Completions always +weight, capped at N/month.
+function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay){
   const totalDays=daysInMonthY(year,m);
   const rt=realTodayParts();
   const isCurMonth=(year===rt.y&&m===rt.m);
@@ -1752,10 +1793,13 @@ function eventHabitPointsForMonth(h,year,m,yd){
   const N=effTargetForYear(h,year,m,yd);
   const mk="m"+m;
   const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
+  const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
   const upper=isCurMonth?rt.d:totalDays;
+  const tierUse=tierUseOut||{};
   let doneSoFar=0,pts=0;
   for(let d=1;d<=upper;d++){
+    if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(frozen.includes(d))continue;
     if(checksBucket[d]){
@@ -1766,17 +1810,39 @@ function eventHabitPointsForMonth(h,year,m,yd){
     const isPast=isCurMonth?d<rt.d:true;
     if(!isPast||totalDays<=0||N<=0)continue;
     const minRequired=Math.floor(d/totalDays*N);
-    if(doneSoFar<minRequired)pts+=-3*h.weight;
+    if(doneSoFar<minRequired){
+      const loggedTier=tierBucket[d];
+      if(loggedTier!==undefined&&h.violationTiers&&h.violationTiers[loggedTier]){
+        let idx=loggedTier;
+        tierUse[idx]=(tierUse[idx]||0)+1;
+        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        }
+        pts+=h.violationTiers[idx].deltaMult*h.weight;
+      }else{
+        const r=resolveUnloggedTierMiss(h,tierUse);
+        if(r===null)pts+=-3*h.weight;
+        else{pts+=r.delta;if(r.unresolved&&unresolvedOut)unresolvedOut.push(d);}
+      }
+    }
   }
   return pts;
 }
-function habitPointsForMonth(h,year,m,yd){
-  return h.type==="event"?eventHabitPointsForMonth(h,year,m,yd):dailyHabitPointsForMonth(h,year,m,yd);
+function habitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay){
+  return h.type==="event"?eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay):dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay);
 }
 // Current-month balance for the ACTIVE (bound) year — used by the money pool & UI previews.
 function habitMonthBalance(h,m){return habitPointsForMonth(h,activeYear(),m,state)}
 // UI-facing pace-line status for an event habit on a specific day (mirrors eventHabitPointsForMonth's
 // running count exactly, but exposed as data instead of a point delta, for the Today-view badge).
+// Which tier indices are still available (under their free-use cap) as of just BEFORE day d, for
+// the currently active/bound year — lets the grid's tier-mark cycle skip exhausted options.
+function availableTiersOnDay(h,m,d){
+  if(!h.violationTiers||!h.violationTiers.length)return[];
+  const tierUse={};
+  habitPointsForMonth(h,activeYear(),m,state,null,tierUse,d);
+  return tierAvailableIdxs(h,tierUse);
+}
 function eventPaceStatus(h,m,d){
   const totalDays=daysInMonth(m);
   const N=effTarget(h,m);
@@ -1834,6 +1900,22 @@ function getChecks(m,hid){
   if(!state.checks[mk][hid])state.checks[mk][hid]={};
   return state.checks[mk][hid];
 }
+// Bonus freezes are an eternal stockpile earned +1 per XP level gained, ON TOP of the monthly
+// free allowance — derived (never stored/patched) from state.xp and actual freeze usage, same
+// "always derive" principle as recalcPoints/recalcXP.
+function totalBonusFreezesEarned(){return Math.max(0,levelFromXp(state.xp)-1)}
+function totalBonusFreezesConsumed(){
+  syncLiveToYear();
+  let used=0;
+  if(state.years){
+    Object.keys(state.years).forEach(y=>{
+      const fz=(state.years[y]||{}).freezesUsed||{};
+      Object.keys(fz).forEach(mk=>{ used+=Math.max(0,(fz[mk]||[]).length-MAX_FREEZES); });
+    });
+  }
+  return used;
+}
+function bonusFreezesAvailable(){return Math.max(0,totalBonusFreezesEarned()-totalBonusFreezesConsumed())}
 function getFreezes(m){return state.freezesUsed["m"+m]||[]}
 function isFrozen(m,d){return getFreezes(m).includes(d)}
 function toggleFreeze(m,d){
@@ -1842,34 +1924,159 @@ function toggleFreeze(m,d){
   const arr=state.freezesUsed[mk];
   const idx=arr.indexOf(d);
   if(idx>=0)arr.splice(idx,1);
-  else if(arr.length<MAX_FREEZES)arr.push(d);
+  else if(arr.length<MAX_FREEZES||bonusFreezesAvailable()>0)arr.push(d);
   else{toast(T.maxFreezesMsg.replace("{0}",MAX_FREEZES));return}
   save();
 }
+// XP is lifetime (like points) and gated by the same trackingStart cutoff — always re-derived from
+// every year's real check history, never patched incrementally (same reasoning as recalcPoints()).
 function recalcXP(){
+  syncLiveToYear();
   let xp=0;
-  (state.habits||[]).forEach(h=>{
-    for(let m=0;m<12;m++){
-      const mk="m"+m;
-      const bucket=state.checks[mk]&&state.checks[mk][h.id];
-      if(bucket)xp+=Object.keys(bucket).length*xpForCheck(h.weight);
-    }
-  });
+  if(state.years){
+    Object.keys(state.years).forEach(y=>{
+      const yd=state.years[y],yNum=+y;
+      (state.habits||[]).forEach(h=>{
+        for(let m=0;m<12;m++){
+          const mk="m"+m;
+          const bucket=yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id];
+          if(!bucket)continue;
+          Object.keys(bucket).forEach(dStr=>{
+            if(!bucket[dStr]||beforeTrackingStart(yNum,m,+dStr))return;
+            xp+=xpForCheck(h.weight);
+          });
+        }
+      });
+    });
+  }
   state.xp=xp;
-  if(state.years&&state.years[state.currentYear])state.years[state.currentYear].xp=xp;
+}
+/* ===== NOTIFICATION CENTER =====
+   A user-managed log (like state.purchases) — NOT derived/recalculated from scratch, because
+   deleting a notification must actually stick. Absorbs the app's one-off popups (habit-success,
+   end-of-month tier-ambiguity warnings) into a single inbox the user checks on their own time. */
+function addNotification(type,title,body){
+  if(!Array.isArray(state.notifications))state.notifications=[];
+  state.notifications.unshift({id:uid(),type,title,body,date:Date.now(),read:false,archived:false});
+}
+function unreadNotifCount(){return(state.notifications||[]).filter(n=>!n.read&&!n.archived).length}
+function markNotifRead(id){
+  const n=(state.notifications||[]).find(x=>x.id===id);if(!n)return;
+  n.read=true;save();renderNotifCenter();renderNotifBadge();
+}
+function archiveNotif(id){
+  const n=(state.notifications||[]).find(x=>x.id===id);if(!n)return;
+  n.archived=true;save();renderNotifCenter();renderNotifBadge();
+}
+function restoreNotif(id){
+  const n=(state.notifications||[]).find(x=>x.id===id);if(!n)return;
+  n.archived=false;save();renderNotifCenter();renderNotifBadge();
+}
+function deleteNotif(id){
+  state.notifications=(state.notifications||[]).filter(x=>x.id!==id);
+  save();renderNotifCenter();renderNotifBadge();
+}
+// One-time-per-(year,month,habit) end-of-month warning: only for habits with 2+ configured tiers
+// (0/1-tier habits can never be ambiguous — resolveUnloggedTierMiss always resolves them on its
+// own) that actually left unresolved days behind. tierWarningKeys is a permanent dedup ledger so
+// this never re-fires for the same month/habit even after the user deletes the notification.
+function scanTierWarnings(){
+  if(!Array.isArray(state.tierWarningKeys))state.tierWarningKeys=[];
+  const seen=new Set(state.tierWarningKeys);
+  const ru=state.lang!=="en";
+  Object.keys(state.years||{}).forEach(yStr=>{
+    const year=+yStr,yd=state.years[yStr];if(!yd)return;
+    (state.habits||[]).forEach(h=>{
+      if(h.deleted||!h.violationTiers||h.violationTiers.length<2)return;
+      for(let m=0;m<12;m++){
+        if(elapsedDaysInMonthY(year,m)<daysInMonthY(year,m))continue; // month not fully elapsed yet
+        const key=year+"_"+m+"_"+h.id;
+        if(seen.has(key))continue;
+        seen.add(key);state.tierWarningKeys.push(key);
+        const unresolved=[];
+        habitPointsForMonth(h,year,m,yd,unresolved);
+        if(unresolved.length){
+          addNotification("tierWarning",
+            ru?"⚠️ Не указан уровень срыва":"⚠️ Severity not specified",
+            ru?`«${h.name}», ${T.months[m]}: ${unresolved.length} дн. без выбранного уровня срыва — баллы за них не начислены.`
+              :`"${h.name}", ${T.months[m]}: ${unresolved.length} day(s) with no severity chosen — no points were charged.`);
+        }
+      }
+    });
+  });
+}
+let notifActiveTab="new"; // "new" | "archive"
+function renderNotifBadge(){
+  const badge=document.getElementById("notifBadge");if(!badge)return;
+  const n=unreadNotifCount();
+  badge.style.display=n>0?"flex":"none";
+  badge.textContent=n>9?"9+":n;
+}
+function openNotifCenter(){
+  notifActiveTab="new";
+  renderNotifCenter();
+  document.getElementById("notifOverlay").style.display="block";
+  document.getElementById("notifModal").classList.add("show");
+}
+function closeNotifCenter(){
+  document.getElementById("notifOverlay").style.display="none";
+  document.getElementById("notifModal").classList.remove("show");
+}
+function renderNotifCenter(){
+  const ru=state.lang!=="en";
+  document.getElementById("notifModalTitle").textContent=ru?"Уведомления":"Notifications";
+  const all=state.notifications||[];
+  const newCount=all.filter(n=>!n.archived).length;
+  const archCount=all.filter(n=>n.archived).length;
+  const tabNew=document.getElementById("notifTabNew"),tabArch=document.getElementById("notifTabArchive");
+  tabNew.textContent=(ru?"Новые":"New")+" ("+newCount+")";
+  tabArch.textContent=(ru?"Архив":"Archive")+" ("+archCount+")";
+  tabNew.classList.toggle("active",notifActiveTab==="new");
+  tabArch.classList.toggle("active",notifActiveTab==="archive");
+  const list=all.filter(n=>notifActiveTab==="new"?!n.archived:n.archived);
+  const box=document.getElementById("notifList");
+  if(!list.length){
+    box.innerHTML=`<div class="empty" style="padding:16px 0"><b>${notifActiveTab==="new"?(ru?"Нет новых уведомлений":"No new notifications"):(ru?"Архив пуст":"Archive is empty")}</b></div>`;
+    return;
+  }
+  box.innerHTML=list.map(n=>{
+    const dt=new Date(n.date);
+    const dateStr=dt.toLocaleDateString(ru?"ru-RU":"en-US")+" "+dt.toLocaleTimeString(ru?"ru-RU":"en-US",{hour:"2-digit",minute:"2-digit"});
+    const acts=notifActiveTab==="new"
+      ?(n.read?"":`<button class="mini" data-nread="${n.id}">${ru?"Прочитано":"Read"}</button>`)
+        +`<button class="mini" data-narchive="${n.id}">${ru?"Архив":"Archive"}</button>`
+        +`<button class="mini" data-ndelete="${n.id}">${ru?"Удалить":"Delete"}</button>`
+      :`<button class="mini" data-nrestore="${n.id}">${ru?"Вернуть":"Restore"}</button>`
+        +`<button class="mini" data-ndelete="${n.id}">${ru?"Удалить":"Delete"}</button>`;
+    return`<div class="notif-item ${n.read?"read":""}">
+      <div class="notif-title">${escapeHtml(n.title)}</div>
+      <div class="notif-body">${escapeHtml(n.body)}</div>
+      <div class="notif-date">${dateStr}</div>
+      <div class="notif-acts">${acts}</div>
+    </div>`;
+  }).join("");
+  box.querySelectorAll("[data-nread]").forEach(b=>b.onclick=()=>markNotifRead(b.dataset.nread));
+  box.querySelectorAll("[data-narchive]").forEach(b=>b.onclick=()=>archiveNotif(b.dataset.narchive));
+  box.querySelectorAll("[data-ndelete]").forEach(b=>b.onclick=()=>{ if(confirm(ru?"Удалить уведомление?":"Delete notification?"))deleteNotif(b.dataset.ndelete); });
+  box.querySelectorAll("[data-nrestore]").forEach(b=>b.onclick=()=>restoreNotif(b.dataset.nrestore));
 }
 function toggleCheck(m,hid,day){
   const c=getChecks(m,hid);
   const h=state.habits.find(x=>x.id===hid);
   const prevSucceeded=h?metTarget(h,m):null;
-  if(c[day]){delete c[day];state.xp=Math.max(0,(state.xp||0)-xpForCheck(h?h.weight:1))}
-  else{c[day]=true;state.xp=(state.xp||0)+xpForCheck(h?h.weight:1)}
-  recalcPoints(); // full re-derive: a single check can shift many other elapsed days for event habits
-  save();
+  if(c[day]){delete c[day];}else{c[day]=true;}
+  recalcXP();recalcPoints(); // full re-derive: a single check can shift many other elapsed days for event habits
   if(h){
     const nowSucceeded=metTarget(h,m);
-    if(nowSucceeded&&!prevSucceeded)showRewardPopup(h);
+    if(nowSucceeded&&!prevSucceeded){
+      const ru=state.lang!=="en";
+      addNotification("success",
+        ru?"✅ Месяц в плюсе":"✅ Month in the black",
+        ru?`«${h.name}»: месяц в плюсе, штрафа нет.`:`"${h.name}": month is in the black, no penalty.`);
+      renderNotifBadge();
+    }
   }
+  save();
 }
 function checkedCount(m,hid){return Object.keys(getChecks(m,hid)).length}
 function effTarget(h,m){
@@ -2003,19 +2210,6 @@ function openLevelModal(){
 }
 function closeLevelModal(){document.getElementById("levelModal").classList.remove("open")}
 
-/* ===== REWARD POPUP ===== */
-function showRewardPopup(habit){
-  document.getElementById("rpTitle").textContent=T.rewardEarned;
-  document.getElementById("rpHabit").textContent=T.targetReached+' "'+habit.name+'"';
-  document.getElementById("rpReward").textContent=habit.reward||'—';
-  document.getElementById("rewardOverlay").classList.add("show");
-  document.getElementById("rewardPopup").classList.add("show");
-}
-function closeRewardPopup(){
-  document.getElementById("rewardOverlay").classList.remove("show");
-  document.getElementById("rewardPopup").classList.remove("show");
-}
-
 /* ===== TODAY VIEW ===== */
 // "today" markers depend on the ACTIVE year: real today only if active year == calendar year
 const todayDate=new Date();
@@ -2029,7 +2223,9 @@ function renderToday(){
   if(m<0){el.innerHTML=`<div class="empty"><b>${T.notYearYet.replace("{0}",activeYear())}</b></div>`;return}
   const hs=activeHabits().sort((a,b)=>(a.order||0)-(b.order||0));
   const frozen=isFrozen(m,d);
-  const freezesLeft=MAX_FREEZES-getFreezes(m).length;
+  const freezesLeft=Math.max(0,MAX_FREEZES-getFreezes(m).length);
+  const bonusLeft=bonusFreezesAvailable();
+  const totalFreezesLeft=freezesLeft+bonusLeft;
   const doneCount=hs.filter(h=>!!getChecks(m,h.id)[d]).length;
   const todayXP=hs.reduce((s,h)=>getChecks(m,h.id)[d]?s+xpForCheck(h.weight):s,0);
 
@@ -2045,10 +2241,11 @@ function renderToday(){
       <div class="ts"><div class="tsl">${T.todayDone}</div><div class="tsv" style="color:var(--green)">${doneCount}</div></div>
       <div class="ts"><div class="tsl">${T.remaining}</div><div class="tsv" style="color:var(--accent2)">${hs.length-doneCount}</div></div>
       <div class="ts"><div class="tsl">${T.freezesLeft}</div><div class="tsv">${freezesLeft}</div></div>
+      <div class="ts"><div class="tsl">${T.bonusFreezes}</div><div class="tsv">${bonusLeft}</div></div>
     </div>`;
 
   if(!frozen){
-    html+=`<div class="freeze-btn ${freezesLeft<=0?'used':''}" id="btnFreezeToday">&#10052; ${T.freezeToday} (${freezesLeft} ${T.left})</div>`;
+    html+=`<div class="freeze-btn ${totalFreezesLeft<=0?'used':''}" id="btnFreezeToday">&#10052; ${T.freezeToday} (${totalFreezesLeft} ${T.left})</div>`;
   }else{
     html+=`<div class="freeze-btn" id="btnUnfreezeToday">&#10052; ${T.dayFrozen}</div>`;
   }
@@ -2236,7 +2433,7 @@ function renderGrid(){
             if(!on&&h.type==="daily"&&isFutureOrToday&&(h.sinDays||[]).includes(wd)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
               mark=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${T.sinDeclareHint}">🙏</span>`;
-            }else if(!on&&h.type==="daily"&&isPastDay&&(h.violationTiers||[]).length>0){
+            }else if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
@@ -2282,12 +2479,14 @@ function renderGrid(){
       e.stopPropagation();
       const hid=el.dataset.tierH,d=+el.dataset.tierD,mk="m"+m;
       const h=state.habits.find(x=>x.id===hid);if(!h||!h.violationTiers||!h.violationTiers.length)return;
+      const avail=availableTiersOnDay(h,m,d);
+      if(!avail.length)return; // shouldn't happen — the harshest tier always counts as available
       if(!state.violationLogs[mk])state.violationLogs[mk]={};
       if(!state.violationLogs[mk][hid])state.violationLogs[mk][hid]={};
       const bucket=state.violationLogs[mk][hid];
-      const cur=bucket[d];
-      if(cur===undefined)bucket[d]=0;
-      else if(cur+1<h.violationTiers.length)bucket[d]=cur+1;
+      const curPos=bucket[d]===undefined?-1:avail.indexOf(bucket[d]);
+      // cycle only through currently-available tiers; past the last one, clear the log entirely
+      if(curPos+1<avail.length)bucket[d]=avail[curPos+1];
       else delete bucket[d];
       recalcPoints();save();renderGrid();renderHero();renderXP();
     };
@@ -2416,7 +2615,7 @@ function renderHabitList(){
         <span class="dot" style="background:${tag.color}"></span>
         <div class="info">
           <div class="nm">${escapeHtml(h.name)} ${badge}</div>
-          <div class="meta">${escapeHtml(tag.name)} &middot; ${norm} &middot; w${h.weight}${pen}<br><span class="pr">&#127805; ${escapeHtml(h.reward||"—")}</span></div>
+          <div class="meta">${escapeHtml(tag.name)} &middot; ${norm} &middot; w${h.weight}${pen}</div>
         </div>
         <div class="acts">
           ${!h.deleted?`<button class="mini" data-edit="${h.id}">&#9998;</button>`:''}
@@ -2475,17 +2674,21 @@ function initDragDrop(el){
 }
 
 // Sin-days + violation-tiers only make sense for daily-type habits (event habits use the pace-line instead).
+// Sin-days only make sense for daily habits (event habits are already flexible day-to-day via the
+// pace-line). Violation tiers apply to BOTH — an event habit's obligatory catch-up misses can have
+// severity levels too, same as a daily habit's misses.
 function updateTypeSectionVisibility(){
   const sinSec=document.getElementById("fSinDaysSection");
-  const tierSec=document.getElementById("fTiersSection");
   if(sinSec)sinSec.style.display=fEveryday?"":"none";
-  if(tierSec)tierSec.style.display=fEveryday?"":"none";
 }
 function renderSinDaysChips(selected){
   const dayNames=T.daysShort;
+  // Display order starts Monday (matches the habit's actual week), but data-day keeps the real
+  // getDay()-compatible index (0=Sun..6=Sat) that the sin-day logic elsewhere reads.
+  const order=[1,2,3,4,5,6,0];
   const sel=new Set(selected||[]);
   const box=document.getElementById("fSinDays");if(!box)return;
-  box.innerHTML=dayNames.map((d,i)=>`<button type="button" class="day-chip ${sel.has(i)?'on':''}" data-day="${i}">${d}</button>`).join("");
+  box.innerHTML=order.map(i=>`<button type="button" class="day-chip ${sel.has(i)?'on':''}" data-day="${i}">${dayNames[i]}</button>`).join("");
   box.querySelectorAll(".day-chip").forEach(c=>c.onclick=()=>{c.classList.toggle("on")});
 }
 function readSinDaysChips(){
@@ -2525,7 +2728,6 @@ function clearForm(){
   editId=null;
   document.getElementById("fName").value="";
   document.getElementById("fWeight").value="";
-  document.getElementById("fReward").value="";
   document.getElementById("fTarget").value="";
   document.getElementById("fTag").selectedIndex=0;
   fEveryday=true;
@@ -2546,7 +2748,6 @@ function startEdit(id){
   editId=id;
   document.getElementById("fName").value=h.name;
   document.getElementById("fWeight").value=h.weight;
-  document.getElementById("fReward").value=h.reward;
   document.getElementById("fTarget").value=h.target||"";
   document.getElementById("fTag").value=h.tagId;
   fEveryday=!!h.everyday;
@@ -2568,7 +2769,6 @@ function saveHabit(){
   const name=document.getElementById("fName").value.trim();
   if(!name){toast(T.enterName);return}
   const weight=Math.max(1,Math.min(10,+document.getElementById("fWeight").value||5));
-  const reward=document.getElementById("fReward").value.trim();
   const target=Math.max(0,+document.getElementById("fTarget").value||0);
   const tagId=document.getElementById("fTag").value;
   const sinDays=readSinDaysChips();
@@ -2585,10 +2785,10 @@ function saveHabit(){
   const type=fEveryday?"daily":"event";
   if(editId){
     const h=state.habits.find(x=>x.id===editId);
-    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,reward,monthTargets});
+    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,reward,monthTargets,archived:false,deleted:false,deletedAt:null,order:state.habits.length});
+    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets,archived:false,deleted:false,deletedAt:null,order:state.habits.length});
     toast(T.habitAdded);
   }
   recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
@@ -2979,9 +3179,6 @@ function renderRewards(){
       <button class="usebtn used" data-brcancel>✕</button>
       <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfTag_${id}">${tagOpts}</select></div>
       <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfHabit_${id}">${habitOpts}</select></div>
-      <label style="flex:1 1 100%;margin-top:6px;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:6px">
-        <input type="checkbox" id="brfConverts_${id}" ${r&&r.convertsDay?'checked':''}> ${ru?'Покупка выкупает пропущенный день привычки (превращает в успех)':'Purchase buys out a missed day of the linked habit (turns it into a success)'}
-      </label>
     </div>`;
   }
 
@@ -2990,10 +3187,11 @@ function renderRewards(){
     const canBuy=avail>=r.cost;
     const owned=(state.purchases||[]).filter(p=>p.rewardId===r.id).length;
     const tag=r.tagId?getTag(r.tagId):null;
+    const linkedHabit=r.linkedHabitId?state.habits.find(h=>h.id===r.linkedHabitId):null;
     return`<div class="br-item">
       <span class="br-emo">${r.emo||'🎁'}</span>
       <div class="br-info"><div class="br-name">${tag?`<span class="dot" style="background:${tag.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px"></span>`:''}${escapeHtml(r.name)}</div>
-        <div class="br-cost">${r.cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${r.linkedHabitId?' · &#128260; '+(ru?'выкуп дня':'day buyout'):''}</div>
+        <div class="br-cost">${r.cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${linkedHabit?' · &#128279; '+(ru?'для: ':'for: ')+escapeHtml(linkedHabit.name):''}</div>
       </div>
       <div class="br-btns">
         <button class="usebtn ${canBuy?'':'used'}" data-brbuy="${r.id}" ${canBuy?'':'disabled'}>${canBuy?(ru?'купить':'buy'):(ru?'мало очков':'not enough')}</button>
@@ -3030,21 +3228,19 @@ function renderRewards(){
     const coEl=document.getElementById('brfCost_'+id);
     const tagEl=document.getElementById('brfTag_'+id);
     const habitEl=document.getElementById('brfHabit_'+id);
-    const convEl=document.getElementById('brfConverts_'+id);
     if(!nmEl||!nmEl.value.trim()){toast(ru?'Введите название':'Enter a name');return}
     const emo=emoEl?emoEl.value.trim():'🎁';
     const name=nmEl.value.trim();
     const cost=Math.max(1,+coEl.value||1);
     const tagId=tagEl&&tagEl.value?tagEl.value:null;
     const linkedHabitId=habitEl&&habitEl.value?habitEl.value:null;
-    const convertsDay=!!(linkedHabitId&&convEl&&convEl.checked);
     if(id==='new'){
       if(!state.bigRewards)state.bigRewards=[];
-      state.bigRewards.push({id:uid(),name,cost,emo,tagId,linkedHabitId,convertsDay});
+      state.bigRewards.push({id:uid(),name,cost,emo,tagId,linkedHabitId});
       toast(ru?'Награда добавлена':'Reward added');
     }else{
       const r=state.bigRewards.find(x=>x.id===id);
-      if(r)Object.assign(r,{name,cost,emo,tagId,linkedHabitId,convertsDay});
+      if(r)Object.assign(r,{name,cost,emo,tagId,linkedHabitId});
       toast(ru?'Обновлено':'Updated');
     }
     bigRewardEditId=null;save();renderRewards();
@@ -3067,8 +3263,7 @@ function renderRewards(){
       const r=state.bigRewards.find(x=>x.id===b.dataset.brbuy);
       if(!r)return;
       if((state.points||0)<r.cost){toast(ru?'Не хватает очков':'Not enough points');return}
-      if(r.linkedHabitId&&r.convertsDay)openBuyModal(r);
-      else buyRewardFlat(r);
+      buyRewardFlat(r);
     };
   });
 }
@@ -3079,77 +3274,6 @@ function buyRewardFlat(r){
   state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now()});
   recalcPoints();save();renderRewards();renderXP();
   toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${CURRENCY_TICKER})`);
-}
-
-/* ===== DAY-BUYOUT PURCHASE (reward linked to a habit: pick a missed day to convert into a success) =====
-   Converting = simply checking that day's box for the linked habit, then recalcPoints() picks it up
-   through the exact same math as any other success — no special-cased point bypass needed. */
-let _buyState=null; // {reward, candidates, picked:{m,d}|null}
-function recentMissedDays(hid,limit){
-  const h=state.habits.find(x=>x.id===hid);if(!h)return[];
-  const rt=realTodayParts(),ay=activeYear();
-  const out=[];
-  for(let back=0;back<62&&out.length<(limit||14);back++){
-    const dt=new Date(rt.y,rt.m,rt.d-1-back); // strictly before today, walking backwards
-    if(dt.getFullYear()!==ay)continue; // only the currently bound year has live check data
-    const m=dt.getMonth(),d=dt.getDate();
-    if(getFreezes(m).includes(d))continue;
-    if(!getChecks(m,h.id)[d])out.push({m,d,label:T.monthsShort[m]+" "+d});
-  }
-  return out;
-}
-function openBuyModal(reward){
-  const ru=state.lang!=="en";
-  const candidates=recentMissedDays(reward.linkedHabitId,14);
-  if(!candidates.length){toast(ru?'Нет подходящих пропущенных дней за последнее время':'No recent missed days to convert');return}
-  _buyState={reward,candidates,picked:null};
-  renderBuyModal();
-  document.getElementById('buyOverlay').style.display='block';
-  document.getElementById('buyModal').classList.add('show');
-}
-function closeBuyModal(){
-  _buyState=null;
-  document.getElementById('buyOverlay').style.display='none';
-  document.getElementById('buyModal').classList.remove('show');
-}
-function renderBuyModal(){
-  if(!_buyState)return;
-  const ru=state.lang!=="en";
-  const{reward:r,candidates,picked}=_buyState;
-  const h=state.habits.find(x=>x.id===r.linkedHabitId);
-  document.getElementById('buyModalHead').innerHTML=`
-    <div style="display:flex;align-items:center;gap:10px">
-      <span style="font-size:30px">${r.emo||'🎁'}</span>
-      <div><div style="font-size:17px;font-weight:800">${escapeHtml(r.name)}</div>
-      <div class="sub" style="margin:2px 0 0">${ru?'Выбери день':'Pick a day'} — ${escapeHtml(h?h.name:'')} (&minus;${r.cost} ${CURRENCY_TICKER})</div></div>
-    </div>`;
-  document.getElementById('buyModalList').innerHTML=candidates.map(c=>{
-    const on=picked&&picked.m===c.m&&picked.d===c.d;
-    return`<label class="buy-row ${on?'on':''}" data-bm="${c.m}" data-bd="${c.d}">
-      <span class="buy-check">${on?'✓':''}</span>
-      <span style="flex:1;min-width:0"><b style="font-size:13px">${c.label}</b></span>
-    </label>`;
-  }).join('');
-  document.getElementById('buyModalFoot').innerHTML=`
-    <div style="display:flex;gap:8px;margin-top:6px">
-      <button class="btn ghost" style="flex:1" onclick="closeBuyModal()">${ru?'Отмена':'Cancel'}</button>
-      <button class="btn primary" style="flex:1;${picked?'':'opacity:.5'}" id="buyConfirmBtn" ${picked?'':'disabled'}>${ru?'Купить':'Buy'}</button>
-    </div>`;
-  document.querySelectorAll('#buyModalList .buy-row').forEach(el=>el.onclick=()=>{
-    _buyState.picked={m:+el.dataset.bm,d:+el.dataset.bd};
-    renderBuyModal();
-  });
-  const cbtn=document.getElementById('buyConfirmBtn');
-  if(cbtn)cbtn.onclick=()=>{
-    if(!_buyState.picked)return;
-    const{m,d}=_buyState.picked;
-    const c=getChecks(m,r.linkedHabitId);
-    c[d]=true;
-    if(!state.purchases)state.purchases=[];
-    state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now(),convertedDay:{year:activeYear(),month:m,day:d,habitId:r.linkedHabitId}});
-    recalcPoints();save();closeBuyModal();renderRewards();renderXP();
-    toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${CURRENCY_TICKER})`);
-  };
 }
 
 /* ===== MONTHLY SUMMARY ===== */
@@ -3635,6 +3759,7 @@ function rerenderActive(){
   else if(currentView==="stats")renderStats();
   else if(currentView==="settings")renderSettings();
   renderXP();
+  renderNotifBadge();
 }
 
 function renderMonthTargetsGrid(){
@@ -3965,9 +4090,11 @@ function init(){
   document.getElementById("btnCloseLevel").onclick=closeLevelModal;
   document.getElementById("levelModal").onclick=e=>{if(e.target===document.getElementById("levelModal"))closeLevelModal()};
 
-  // reward popup
-  document.getElementById("btnCloseReward").onclick=closeRewardPopup;
-  document.getElementById("rewardOverlay").onclick=closeRewardPopup;
+  // notification center
+  document.getElementById("btnNotifBell").onclick=openNotifCenter;
+  document.getElementById("notifTabNew").onclick=()=>{notifActiveTab="new";renderNotifCenter()};
+  document.getElementById("notifTabArchive").onclick=()=>{notifActiveTab="archive";renderNotifCenter()};
+  renderNotifBadge();
   initRemindersWiring();
   startReminderLoop();
   // Register service worker for PWA + background notifications
