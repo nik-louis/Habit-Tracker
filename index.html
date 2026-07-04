@@ -157,6 +157,7 @@ td.frozen-cell{position:relative}
 .inp{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--text);
   border-radius:11px;padding:12px 13px;outline:none;transition:border-color .2s}
 .inp:focus{border-color:var(--accent)}
+.inp.invalid{border-color:var(--red);background:rgba(231,76,60,.1)}
 textarea.inp{resize:vertical;min-height:60px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
@@ -835,7 +836,7 @@ targetEveryDay:"Target: every day of the month",targetDays:"Target days per mont
 monthTargetsLabel:"Per-month targets (empty = default)",
 weightLabel:"Weight (1-10)",
 sinDaysTitle:"Conscious skip days",sinDaysHint:"A pre-declared skip on these days costs −1×weight instead of −3×weight.",
-tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight).",
+tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight). First number = penalty multiplier, must be negative. Second number = free uses per month before it escalates to the next tier — leave blank for unlimited.",
 sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",
 paceOnTrack:"on track",paceObligatory:"catch-up day",paceThisMonth:"this month",
 trackingStartTitle:"Tracking start date",trackingStartDesc:"Days before this date never enter the points economy — no gains, no penalties. Set it to when you actually started using this system.",trackingStartLabel:"Start date",
@@ -937,7 +938,7 @@ targetEveryDay:"Цель: каждый день месяца",targetDays:"Цел
 monthTargetsLabel:"Норма по месяцам (пусто = по умолчанию)",
 weightLabel:"Вес (1-10)",
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.",
-tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).",
+tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес). Первое число — множитель штрафа, обязательно отрицательное. Второе число — сколько раз в месяц этот уровень бесплатный, дальше срыв эскалирует к следующему уровню; пусто = без ограничений.",
 sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",
 paceOnTrack:"по графику",paceObligatory:"обязательно сегодня",paceThisMonth:"в этом месяце",
 trackingStartTitle:"Начало трекинга",trackingStartDesc:"Дни до этой даты не участвуют в подсчёте очков — ни в плюс, ни в минус. Поставь дату, когда реально начал(а) использовать систему.",trackingStartLabel:"Дата начала",
@@ -1039,7 +1040,7 @@ targetEveryDay:"Meta: todos los días del mes",targetDays:"Días objetivo por me
 monthTargetsLabel:"Metas por mes (vacío = predeterminado)",
 weightLabel:"Peso (1-10)",
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con antelación en estos días cuesta −1×peso en vez de −3×peso.",
-tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave.",
+tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave. Primer número = multiplicador de penalización, debe ser negativo. Segundo número = usos gratis por mes antes de escalar al siguiente nivel; déjalo en blanco para ilimitado.",
 sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",
 paceOnTrack:"al día",paceObligatory:"día obligatorio",paceThisMonth:"este mes",
 trackingStartTitle:"Fecha de inicio",trackingStartDesc:"Los días antes de esta fecha no entran en la economía de puntos — sin ganancias, sin penalizaciones. Ponla en el día que realmente empezaste a usar el sistema.",trackingStartLabel:"Fecha de inicio",
@@ -1141,7 +1142,7 @@ targetEveryDay:"目标：每月每天",targetDays:"每月目标天数",
 monthTargetsLabel:"每月目标（空=默认）",
 weightLabel:"权重 (1-10)",
 sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子只扣 −1×权重,而不是 −3×权重。",
-tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。",
+tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。第一个数字 = 惩罚倍数,必须为负数。第二个数字 = 每月免费次数,超过后升级到下一等级;留空表示不限。",
 sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",
 paceOnTrack:"进度正常",paceObligatory:"今天必须完成",paceThisMonth:"本月",
 trackingStartTitle:"追踪开始日期",trackingStartDesc:"此日期之前的天数不计入积分——无得分，无扣分。请设置为你真正开始使用本系统的日期。",trackingStartLabel:"开始日期",
@@ -1243,7 +1244,7 @@ targetEveryDay:"Objectif : chaque jour du mois",targetDays:"Jours cibles par moi
 monthTargetsLabel:"Objectifs par mois (vide = défaut)",
 weightLabel:"Poids (1-10)",
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'avance ces jours-là coûte −1×poids au lieu de −3×poids.",
-tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur.",
+tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur. Premier nombre = multiplicateur de pénalité, doit être négatif. Second nombre = utilisations gratuites par mois avant d'escalader au niveau suivant ; laisse vide pour illimité.",
 sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",
 paceOnTrack:"à jour",paceObligatory:"jour de rattrapage",paceThisMonth:"ce mois",
 trackingStartTitle:"Date de début du suivi",trackingStartDesc:"Les jours avant cette date n'entrent pas dans l'économie de points — ni gain, ni pénalité. Mets la date à laquelle tu as vraiment commencé à utiliser ce système.",trackingStartLabel:"Date de début",
@@ -2695,30 +2696,74 @@ function readSinDaysChips(){
   const box=document.getElementById("fSinDays");if(!box)return[];
   return[...box.querySelectorAll(".day-chip.on")].map(c=>+c.dataset.day);
 }
+// Short persistent column captions above the tier rows — a tooltip alone isn't discoverable on
+// touch devices, and placeholders vanish once the field has a value, so on their own neither
+// explains what the two number columns mean when a user comes back to edit later.
+function tiersHeaderHTML(){
+  const ru=state.lang!=="en";
+  return`<div class="br-edit-row tier-row-header" style="border-bottom:none;padding-bottom:0;font-size:10px;color:var(--dim);letter-spacing:.03em">
+    <span style="flex:1">${ru?'Название уровня':'Tier name'}</span>
+    <span style="width:64px;text-align:center">${ru?'×вес (< 0)':'×weight (< 0)'}</span>
+    <span style="width:56px;text-align:center">${ru?'раз/мес':'free/mo'}</span>
+    <span style="width:28px"></span>
+  </div>`;
+}
 function tierRowHTML(t,idx){
   const ru=state.lang!=="en";
   return`<div class="br-edit-row tier-row" data-idx="${idx}">
     <input class="inp tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
-    <input class="inp tier-delta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'×вес':'×weight'}">
-    <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Бесплатных раз/мес':'Free uses/mo'}">
+    <input class="inp tier-delta" type="number" step="0.5" max="-0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'Множитель штрафа ×вес — обязательно отрицательное число':'Penalty multiplier ×weight — must be negative'}">
+    <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц этот уровень бесплатный (пусто = без ограничений)':'Free uses per month for this tier (blank = unlimited)'}">
     <button type="button" class="mini tier-del" data-tierdel="${idx}">✕</button>
   </div>`;
 }
 let editTiers=[];
 function renderTiersList(){
   const box=document.getElementById("fTiersList");if(!box)return;
-  box.innerHTML=editTiers.map((t,i)=>tierRowHTML(t,i)).join("");
+  box.innerHTML=(editTiers.length?tiersHeaderHTML():"")+editTiers.map((t,i)=>tierRowHTML(t,i)).join("");
   box.querySelectorAll("[data-tierdel]").forEach(b=>b.onclick=()=>{
     editTiers.splice(+b.dataset.tierdel,1);renderTiersList();
   });
+  // Live visual feedback: a non-negative multiplier would silently zero out the tier's penalty
+  // (or worse, flip it into a bonus), so flag it red the moment it's typed rather than only
+  // catching it at save time.
+  box.querySelectorAll(".tier-delta").forEach(inp=>{
+    const markInvalid=()=>inp.classList.toggle("invalid",inp.value!==""&&+inp.value>=0);
+    inp.oninput=markInvalid;
+    markInvalid();
+  });
+}
+// A non-negative multiplier isn't just "unusual" — it silently defeats the whole point of a
+// violation tier (zero or positive = no real consequence, reintroducing the exact "dead zone"
+// this points economy was redesigned to eliminate). Checked separately from the sync below so an
+// invalid in-progress value (still being typed) never gets silently discarded — only an actual
+// save attempt is blocked by it.
+function tiersAreValid(){
+  const ru=state.lang!=="en";
+  for(const row of document.querySelectorAll("#fTiersList .tier-row")){
+    const i=+row.dataset.idx;
+    const raw=row.querySelector(".tier-delta").value;
+    if(raw!==""&&+raw>=0){
+      const label=row.querySelector(".tier-label").value.trim()||(editTiers[i]&&editTiers[i].label)||(ru?"(без названия)":"(unnamed)");
+      toast(ru?`Уровень «${label}»: множитель должен быть отрицательным числом (это штраф, не бонус)`:`Tier "${label}": the multiplier must be a negative number (it's a penalty, not a bonus)`);
+      return false;
+    }
+  }
+  return true;
 }
 function readTiersFromForm(){
-  // sync any edited text back into editTiers before reading (inputs aren't bound live)
+  // sync any edited text back into editTiers before reading (inputs aren't bound live) — always
+  // runs regardless of validity, so in-progress edits (even a momentarily invalid multiplier)
+  // are never lost, e.g. when "+ tier" re-renders the list to append a new blank row.
   document.querySelectorAll("#fTiersList .tier-row").forEach(row=>{
     const i=+row.dataset.idx;
     if(!editTiers[i])return;
     editTiers[i].label=row.querySelector(".tier-label").value.trim();
-    editTiers[i].deltaMult=Math.min(0,+row.querySelector(".tier-delta").value||-1);
+    // Only an EMPTY field defaults to -1 (matches its placeholder) — an explicit "0" must be kept
+    // as literally 0, not silently coerced, so it stays visibly invalid until the user fixes it
+    // instead of quietly becoming a valid -1 behind their back on the next re-render.
+    const deltaRaw=row.querySelector(".tier-delta").value;
+    editTiers[i].deltaMult=deltaRaw===""?-1:+deltaRaw;
     const fl=row.querySelector(".tier-free").value;
     editTiers[i].freeLimit=fl===""?null:Math.max(0,+fl);
   });
@@ -2771,6 +2816,7 @@ function saveHabit(){
   const weight=Math.max(1,Math.min(10,+document.getElementById("fWeight").value||5));
   const target=Math.max(0,+document.getElementById("fTarget").value||0);
   const tagId=document.getElementById("fTag").value;
+  if(!tiersAreValid())return; // toast already shown — an invalid (non-negative) tier multiplier blocks the save
   const sinDays=readSinDaysChips();
   const violationTiers=readTiersFromForm();
   const monthTargets={};
