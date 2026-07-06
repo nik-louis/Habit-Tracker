@@ -1561,7 +1561,12 @@ function switchYear(year){
 function load(){
   try{const raw=localStorage.getItem(STORE_KEY);if(raw){state=JSON.parse(raw);migrate();return;}}catch(e){memFallback=true}
   state=freshState();
-  T=I18N[state.lang]||I18N.en; // migrate() normally sets this — a brand-new install skips migrate() entirely
+  // migrate() is idempotent (every step is guarded by if(!...)) so it's always safe to run here too —
+  // freshState() gives a valid baseline, but skipping migrate() let real schema-default steps (T's
+  // active language, h.type from h.everyday) silently never run on a truly fresh install. Rather than
+  // keep patching one field at a time as each gap surfaces, just always run the same normalization
+  // every other load path already gets.
+  migrate();
 }
 function migrate(){
   // ── Multi-year migration ──
@@ -1639,6 +1644,15 @@ function migrate(){
     if(h.type===undefined)h.type=h.everyday?"daily":"event";
     if(!Array.isArray(h.sinDays))h.sinDays=[];
     if(!Array.isArray(h.violationTiers))h.violationTiers=[];
+    // Per-tier conscious ("sin") pricing — additive fields on each tier, independent of its
+    // existing unplanned deltaMult/freeLimit. Default sinDeltaMult=-1 mirrors the old flat
+    // habit-wide sin discount so existing configured tiers keep behaving the same until the user
+    // customizes them; sinLimit defaults to unlimited (null), same "opt-in cap" convention as
+    // freeLimit.
+    h.violationTiers.forEach(t=>{
+      if(t.sinDeltaMult===undefined)t.sinDeltaMult=-1;
+      if(t.sinLimit===undefined)t.sinLimit=null;
+    });
   });
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
@@ -1714,7 +1728,8 @@ function beforeTrackingStart(year,m,d){
   const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
   return ds<state.trackingStart;
 }
-// A tier is "available" for the NEXT use if it has no free-use cap, or hasn't hit its cap yet.
+// A tier is "available" for the NEXT unplanned use if it has no free-use cap, or hasn't hit its
+// cap yet.
 function tierAvailableIdxs(h,tierUse){
   const out=[];
   for(let ti=0;ti<h.violationTiers.length;ti++){
@@ -1736,14 +1751,39 @@ function resolveUnloggedTierMiss(h,tierUse){
   tierUse[idx]=(tierUse[idx]||0)+1;
   return{delta:h.violationTiers[idx].deltaMult*h.weight,unresolved:false};
 }
-// Daily habit: check=+weight; an elapsed miss=-3×weight (or the habit's tier ladder if configured),
-// or -1×weight if pre-declared as a sin on one of the habit's configured sin-days.
+// Conscious ("sin") counterpart of tierAvailableIdxs — gated by each tier's OWN sinLimit, a pool
+// completely independent of the unplanned freeLimit above. weekdayExempt (the day matches one of
+// the habit's configured recurring sin-days) bypasses the cap entirely — every tier is available,
+// unlimited, exactly like today's flat weekday-based sin discount, just now per-tier-priced.
+function sinTierAvailableIdxs(h,sinUse,weekdayExempt){
+  const out=[];
+  for(let ti=0;ti<h.violationTiers.length;ti++){
+    const t=h.violationTiers[ti],used=sinUse[ti]||0;
+    if(weekdayExempt||t.sinLimit==null||used<t.sinLimit)out.push(ti);
+  }
+  return out;
+}
+// Same shape as resolveUnloggedTierMiss, but for a day that was pre-declared conscious with no
+// explicit tier log — uses each tier's sinDeltaMult and consumes its sinLimit pool (unless
+// weekdayExempt, which never consumes anything, matching the unlimited weekday mode).
+function resolveSinTierMiss(h,sinUse,weekdayExempt){
+  const avail=sinTierAvailableIdxs(h,sinUse,weekdayExempt);
+  const idx=avail.length===1?avail[0]:avail.length===0?h.violationTiers.length-1:null;
+  if(idx===null)return{delta:0,unresolved:true};
+  if(!weekdayExempt)sinUse[idx]=(sinUse[idx]||0)+1;
+  return{delta:h.violationTiers[idx].sinDeltaMult*h.weight,unresolved:false};
+}
+// Daily habit: check=+weight; an elapsed miss=-3×weight (or the habit's tier ladder if configured).
+// A miss pre-declared as conscious ("sin") uses the SAME tier ladder but each tier's sinDeltaMult
+// instead of deltaMult — on one of the habit's configured recurring sin-days that's unlimited
+// (weekdayExempt); on any other day it draws from that tier's own separate sinLimit pool. A 0-tier
+// habit keeps the original flat -1×weight weekday-only sin discount untouched.
 // unresolvedOut, if passed an array, gets pushed the day numbers that ended up ambiguous (2+ tiers
 // still available, nothing explicitly logged) — used by the end-of-month review notification.
-// tierUseOut, if passed an object, is mutated in place with the running per-tier usage count — lets
-// the UI ask "what's still available as of day D" without duplicating this whole loop.
-// stopBeforeDay, if set, halts the walk before processing that day (for the same "as of day D" ask).
-function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay){
+// tierUseOut/sinUseOut, if passed objects, are mutated in place with the running per-tier usage
+// counts (unplanned/conscious respectively) — lets the UI ask "what's still available as of day D"
+// without duplicating this whole loop. stopBeforeDay, if set, halts the walk before that day.
+function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut){
   const totalDays=daysInMonthY(year,m);
   const elapsed=elapsedDaysInMonthY(year,m);
   const rt=realTodayParts();
@@ -1756,6 +1796,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
+  const sinUse=sinUseOut||{};
   let pts=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
@@ -1765,15 +1806,32 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     const isPast=isCurMonth?d<rt.d:true;
     if(!isPast)continue;
     const weekday=new Date(year,m,d).getDay();
+    const hasTiers=h.violationTiers&&h.violationTiers.length>0;
+    const isSin=!!sinBucket[d];
+    const weekdayExempt=isSin&&(h.sinDays||[]).includes(weekday);
     const loggedTier=tierBucket[d];
-    if(loggedTier!==undefined&&h.violationTiers&&h.violationTiers[loggedTier]){
+    if(loggedTier!==undefined&&hasTiers&&h.violationTiers[loggedTier]){
       let idx=loggedTier;
-      tierUse[idx]=(tierUse[idx]||0)+1;
-      while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
-        idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+      if(isSin){
+        if(!weekdayExempt){
+          sinUse[idx]=(sinUse[idx]||0)+1;
+          while(h.violationTiers[idx].sinLimit!=null&&sinUse[idx]>h.violationTiers[idx].sinLimit&&idx<h.violationTiers.length-1){
+            idx++;sinUse[idx]=(sinUse[idx]||0)+1;
+          }
+        }
+        pts+=h.violationTiers[idx].sinDeltaMult*h.weight;
+      }else{
+        tierUse[idx]=(tierUse[idx]||0)+1;
+        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        }
+        pts+=h.violationTiers[idx].deltaMult*h.weight;
       }
-      pts+=h.violationTiers[idx].deltaMult*h.weight;
-    }else if(sinBucket[d]&&(h.sinDays||[]).includes(weekday)){
+    }else if(isSin&&hasTiers){
+      const r=resolveSinTierMiss(h,sinUse,weekdayExempt);
+      if(r.unresolved){if(unresolvedOut)unresolvedOut.push(d);}
+      else pts+=r.delta;
+    }else if(isSin&&!hasTiers&&(h.sinDays||[]).includes(weekday)){
       pts+=-1*h.weight;
     }else{
       const r=resolveUnloggedTierMiss(h,tierUse);
@@ -1786,7 +1844,9 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
 // Event habit: "minimum pace line" — Мин(D)=floor(D/daysInMonth×N). Below the line, a missed
 // day costs -3×weight (or the habit's tier ladder if configured); at/above it, skipping is free.
 // Completions always +weight, capped at N/month.
-function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay){
+function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut){
+  // Event habits have no conscious/"sin" concept (unlike daily habits) — sinUseOut is accepted
+  // only so its signature matches habitPointsForMonth's uniform dispatch; it's never read here.
   const totalDays=daysInMonthY(year,m);
   const rt=realTodayParts();
   const isCurMonth=(year===rt.y&&m===rt.m);
@@ -1829,20 +1889,41 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   }
   return pts;
 }
-function habitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay){
-  return h.type==="event"?eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay):dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay);
+function habitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut){
+  return h.type==="event"?eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut):dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut);
 }
 // Current-month balance for the ACTIVE (bound) year — used by the money pool & UI previews.
 function habitMonthBalance(h,m){return habitPointsForMonth(h,activeYear(),m,state)}
 // UI-facing pace-line status for an event habit on a specific day (mirrors eventHabitPointsForMonth's
 // running count exactly, but exposed as data instead of a point delta, for the Today-view badge).
-// Which tier indices are still available (under their free-use cap) as of just BEFORE day d, for
-// the currently active/bound year — lets the grid's tier-mark cycle skip exhausted options.
+// Which tier indices are still available as of just BEFORE day d, for the currently active/bound
+// year — lets the grid's tier-mark cycle skip exhausted options. Branches on whether THIS day was
+// pre-declared conscious: a sin day cycles through sin-availability (gated by each tier's own
+// sinLimit, or unlimited on a configured recurring sin-weekday); any other day cycles through the
+// normal unplanned availability (gated by freeLimit), exactly as before.
 function availableTiersOnDay(h,m,d){
   if(!h.violationTiers||!h.violationTiers.length)return[];
+  const mk="m"+m;
+  const isSin=!!(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d]);
+  if(isSin){
+    const weekdayExempt=(h.sinDays||[]).includes(weekday(m,d));
+    const sinUse={};
+    habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
+    return sinTierAvailableIdxs(h,sinUse,weekdayExempt);
+  }
   const tierUse={};
   habitPointsForMonth(h,activeYear(),m,state,null,tierUse,d);
   return tierAvailableIdxs(h,tierUse);
+}
+// Whether the sin-declare (🙏) icon should be offered on this day at all: either it's one of the
+// habit's configured recurring weekdays (always allowed, unlimited, as before), or the habit has
+// tiers and at least one still has conscious-quota room left this month for an "any day" declare.
+function sinMarkAvailable(h,m,d){
+  if((h.sinDays||[]).includes(weekday(m,d)))return true;
+  if(!h.violationTiers||!h.violationTiers.length)return false;
+  const sinUse={};
+  habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
+  return sinTierAvailableIdxs(h,sinUse,false).length>0;
 }
 function eventPaceStatus(h,m,d){
   const totalDays=daysInMonth(m);
@@ -2431,7 +2512,7 @@ function renderGrid(){
             const isPastDay=(ay<rt.y)||(ay===rt.y&&m<rt.m)||(ay===rt.y&&m===rt.m&&d<rt.d);
             const wd=weekday(m,d);
             let mark="";
-            if(!on&&h.type==="daily"&&isFutureOrToday&&(h.sinDays||[]).includes(wd)){
+            if(!on&&h.type==="daily"&&isFutureOrToday&&sinMarkAvailable(h,m,d)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
               mark=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${T.sinDeclareHint}">🙏</span>`;
             }else if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
@@ -2699,22 +2780,33 @@ function readSinDaysChips(){
 // Short persistent column captions above the tier rows — a tooltip alone isn't discoverable on
 // touch devices, and placeholders vanish once the field has a value, so on their own neither
 // explains what the two number columns mean when a user comes back to edit later.
+// Header captions align with BOTH the "usual" and "conscious" number-pairs below (same two
+// columns, repeated once per row) — not the label row, which has no numeric columns to caption.
 function tiersHeaderHTML(){
   const ru=state.lang!=="en";
-  return`<div class="br-edit-row tier-row-header" style="border-bottom:none;padding-bottom:0;font-size:10px;color:var(--dim);letter-spacing:.03em">
-    <span style="flex:1">${ru?'Название уровня':'Tier name'}</span>
+  return`<div class="tier-row-header" style="display:flex;gap:6px;padding:0 0 2px;font-size:10px;color:var(--dim);letter-spacing:.03em">
+    <span style="width:64px"></span>
     <span style="width:64px;text-align:center">${ru?'×вес (< 0)':'×weight (< 0)'}</span>
     <span style="width:56px;text-align:center">${ru?'раз/мес':'free/mo'}</span>
-    <span style="width:28px"></span>
   </div>`;
 }
 function tierRowHTML(t,idx){
   const ru=state.lang!=="en";
-  return`<div class="br-edit-row tier-row" data-idx="${idx}">
-    <input class="inp tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
-    <input class="inp tier-delta" type="number" step="0.5" max="-0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'Множитель штрафа ×вес — обязательно отрицательное число':'Penalty multiplier ×weight — must be negative'}">
-    <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц этот уровень бесплатный (пусто = без ограничений)':'Free uses per month for this tier (blank = unlimited)'}">
-    <button type="button" class="mini tier-del" data-tierdel="${idx}">✕</button>
+  return`<div class="br-edit-row tier-row" data-idx="${idx}" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <input class="inp tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
+      <button type="button" class="mini tier-del" data-tierdel="${idx}">✕</button>
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'обычно':'usual'}</span>
+      <input class="inp tier-delta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'Множитель штрафа ×вес для НЕосознанного пропуска — обязательно отрицательное число':'Penalty multiplier ×weight for an unplanned miss — must be negative'}">
+      <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц этот уровень бесплатный при неосознанном пропуске (пусто = без ограничений)':'Free uses per month for an unplanned miss on this tier (blank = unlimited)'}">
+    </div>
+    <div style="display:flex;gap:6px;align-items:center">
+      <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'осознанно':'conscious'}</span>
+      <input class="inp tier-sindelta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.sinDeltaMult!==undefined?t.sinDeltaMult:''}" placeholder="-1" title="${ru?'Множитель ×вес для заранее объявленного (осознанного) пропуска — обязательно отрицательное число':'Multiplier ×weight for a pre-declared (conscious) miss — must be negative'}">
+      <input class="inp tier-sinfree" type="number" min="0" style="width:56px;text-align:center" value="${t.sinLimit!=null?t.sinLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц можно заранее объявить этот уровень осознанным, помимо дней недели ниже (пусто = без ограничений)':'How many times per month this tier can be pre-declared conscious, besides the weekdays below (blank = unlimited)'}">
+    </div>
   </div>`;
 }
 let editTiers=[];
@@ -2726,8 +2818,8 @@ function renderTiersList(){
   });
   // Live visual feedback: a non-negative multiplier would silently zero out the tier's penalty
   // (or worse, flip it into a bonus), so flag it red the moment it's typed rather than only
-  // catching it at save time.
-  box.querySelectorAll(".tier-delta").forEach(inp=>{
+  // catching it at save time. Applies to BOTH the usual and conscious multiplier fields.
+  box.querySelectorAll(".tier-delta, .tier-sindelta").forEach(inp=>{
     const markInvalid=()=>inp.classList.toggle("invalid",inp.value!==""&&+inp.value>=0);
     inp.oninput=markInvalid;
     markInvalid();
@@ -2737,15 +2829,20 @@ function renderTiersList(){
 // violation tier (zero or positive = no real consequence, reintroducing the exact "dead zone"
 // this points economy was redesigned to eliminate). Checked separately from the sync below so an
 // invalid in-progress value (still being typed) never gets silently discarded — only an actual
-// save attempt is blocked by it.
+// save attempt is blocked by it. Checks BOTH the usual and conscious multiplier per tier.
 function tiersAreValid(){
   const ru=state.lang!=="en";
   for(const row of document.querySelectorAll("#fTiersList .tier-row")){
     const i=+row.dataset.idx;
-    const raw=row.querySelector(".tier-delta").value;
-    if(raw!==""&&+raw>=0){
-      const label=row.querySelector(".tier-label").value.trim()||(editTiers[i]&&editTiers[i].label)||(ru?"(без названия)":"(unnamed)");
-      toast(ru?`Уровень «${label}»: множитель должен быть отрицательным числом (это штраф, не бонус)`:`Tier "${label}": the multiplier must be a negative number (it's a penalty, not a bonus)`);
+    const label=row.querySelector(".tier-label").value.trim()||(editTiers[i]&&editTiers[i].label)||(ru?"(без названия)":"(unnamed)");
+    const rawDelta=row.querySelector(".tier-delta").value;
+    if(rawDelta!==""&&+rawDelta>=0){
+      toast(ru?`Уровень «${label}»: обычный множитель должен быть отрицательным числом (это штраф, не бонус)`:`Tier "${label}": the usual multiplier must be a negative number (it's a penalty, not a bonus)`);
+      return false;
+    }
+    const rawSinDelta=row.querySelector(".tier-sindelta").value;
+    if(rawSinDelta!==""&&+rawSinDelta>=0){
+      toast(ru?`Уровень «${label}»: осознанный множитель должен быть отрицательным числом (это штраф, не бонус)`:`Tier "${label}": the conscious multiplier must be a negative number (it's a penalty, not a bonus)`);
       return false;
     }
   }
@@ -2766,6 +2863,10 @@ function readTiersFromForm(){
     editTiers[i].deltaMult=deltaRaw===""?-1:+deltaRaw;
     const fl=row.querySelector(".tier-free").value;
     editTiers[i].freeLimit=fl===""?null:Math.max(0,+fl);
+    const sinDeltaRaw=row.querySelector(".tier-sindelta").value;
+    editTiers[i].sinDeltaMult=sinDeltaRaw===""?-1:+sinDeltaRaw;
+    const sfl=row.querySelector(".tier-sinfree").value;
+    editTiers[i].sinLimit=sfl===""?null:Math.max(0,+sfl);
   });
   return editTiers.filter(t=>t.label);
 }
@@ -3230,7 +3331,6 @@ function renderRewards(){
 
   const shopRows=bigR.map(r=>{
     if(bigRewardEditId===r.id) return editForm(r);
-    const canBuy=avail>=r.cost;
     const owned=(state.purchases||[]).filter(p=>p.rewardId===r.id).length;
     const tag=r.tagId?getTag(r.tagId):null;
     const linkedHabit=r.linkedHabitId?state.habits.find(h=>h.id===r.linkedHabitId):null;
@@ -3240,7 +3340,7 @@ function renderRewards(){
         <div class="br-cost">${r.cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${linkedHabit?' · &#128279; '+(ru?'для: ':'for: ')+escapeHtml(linkedHabit.name):''}</div>
       </div>
       <div class="br-btns">
-        <button class="usebtn ${canBuy?'':'used'}" data-brbuy="${r.id}" ${canBuy?'':'disabled'}>${canBuy?(ru?'купить':'buy'):(ru?'мало очков':'not enough')}</button>
+        <button class="usebtn" data-brbuy="${r.id}">${ru?'купить':'buy'}</button>
         <button class="move-btn" data-bredit="${r.id}" title="${ru?'Изменить':'Edit'}">✎</button>
         <button class="move-btn" data-brdel="${r.id}" title="${ru?'Удалить':'Delete'}">✕</button>
       </div>
@@ -3304,11 +3404,9 @@ function renderRewards(){
   const addBtn=document.getElementById('brAddBtn');
   if(addBtn)addBtn.onclick=()=>{bigRewardEditId='new';renderRewards()};
   body.querySelectorAll('[data-brbuy]').forEach(b=>{
-    if(b.disabled)return;
     b.onclick=()=>{
       const r=state.bigRewards.find(x=>x.id===b.dataset.brbuy);
       if(!r)return;
-      if((state.points||0)<r.cost){toast(ru?'Не хватает очков':'Not enough points');return}
       buyRewardFlat(r);
     };
   });
@@ -4078,7 +4176,7 @@ function init(){
   };
   document.getElementById("fTierAdd").onclick=()=>{
     readTiersFromForm(); // capture any in-progress edits before appending a new blank row
-    editTiers.push({label:"",deltaMult:-1,freeLimit:null});
+    editTiers.push({label:"",deltaMult:-1,freeLimit:null,sinDeltaMult:-1,sinLimit:null});
     renderTiersList();
   };
   document.getElementById("btnSaveHabit").onclick=saveHabit;
