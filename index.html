@@ -1630,6 +1630,12 @@ function migrate(){
     if(h.weight===undefined)h.weight=5;
     if(h.order===undefined)h.order=i;
     if(h.archived===undefined)h.archived=false;
+    // Archive history ledger (see isArchivedOn) — installs upgrading from before this existed only
+    // have the live archived boolean, with no record of WHEN. Best we can do is anchor an open
+    // period at "now" for anything currently archived, so the fix takes effect going forward; we
+    // can't retroactively reconstruct a start date that was never recorded, and don't need to —
+    // whatever was already charged under the old (broken) behavior stays as history.
+    if(!Array.isArray(h.archivePeriods))h.archivePeriods=h.archived?[{start:todayISO(),end:null}]:[];
     if(h.deleted===undefined)h.deleted=false;
     if(!h.monthTargets)h.monthTargets={};
     if(!h.tagId&&h.color){
@@ -1708,14 +1714,38 @@ function elapsedDaysInMonthY(year,m){
   if(year>rt.y||(year===rt.y&&m>rt.m))return 0;
   return rt.d-1;
 }
+// A day is "archived" for a habit if it falls in one of its recorded archive periods —
+// [start, end) half-open: the start date itself is the first paused day, the end date (recorded
+// the moment you un-archive) is already back to being judged normally. A still-open period
+// (end===null) covers everything from start through today and beyond. Stored as a list of
+// {start,end} ISO-date ranges rather than a single boolean so a habit can be archived and
+// un-archived multiple times over its life and every past window stays correctly excluded from
+// scoring even after you're no longer archived — the same reasoning recalcPoints/recalcXP already
+// follow for every other historical fact in this app (never derive the past from current-only state).
+function isArchivedOn(h,year,m,d){
+  if(!Array.isArray(h.archivePeriods)||!h.archivePeriods.length)return false;
+  const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
+  return h.archivePeriods.some(p=>ds>=p.start&&(p.end==null||ds<p.end));
+}
+function countArchivedDaysInMonth(h,year,m){
+  if(!Array.isArray(h.archivePeriods)||!h.archivePeriods.length)return 0;
+  const total=daysInMonthY(year,m);
+  let count=0;
+  for(let d=1;d<=total;d++)if(isArchivedOn(h,year,m,d))count++;
+  return count;
+}
+// Archived days shrink the monthly target exactly like frozen days already do (a flat subtraction,
+// not a proportional pace-line reshape) — reuses the exact mechanism already tested for freezes
+// rather than introducing a second way to represent "this many fewer days available this month".
 function effTargetForYear(h,year,m,yd){
   const mk="m"+m;
   const frozen=((yd.freezesUsed&&yd.freezesUsed[mk])||[]).length;
+  const archivedDays=countArchivedDaysInMonth(h,year,m);
   const mt=h.monthTargets&&h.monthTargets[mk];
   let base;
   if(mt!==undefined&&mt!==null&&mt!==""){base=Math.min(+mt,daysInMonthY(year,m));}
   else{base=h.type==="daily"?daysInMonthY(year,m):Math.min(h.target||0,daysInMonthY(year,m));}
-  return Math.max(0,base-frozen);
+  return Math.max(0,base-frozen-archivedDays);
 }
 // Daily habit: check=+weight; an elapsed miss=-3×weight, or -1×weight if pre-declared as a sin
 // on one of the habit's configured sin-days, or the habit's own tier ladder if the miss was
@@ -1803,6 +1833,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(beforeTrackingStart(year,m,d))continue;
     if(checksBucket[d]){pts+=h.weight;continue}
     if(frozen.includes(d))continue;
+    if(isArchivedOn(h,year,m,d))continue;
     const isPast=isCurMonth?d<rt.d:true;
     if(!isPast)continue;
     const weekday=new Date(year,m,d).getDay();
@@ -1863,6 +1894,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(frozen.includes(d))continue;
+    if(isArchivedOn(h,year,m,d))continue;
     if(checksBucket[d]){
       doneSoFar++;
       if(doneSoFar<=N)pts+=h.weight;
@@ -2714,10 +2746,22 @@ function renderHabitList(){
     el.querySelectorAll("[data-mvdn]").forEach(b=>b.onclick=()=>{moveHabit(b.dataset.mvdn,1);renderHabitList()});
     el.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>delHabit(b.dataset.del));
     el.querySelectorAll("[data-archive]").forEach(b=>b.onclick=()=>{
-      const h=state.habits.find(x=>x.id===b.dataset.archive);if(h){h.archived=true;save();renderHabitsManager();toast(T.archived)}
+      const h=state.habits.find(x=>x.id===b.dataset.archive);
+      if(!h)return;
+      h.archived=true;
+      if(!Array.isArray(h.archivePeriods))h.archivePeriods=[];
+      h.archivePeriods.push({start:todayISO(),end:null});
+      recalcPoints();save();renderHabitsManager();renderXP();toast(T.archived);
     });
     el.querySelectorAll("[data-unarchive]").forEach(b=>b.onclick=()=>{
-      const h=state.habits.find(x=>x.id===b.dataset.unarchive);if(h){h.archived=false;save();renderHabitsManager();toast(T.restoredActive)}
+      const h=state.habits.find(x=>x.id===b.dataset.unarchive);
+      if(!h)return;
+      h.archived=false;
+      if(Array.isArray(h.archivePeriods)&&h.archivePeriods.length){
+        const last=h.archivePeriods[h.archivePeriods.length-1];
+        if(last.end==null)last.end=todayISO();
+      }
+      recalcPoints();save();renderHabitsManager();renderXP();toast(T.restoredActive);
     });
     el.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{
       const h=state.habits.find(x=>x.id===b.dataset.restore);if(h){h.deleted=false;h.deletedAt=null;save();renderHabitsManager();toast(T.restoredLabel)}
@@ -2935,7 +2979,7 @@ function saveHabit(){
     Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets,archived:false,deleted:false,deletedAt:null,order:state.habits.length});
+    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length});
     toast(T.habitAdded);
   }
   recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
