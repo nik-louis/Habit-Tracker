@@ -106,6 +106,7 @@ td.cell{border-left:1px solid var(--line)}
   text-align:center;color:var(--dim);cursor:pointer;z-index:1}
 .cell-mark.sin-on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a}
 .cell-mark.tier-set{background:var(--red);border-color:var(--red);color:#fff}
+.cell-mark.ach-mark{background:var(--green);border-color:var(--green);color:#062}
 td.today-col,th.today-col{box-shadow:inset 0 0 0 2px var(--accent)}
 .rowmeta{font-size:10px;color:var(--dim);margin-top:2px;font-weight:600}
 .rowmeta b.ok{color:var(--green)} .rowmeta b.bad{color:var(--accent2)}
@@ -143,6 +144,10 @@ td.frozen-cell{position:relative}
   display:flex;align-items:center;justify-content:center;font-size:20px;flex:0 0 auto;transition:.15s}
 .today-item .ti-check.done{border-color:var(--chkcolor,var(--accent));color:#000}
 .today-item .ti-xp{font-size:11px;font-weight:700;color:var(--accent);margin-left:4px}
+.ti-ach-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.ach-chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;border:1.5px solid var(--line);
+  background:var(--panel2);color:var(--dim);cursor:pointer}
+.ach-chip.sel{background:var(--green);border-color:var(--green);color:#062}
 .freeze-btn{background:var(--panel);border:1px solid var(--line);color:var(--dim);border-radius:12px;
   padding:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px}
 .freeze-btn:active{transform:scale(.97)}
@@ -580,6 +585,18 @@ textarea.inp{resize:vertical;min-height:60px}
         <p class="hint" id="lTiersHint" style="margin:0 0 8px">По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес).</p>
         <div id="fTiersList"></div>
       </div>
+      <!-- Optional positive achievement-tier ladder (mirror of violation tiers, for daily+event
+           habits): default check is +1×weight. Once tiers exist, EVERY check must resolve to one
+           of them — no separate flat "just checked" option survives, same replace-not-add pattern
+           violation tiers already use. -->
+      <div class="zone-editor" id="fAchTiersSection">
+        <div class="zone-ed-header">
+          <span style="font-size:13px;font-weight:700" id="lAchTiersTitle">Уровни успеха (необязательно)</span>
+          <button type="button" class="mini" id="fAchTierAdd">+ <span id="lAchTierAdd">уровень</span></button>
+        </div>
+        <p class="hint" id="lAchTiersHint" style="margin:0 0 8px">По умолчанию любая галочка = +1×вес. Добавь уровни, если хочешь награждать разные варианты выполнения по-разному (напр. «холодный душ» +1×вес, «холодная ванна» +2×вес) — засчитывается только ОДИН уровень в день, даже если сделал несколько.</p>
+        <div id="fAchTiersList"></div>
+      </div>
       <button class="btn primary" id="btnSaveHabit">Add Habit</button>
       <button class="btn ghost" id="btnCancelEdit" style="margin-top:8px;display:none">Cancel</button>
     </div>
@@ -839,7 +856,8 @@ monthTargetsLabel:"Per-month targets (empty = default)",
 weightLabel:"Weight (1-10)",
 sinDaysTitle:"Conscious skip days",sinDaysHint:"A skip pre-declared on these days costs −1×weight — or, if you configure violation tiers below, that tier's conscious rate instead, with no limit. With tiers configured, each one also gets its own monthly quota for declaring ANY other day conscious too — not just the ones picked here.",
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight). First number = penalty multiplier, must be negative. Second number = free uses per month before it escalates to the next tier — leave blank for unlimited.",
-sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",
+achTiersTitle:"Success tiers (optional)",achTierAdd:"tier",achTiersHint:"By default any check is +1×weight. Add tiers to reward different ways of succeeding differently (e.g. \"cold shower\" +1×weight, \"cold bath\" +2×weight) — only ONE tier counts per day, your choice, even if you technically did several. Number = reward multiplier, must be positive.",
+sinDeclareHint:"Declare a conscious skip for this day",tierLogHint:"Tap to log which severity tier this miss was",achTierLogHint:"Tap to cycle which success tier this check counts as",
 paceOnTrack:"on track",paceObligatory:"catch-up day",paceThisMonth:"this month",
 trackingStartTitle:"Tracking start date",trackingStartDesc:"Days before this date never enter the points economy — no gains, no penalties. Set it to when you actually started using this system.",trackingStartLabel:"Start date",
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
@@ -941,7 +959,8 @@ monthTargetsLabel:"Норма по месяцам (пусто = по умолч�
 weightLabel:"Вес (1-10)",
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Пропуск в эти дни, объявленный заранее, стоит −1×вес — или, если ниже настроены уровни срыва, по осознанной ставке нужного уровня, без ограничений. При настроенных уровнях у каждого есть и свой отдельный месячный лимит на объявление осознанным ЛЮБОГО другого дня, не только из этого списка.",
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес). Первое число — множитель штрафа, обязательно отрицательное. Второе число — сколько раз в месяц этот уровень бесплатный, дальше срыв эскалирует к следующему уровню; пусто = без ограничений.",
-sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",
+achTiersTitle:"Уровни успеха (необязательно)",achTierAdd:"уровень",achTiersHint:"По умолчанию любая галочка = +1×вес. Добавь уровни, если хочешь награждать разные варианты выполнения по-разному (напр. «холодный душ» +1×вес, «холодная ванна» +2×вес) — засчитывается только ОДИН уровень в день, по твоему выбору, даже если сделал несколько. Число — множитель награды, обязательно положительное.",
+sinDeclareHint:"Объявить осознанный пропуск на этот день",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",achTierLogHint:"Нажми, чтобы переключить уровень успеха для этой галочки",
 paceOnTrack:"по графику",paceObligatory:"обязательно сегодня",paceThisMonth:"в этом месяце",
 trackingStartTitle:"Начало трекинга",trackingStartDesc:"Дни до этой даты не участвуют в подсчёте очков — ни в плюс, ни в минус. Поставь дату, когда реально начал(а) использовать систему.",trackingStartLabel:"Дата начала",
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
@@ -1043,7 +1062,8 @@ monthTargetsLabel:"Metas por mes (vacío = predeterminado)",
 weightLabel:"Peso (1-10)",
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Un salto declarado con antelación en estos días cuesta −1×peso — o, si configuras niveles de recaída abajo, la tarifa consciente de ese nivel, sin límite. Con niveles configurados, cada uno también tiene su propia cuota mensual para declarar consciente CUALQUIER otro día, no solo los de esta lista.",
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave. Primer número = multiplicador de penalización, debe ser negativo. Segundo número = usos gratis por mes antes de escalar al siguiente nivel; déjalo en blanco para ilimitado.",
-sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",
+achTiersTitle:"Niveles de éxito (opcional)",achTierAdd:"nivel",achTiersHint:"Por defecto cualquier marca es +1×peso. Añade niveles para premiar distintas formas de cumplir (p. ej. «ducha fría» +1×peso, «baño frío» +2×peso) — solo cuenta UN nivel por día, a tu elección, aunque hayas hecho varios. El número = multiplicador de recompensa, debe ser positivo.",
+sinDeclareHint:"Declarar un salto consciente para este día",tierLogHint:"Toca para registrar el nivel de este fallo",achTierLogHint:"Toca para cambiar el nivel de éxito de esta marca",
 paceOnTrack:"al día",paceObligatory:"día obligatorio",paceThisMonth:"este mes",
 trackingStartTitle:"Fecha de inicio",trackingStartDesc:"Los días antes de esta fecha no entran en la economía de puntos — sin ganancias, sin penalizaciones. Ponla en el día que realmente empezaste a usar el sistema.",trackingStartLabel:"Fecha de inicio",
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
@@ -1145,7 +1165,8 @@ monthTargetsLabel:"每月目标（空=默认）",
 weightLabel:"权重 (1-10)",
 sinDaysTitle:"自觉跳过日",sinDaysHint:"提前声明的跳过在这些日子只扣 −1×权重——如果下面设置了违规等级,则按该等级的自觉费率计算,没有次数限制。设置了等级后,每个等级还有自己每月的配额,可以把这个列表之外的任何一天也声明为自觉跳过。",
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。第一个数字 = 惩罚倍数,必须为负数。第二个数字 = 每月免费次数,超过后升级到下一等级;留空表示不限。",
-sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",
+achTiersTitle:"成功等级(可选)",achTierAdd:"等级",achTiersHint:"默认任何打卡都是 +1×权重。添加等级可以对不同完成方式给予不同奖励(例如「冷水淋浴」+1×权重,「冷水浴」+2×权重)——每天只算一个等级,由你选择,即使实际完成了多种。数字 = 奖励倍数,必须为正数。",
+sinDeclareHint:"为这一天声明自觉跳过",tierLogHint:"点击记录此次违规的等级",achTierLogHint:"点击切换此次打卡的成功等级",
 paceOnTrack:"进度正常",paceObligatory:"今天必须完成",paceThisMonth:"本月",
 trackingStartTitle:"追踪开始日期",trackingStartDesc:"此日期之前的天数不计入积分——无得分，无扣分。请设置为你真正开始使用本系统的日期。",trackingStartLabel:"开始日期",
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
@@ -1247,7 +1268,8 @@ monthTargetsLabel:"Objectifs par mois (vide = défaut)",
 weightLabel:"Poids (1-10)",
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Un écart déclaré à l'avance ces jours-là coûte −1×poids — ou, si tu configures des niveaux d'écart ci-dessous, le tarif conscient de ce niveau, sans limite. Avec des niveaux configurés, chacun a aussi son propre quota mensuel pour déclarer conscient N'IMPORTE QUEL autre jour, pas seulement ceux listés ici.",
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur. Premier nombre = multiplicateur de pénalité, doit être négatif. Second nombre = utilisations gratuites par mois avant d'escalader au niveau suivant ; laisse vide pour illimité.",
-sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",
+achTiersTitle:"Niveaux de réussite (optionnel)",achTierAdd:"niveau",achTiersHint:"Par défaut toute coche vaut +1×poids. Ajoute des niveaux pour récompenser différemment plusieurs façons de réussir (ex. « douche froide » +1×poids, « bain froid » +2×poids) — un SEUL niveau compte par jour, à ton choix, même si tu en as fait plusieurs. Le nombre = multiplicateur de récompense, doit être positif.",
+sinDeclareHint:"Déclarer un écart conscient pour ce jour",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",achTierLogHint:"Touchez pour changer le niveau de réussite de cette coche",
 paceOnTrack:"à jour",paceObligatory:"jour de rattrapage",paceThisMonth:"ce mois",
 trackingStartTitle:"Date de début du suivi",trackingStartDesc:"Les jours avant cette date n'entrent pas dans l'économie de points — ni gain, ni pénalité. Mets la date à laquelle tu as vraiment commencé à utiliser ce système.",trackingStartLabel:"Date de début",
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
@@ -1349,6 +1371,7 @@ function applyLang(){
     lWeightLabel:T.weightLabel,
     lSinDaysTitle:T.sinDaysTitle,lSinDaysHint:T.sinDaysHint,
     lTiersTitle:T.tiersTitle,lTierAdd:T.tierAdd,lTiersHint:T.tiersHint,
+    lAchTiersTitle:T.achTiersTitle,lAchTierAdd:T.achTierAdd,lAchTiersHint:T.achTiersHint,
     lTrackingStartTitle:T.trackingStartTitle,lTrackingStartDesc:T.trackingStartDesc,lTrackingStartLabel:T.trackingStartLabel,
     lMyHabits:T.myHabits,lHabitListDesc:T.habitListDesc,
     lPenaltyBankLabel:T.penaltyBankLabel,
@@ -1365,7 +1388,7 @@ function applyLang(){
   const ls=document.getElementById("langSelect");if(ls)ls.value=state.lang;
   setSyncStatus(sync.on?(es?"live":"off"):"off");
   renderMonthTargetsGrid();
-  renderSinDaysChips(readSinDaysChips());renderTiersList();
+  renderSinDaysChips(readSinDaysChips());renderTiersList();renderAchTiersList();
   rerenderActive();
 }
 
@@ -1482,11 +1505,11 @@ function defaultBigRewards(){
 let state=null,memFallback=false;
 // Per-year data lives in state.years[YYYY]; shared data (habits/tags/bigRewards/theme...) at top level.
 function freshYearData(){
-  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{}};
+  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{}};
 }
 // xp intentionally NOT per-year (see below) — it's a lifetime field like points, sitting alongside
 // state.years rather than inside it.
-const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs"];
+const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs"];
 function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
 // Scans every year/month/habit's real check data for the earliest date ever marked done —
 // used only as a one-time migration default for trackingStart (see migrate()).
@@ -1526,7 +1549,7 @@ function freshState(){
     // in the UI) so the end-of-month tier-ambiguity warning fires exactly once per month per habit.
     notifications:[],tierWarningKeys:[],
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
-    checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},
+    checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},
     _t:Date.now()
   };
   s.years[startYear]=freshYearData();
@@ -1661,6 +1684,9 @@ function migrate(){
       if(t.sinDeltaMult===undefined)t.sinDeltaMult=-1;
       if(t.sinLimit===undefined)t.sinLimit=null;
     });
+    // Positive mirror of violationTiers — defaults to [] (no behavior change: a plain check keeps
+    // giving the flat +weight it always has, until the user opts in).
+    if(!Array.isArray(h.achievementTiers))h.achievementTiers=[];
   });
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
@@ -1825,15 +1851,26 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
   const sinBucket=(yd.declaredSins&&yd.declaredSins[mk]&&yd.declaredSins[mk][h.id])||{};
   const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
+  const achBucket=(yd.achievementLogs&&yd.achievementLogs[mk]&&yd.achievementLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
   const sinUse=sinUseOut||{};
+  const hasAchTiers=h.achievementTiers&&h.achievementTiers.length>0;
   let pts=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
-    if(checksBucket[d]){pts+=h.weight;continue}
+    if(checksBucket[d]){
+      if(hasAchTiers){
+        const loggedAch=achBucket[d];
+        const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
+        pts+=h.achievementTiers[idx].plusMult*h.weight;
+      }else{
+        pts+=h.weight;
+      }
+      continue;
+    }
     if(frozen.includes(d))continue;
     if(isArchivedOn(h,year,m,d))continue;
     const isPast=isCurMonth?d<rt.d:true;
@@ -1888,9 +1925,11 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const mk="m"+m;
   const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
   const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
+  const achBucket=(yd.achievementLogs&&yd.achievementLogs[mk]&&yd.achievementLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
+  const hasAchTiers=h.achievementTiers&&h.achievementTiers.length>0;
   let doneSoFar=0,pts=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
@@ -1899,7 +1938,15 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(isArchivedOn(h,year,m,d))continue;
     if(checksBucket[d]){
       doneSoFar++;
-      if(doneSoFar<=N)pts+=h.weight;
+      if(doneSoFar<=N){
+        if(hasAchTiers){
+          const loggedAch=achBucket[d];
+          const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
+          pts+=h.achievementTiers[idx].plusMult*h.weight;
+        }else{
+          pts+=h.weight;
+        }
+      }
       continue;
     }
     const isPast=isCurMonth?d<rt.d:true;
@@ -2383,11 +2430,19 @@ function renderToday(){
       }else{
         metaLine=`${T.streak} ${streak} &middot; +${xpForCheck(h.weight)} XP`;
       }
+      let achRow="";
+      if(done&&(h.achievementTiers||[]).length>0){
+        const loggedAch=(state.achievementLogs["m"+m]&&state.achievementLogs["m"+m][h.id])?state.achievementLogs["m"+m][h.id][d]:undefined;
+        const curAchIdx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
+        achRow=`<div class="ti-ach-row">${h.achievementTiers.map((t,i)=>
+          `<span class="ach-chip ${curAchIdx===i?'sel':''}" data-ach-h="${h.id}" data-ach-tier="${i}">${escapeHtml(t.label||('#'+(i+1)))}</span>`
+        ).join('')}</div>`;
+      }
       html+=`<div class="today-item" draggable="true" data-h="${h.id}">
         <span class="ti-drag">&#10495;</span>
         <div class="move-col"><button class="move-btn" data-mvup="${h.id}">&#9650;</button><button class="move-btn" data-mvdn="${h.id}">&#9660;</button></div>
         <div style="flex:1"><div class="ti-name">${escapeHtml(h.name)}</div>
-        <div class="ti-streak">${metaLine}</div></div>
+        <div class="ti-streak">${metaLine}</div>${achRow}</div>
         <div class="ti-check ${done?'done':''}" style="--chkcolor:${tag.color};${done?'background:'+tag.color:''}">
           ${done?'&#10003;':''}</div>
       </div>`;
@@ -2407,11 +2462,23 @@ function renderToday(){
       renderToday();renderXP();
     };
     item.onclick=e=>{
-      if(e.target.classList.contains("ti-drag"))return;
+      if(e.target.classList.contains("ti-drag")||e.target.classList.contains("ach-chip"))return;
       if(frozen)return;
       const hid=item.dataset.h;
       toggleCheck(m,hid,d);
       renderToday();renderXP();
+    };
+  });
+
+  el.querySelectorAll(".ach-chip").forEach(chip=>{
+    chip.onclick=e=>{
+      e.stopPropagation();
+      const hid=chip.dataset.achH,idx=+chip.dataset.achTier,mk="m"+m;
+      if(!state.achievementLogs[mk])state.achievementLogs[mk]={};
+      if(!state.achievementLogs[mk][hid])state.achievementLogs[mk][hid]={};
+      const bucket=state.achievementLogs[mk][hid];
+      if(idx===0)delete bucket[d];else bucket[d]=idx;
+      recalcPoints();save();renderToday();renderXP();
     };
   });
 
@@ -2559,6 +2626,10 @@ function renderGrid(){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
+            }else if(on&&(h.achievementTiers||[]).length>0){
+              const loggedAch=(state.achievementLogs["m"+m]&&state.achievementLogs["m"+m][h.id])?state.achievementLogs["m"+m][h.id][d]:undefined;
+              const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
+              mark=`<span class="cell-mark ach-mark" data-ach-h="${h.id}" data-ach-d="${d}" title="${T.achTierLogHint}">${idx+1}</span>`;
             }
             body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${on?'&#10003;':''}${mark}</div></td>`;
           }
@@ -2572,7 +2643,13 @@ function renderGrid(){
 
   document.querySelectorAll(".chk").forEach(cell=>{
     cell.onclick=()=>{
+      const h=state.habits.find(x=>x.id===cell.dataset.h);
       toggleCheck(m,cell.dataset.h,+cell.dataset.d);
+      if(h&&h.achievementTiers&&h.achievementTiers.length){
+        // achievement-tier state can't be represented by simple class/text patching — re-render fully
+        renderGrid();renderHero();renderXP();
+        return;
+      }
       const on=cell.classList.toggle("on");
       const tag=getTag(state.habits.find(x=>x.id===cell.dataset.h)?.tagId);
       cell.textContent=on?"✓":"";
@@ -2609,6 +2686,21 @@ function renderGrid(){
       const curPos=bucket[d]===undefined?-1:avail.indexOf(bucket[d]);
       // cycle only through currently-available tiers; past the last one, clear the log entirely
       if(curPos+1<avail.length)bucket[d]=avail[curPos+1];
+      else delete bucket[d];
+      recalcPoints();save();renderGrid();renderHero();renderXP();
+    };
+  });
+  document.querySelectorAll(".ach-mark").forEach(el=>{
+    el.onclick=e=>{
+      e.stopPropagation();
+      const hid=el.dataset.achH,d=+el.dataset.achD,mk="m"+m;
+      const h=state.habits.find(x=>x.id===hid);if(!h||!h.achievementTiers||!h.achievementTiers.length)return;
+      if(!state.achievementLogs[mk])state.achievementLogs[mk]={};
+      if(!state.achievementLogs[mk][hid])state.achievementLogs[mk][hid]={};
+      const bucket=state.achievementLogs[mk][hid];
+      const cur=bucket[d]===undefined?0:bucket[d];
+      // cycle 0(default/unlogged)->1->2->...->last->back to unlogged (=0, same resolved tier)
+      if(cur+1<h.achievementTiers.length)bucket[d]=cur+1;
       else delete bucket[d];
       recalcPoints();save();renderGrid();renderHero();renderXP();
     };
@@ -2950,6 +3042,63 @@ function readTiersFromForm(){
   });
   return editTiers.filter(t=>t.label);
 }
+// ===== Achievement tiers: positive mirror of violation tiers — no freeLimit/sinDeltaMult/sinLimit
+// equivalent, since there's no self-rationalization risk to guard against in excelling every day,
+// and no conscious/unconscious distinction (a check is always a real-time, active user action). =====
+function achTiersHeaderHTML(){
+  const ru=state.lang!=="en";
+  return`<div class="tier-row-header" style="display:flex;gap:6px;padding:0 0 2px;font-size:10px;color:var(--dim);letter-spacing:.03em">
+    <span style="flex:1"></span>
+    <span style="width:64px;text-align:center">${ru?'×вес (> 0)':'×weight (> 0)'}</span>
+    <span style="width:28px"></span>
+  </div>`;
+}
+function achTierRowHTML(t,idx){
+  const ru=state.lang!=="en";
+  return`<div class="br-edit-row tier-row" data-idx="${idx}">
+    <input class="inp ach-tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
+    <input class="inp ach-tier-plus" type="number" step="0.5" style="width:64px;text-align:center" value="${t.plusMult!==undefined?t.plusMult:''}" placeholder="1" title="${ru?'Множитель награды ×вес — обязательно положительное число':'Reward multiplier ×weight — must be positive'}">
+    <button type="button" class="mini tier-del" data-achtierdel="${idx}">✕</button>
+  </div>`;
+}
+let editAchTiers=[];
+function renderAchTiersList(){
+  const box=document.getElementById("fAchTiersList");if(!box)return;
+  box.innerHTML=(editAchTiers.length?achTiersHeaderHTML():"")+editAchTiers.map((t,i)=>achTierRowHTML(t,i)).join("");
+  box.querySelectorAll("[data-achtierdel]").forEach(b=>b.onclick=()=>{
+    editAchTiers.splice(+b.dataset.achtierdel,1);renderAchTiersList();
+  });
+  // Mirrors the violation-tier live-invalid marking, just inverted: a non-positive reward
+  // multiplier is nonsensical for an achievement tier (zero or negative isn't a reward at all).
+  box.querySelectorAll(".ach-tier-plus").forEach(inp=>{
+    const markInvalid=()=>inp.classList.toggle("invalid",inp.value!==""&&+inp.value<=0);
+    inp.oninput=markInvalid;
+    markInvalid();
+  });
+}
+function achTiersAreValid(){
+  const ru=state.lang!=="en";
+  for(const row of document.querySelectorAll("#fAchTiersList .tier-row")){
+    const i=+row.dataset.idx;
+    const raw=row.querySelector(".ach-tier-plus").value;
+    if(raw!==""&&+raw<=0){
+      const label=row.querySelector(".ach-tier-label").value.trim()||(editAchTiers[i]&&editAchTiers[i].label)||(ru?"(без названия)":"(unnamed)");
+      toast(ru?`Уровень успеха «${label}»: множитель должен быть положительным числом`:`Achievement tier "${label}": the multiplier must be a positive number`);
+      return false;
+    }
+  }
+  return true;
+}
+function readAchTiersFromForm(){
+  document.querySelectorAll("#fAchTiersList .tier-row").forEach(row=>{
+    const i=+row.dataset.idx;
+    if(!editAchTiers[i])return;
+    editAchTiers[i].label=row.querySelector(".ach-tier-label").value.trim();
+    const raw=row.querySelector(".ach-tier-plus").value;
+    editAchTiers[i].plusMult=raw===""?1:+raw;
+  });
+  return editAchTiers.filter(t=>t.label);
+}
 function clearForm(){
   editId=null;
   document.getElementById("fName").value="";
@@ -2966,6 +3115,7 @@ function clearForm(){
   renderMonthTargetsGrid();
   renderSinDaysChips([]);
   editTiers=[];renderTiersList();
+  editAchTiers=[];renderAchTiersList();
   updateTypeSectionVisibility();
   updatePenaltyPreview();
 }
@@ -2987,6 +3137,7 @@ function startEdit(id){
   if(h.monthTargets){for(let i=0;i<12;i++){const inp=document.getElementById("mt_"+i);if(inp&&h.monthTargets["m"+i]!==undefined)inp.value=h.monthTargets["m"+i]}}
   renderSinDaysChips(h.sinDays||[]);
   editTiers=(h.violationTiers||[]).map(t=>({...t}));renderTiersList();
+  editAchTiers=(h.achievementTiers||[]).map(t=>({...t}));renderAchTiersList();
   updateTypeSectionVisibility();
   updatePenaltyPreview();
   window.scrollTo({top:0,behavior:"smooth"});
@@ -2998,8 +3149,10 @@ function saveHabit(){
   const target=Math.max(0,+document.getElementById("fTarget").value||0);
   const tagId=document.getElementById("fTag").value;
   if(!tiersAreValid())return; // toast already shown — an invalid (non-negative) tier multiplier blocks the save
+  if(!achTiersAreValid())return; // toast already shown — an invalid (non-positive) achievement multiplier blocks the save
   const sinDays=readSinDaysChips();
   const violationTiers=readTiersFromForm();
+  const achievementTiers=readAchTiersFromForm();
   const monthTargets={};
   if(!fEveryday){
     // Non-everyday: read from editor grid
@@ -3012,10 +3165,10 @@ function saveHabit(){
   const type=fEveryday?"daily":"event";
   if(editId){
     const h=state.habits.find(x=>x.id===editId);
-    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets});
+    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,achievementTiers,monthTargets});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length});
+    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinDays,violationTiers,achievementTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length});
     toast(T.habitAdded);
   }
   recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
@@ -4239,7 +4392,7 @@ function init(){
   if(!sync.code){sync.code=genCode();saveSyncCfg()}
   applyTheme();
   renderMonthTargetsGrid();
-  renderSinDaysChips([]);editTiers=[];renderTiersList();updateTypeSectionVisibility();
+  renderSinDaysChips([]);editTiers=[];renderTiersList();editAchTiers=[];renderAchTiersList();updateTypeSectionVisibility();
 
   if(memFallback)setTimeout(()=>toast(T.previewMode),600);
 
@@ -4258,6 +4411,11 @@ function init(){
     readTiersFromForm(); // capture any in-progress edits before appending a new blank row
     editTiers.push({label:"",deltaMult:-1,freeLimit:null,sinDeltaMult:-1,sinLimit:null});
     renderTiersList();
+  };
+  document.getElementById("fAchTierAdd").onclick=()=>{
+    readAchTiersFromForm();
+    editAchTiers.push({label:"",plusMult:1});
+    renderAchTiersList();
   };
   document.getElementById("btnSaveHabit").onclick=saveHabit;
   document.getElementById("btnCancelEdit").onclick=clearForm;
