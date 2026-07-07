@@ -400,6 +400,7 @@ textarea.inp{resize:vertical;min-height:60px}
 .zbadge{font-size:11px;vertical-align:middle}
 .zone-editor{background:var(--panel2);border-radius:12px;padding:12px;margin-bottom:8px}
 .zone-ed-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.sin-tier-chip{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:3px 8px;font-size:11px;color:var(--text);white-space:nowrap}
 .rem-item{display:flex;align-items:center;gap:9px;padding:10px 0;border-bottom:1px solid var(--line)}
 .rem-item:last-of-type{border-bottom:none}
 .rem-item.off{opacity:.5}
@@ -568,6 +569,7 @@ textarea.inp{resize:vertical;min-height:60px}
         </div>
         <p class="hint" id="lSinDaysHint" style="margin:0 0 8px">Пропуск в эти дни, объявленный заранее, стоит −1×вес вместо −3×вес.</p>
         <div id="fSinDays" style="display:flex;gap:5px;flex-wrap:wrap"></div>
+        <div id="fSinDaysTierSummary"></div>
       </div>
       <!-- Optional violation-tier ladder (daily habits only): default miss is always -3×weight -->
       <div class="zone-editor" id="fTiersSection">
@@ -2874,6 +2876,34 @@ function renderTiersList(){
     inp.oninput=markInvalid;
     markInvalid();
   });
+  // Keep the sin-days section's tier-quota summary (below) in sync live as tiers are added,
+  // removed, renamed, or their monthly quota is edited — it's the only place in the UI that
+  // visually ties "conscious skip on any OTHER day" back to the numbers configured down here.
+  box.querySelectorAll(".tier-label, .tier-sinfree").forEach(inp=>{
+    inp.oninput=renderSinDaysTierSummary;
+  });
+  renderSinDaysTierSummary();
+}
+// Reads the tier rows straight from the DOM (same technique as tiersAreValid/readTiersFromForm)
+// so it always reflects exactly what's currently typed, not a possibly-stale editTiers snapshot —
+// and renders a live cross-reference in the SIN-DAYS section showing what each tier's monthly
+// "any other day" conscious quota actually is, since that number lives physically in a different
+// section of the form (Violation tiers) with nothing else connecting the two visually.
+function renderSinDaysTierSummary(){
+  const box=document.getElementById("fSinDaysTierSummary");if(!box)return;
+  const ru=state.lang!=="en";
+  const rows=[...document.querySelectorAll("#fTiersList .tier-row")].map(row=>{
+    const label=row.querySelector(".tier-label").value.trim()||(ru?"(без названия)":"(unnamed)");
+    const raw=row.querySelector(".tier-sinfree").value;
+    const qty=raw===""?(ru?"без ограничений":"unlimited"):(raw+"×"+(ru?"/мес":"/mo"));
+    return `<span class="sin-tier-chip">${escapeHtml(label)}: ${qty}</span>`;
+  });
+  if(!rows.length){
+    box.innerHTML=`<p class="hint" style="margin:8px 0 0;font-style:italic">${ru?'Пока нет уровней срыва (ниже) — доступны только выбранные дни недели выше.':'No violation tiers configured (below) yet — only the weekdays picked above are available.'}</p>`;
+    return;
+  }
+  box.innerHTML=`<div class="hint" style="margin:8px 0 0"><b>${ru?'+ через уровни срыва, в любой ДРУГОЙ день:':'+ via violation tiers, on any OTHER day:'}</b>
+    <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${rows.join('')}</div></div>`;
 }
 // A non-negative multiplier isn't just "unusual" — it silently defeats the whole point of a
 // violation tier (zero or positive = no real consequence, reintroducing the exact "dead zone"
