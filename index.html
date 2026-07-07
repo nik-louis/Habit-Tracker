@@ -412,14 +412,24 @@ textarea.inp{resize:vertical;min-height:60px}
 .day-chip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:7px 11px;font-size:13px;font-weight:700;cursor:pointer;min-width:40px}
 .day-chip.on{background:var(--accent);color:#0a0a0a;border-color:var(--accent)}
 .day-chip:active{transform:scale(.94)}
+.sin-cal-toggle{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:7px 11px;
+  border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);
+  font-size:12px;font-weight:700;cursor:pointer;user-select:none}
+.sin-cal-toggle:active{transform:scale(.98)}
+.sin-cal-toggle .sin-cal-arrow{transition:transform .15s;color:var(--dim)}
+.sin-cal-toggle.open .sin-cal-arrow{transform:rotate(180deg)}
+.sin-cal-body{margin-top:8px}
 .sin-cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;font-size:13px;font-weight:700}
 .sin-cal-nav button{width:28px;height:28px;border-radius:8px;border:1px solid var(--line);background:var(--panel2);color:var(--text);cursor:pointer;font-size:15px}
+.sin-cal-weekdays{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:3px}
+.sin-cal-weekdays span{text-align:center;font-size:9px;color:var(--dim);font-weight:700;text-transform:uppercase}
 .sin-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
 .sin-cal-cell{aspect-ratio:1;display:flex;align-items:center;justify-content:center;border-radius:8px;
   border:1px solid var(--line);background:var(--panel2);color:var(--text);font-size:12px;cursor:pointer;padding:0}
 .sin-cal-cell.blank{visibility:hidden;cursor:default}
 .sin-cal-cell.on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a;font-weight:700}
 .sin-cal-cell:active{transform:scale(.92)}
+.tier-cal{margin-top:2px}
 .zone-lbl{font-size:11px;color:var(--dim);font-weight:600;margin-bottom:4px}
 /* big rewards */
 .br-edit-row{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -585,12 +595,18 @@ textarea.inp{resize:vertical;min-height:60px}
         </div>
         <p class="hint" id="lSinDaysHint" style="margin:0 0 8px">Отметь в календаре конкретные даты, когда пропуск всегда бесплатный, или укажи, сколько раз в месяц можно объявить осознанным любой ДРУГОЙ день.</p>
         <div class="sin-cal">
-          <div class="sin-cal-nav">
-            <button type="button" class="mini" id="fSinCalPrev">&#8249;</button>
-            <span id="fSinCalLabel"></span>
-            <button type="button" class="mini" id="fSinCalNext">&#8250;</button>
+          <div class="sin-cal-toggle" id="fSinCalToggle">
+            <span id="fSinCalToggleLabel">&#128197; &#9662;</span>
           </div>
-          <div class="sin-cal-grid" id="fSinCalGrid"></div>
+          <div class="sin-cal-body" id="fSinCalBody" style="display:none">
+            <div class="sin-cal-nav">
+              <button type="button" class="mini" id="fSinCalPrev">&#8249;</button>
+              <span id="fSinCalLabel"></span>
+              <button type="button" class="mini" id="fSinCalNext">&#8250;</button>
+            </div>
+            <div class="sin-cal-weekdays" id="fSinCalWeekdays"></div>
+            <div class="sin-cal-grid" id="fSinCalGrid"></div>
+          </div>
         </div>
         <div class="field" style="margin-top:10px">
           <label id="lSinQuotaLabel">Осознанный пропуск в любой другой день, раз/мес</label>
@@ -1715,6 +1731,9 @@ function migrate(){
     h.violationTiers.forEach(t=>{
       if(t.sinDeltaMult===undefined)t.sinDeltaMult=-1;
       if(t.sinLimit===undefined)t.sinLimit=null;
+      // Per-tier calendar (specific always-free dates, scoped to just this tier) — mirrors the
+      // habit-level sinCalendarDays above, defaults to empty (no behavior change until configured).
+      if(!Array.isArray(t.sinCalendarDays))t.sinCalendarDays=[];
     });
     // Positive mirror of violationTiers — defaults to [] (no behavior change: a plain check keeps
     // giving the flat +weight it always has, until the user opts in).
@@ -1843,25 +1862,27 @@ function resolveUnloggedTierMiss(h,tierUse){
   return{delta:h.violationTiers[idx].deltaMult*h.weight,unresolved:false};
 }
 // Conscious ("sin") counterpart of tierAvailableIdxs — gated by each tier's OWN sinLimit, a pool
-// completely independent of the unplanned freeLimit above. calendarExempt (the specific date is
-// marked on the habit's sin-calendar widget) bypasses the cap entirely — every tier is available,
-// unlimited, just like a plain unconfigured habit, just now per-tier-priced.
-function sinTierAvailableIdxs(h,sinUse,calendarExempt){
+// completely independent of the unplanned freeLimit above. Each tier also has its OWN calendar
+// (t.sinCalendarDays) — if dateISO is marked on THAT tier's calendar, that tier is unconditionally
+// available, unlimited, regardless of its sinLimit (calendar dates never consume the pool).
+function sinTierAvailableIdxs(h,sinUse,dateISO){
   const out=[];
   for(let ti=0;ti<h.violationTiers.length;ti++){
     const t=h.violationTiers[ti],used=sinUse[ti]||0;
-    if(calendarExempt||t.sinLimit==null||used<t.sinLimit)out.push(ti);
+    const tierCalExempt=(t.sinCalendarDays||[]).includes(dateISO);
+    if(tierCalExempt||t.sinLimit==null||used<t.sinLimit)out.push(ti);
   }
   return out;
 }
 // Same shape as resolveUnloggedTierMiss, but for a day that was pre-declared conscious with no
-// explicit tier log — uses each tier's sinDeltaMult and consumes its sinLimit pool (unless
-// calendarExempt, which never consumes anything, matching the unlimited calendar-date mode).
-function resolveSinTierMiss(h,sinUse,calendarExempt){
-  const avail=sinTierAvailableIdxs(h,sinUse,calendarExempt);
+// explicit tier log — uses each tier's sinDeltaMult and consumes its sinLimit pool (unless the
+// resolved tier's OWN calendar exempts dateISO, which never consumes anything).
+function resolveSinTierMiss(h,sinUse,dateISO){
+  const avail=sinTierAvailableIdxs(h,sinUse,dateISO);
   const idx=avail.length===1?avail[0]:avail.length===0?h.violationTiers.length-1:null;
   if(idx===null)return{delta:0,unresolved:true};
-  if(!calendarExempt)sinUse[idx]=(sinUse[idx]||0)+1;
+  const tierCalExempt=(h.violationTiers[idx].sinCalendarDays||[]).includes(dateISO);
+  if(!tierCalExempt)sinUse[idx]=(sinUse[idx]||0)+1;
   return{delta:h.violationTiers[idx].sinDeltaMult*h.weight,unresolved:false};
 }
 // Daily habit: check=+weight; an elapsed miss=-3×weight (or the habit's tier ladder if configured).
@@ -1910,14 +1931,15 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(!isPast)continue;
     const hasTiers=h.violationTiers&&h.violationTiers.length>0;
     const isSin=!!sinBucket[d];
-    // A specific date marked on the habit's calendar widget is always free, unconditionally —
-    // the direct replacement for the old recurring-weekday exemption.
-    const calendarExempt=isSin&&(h.sinCalendarDays||[]).includes(ymdStr(year,m,d));
+    const dateISO=ymdStr(year,m,d);
     const loggedTier=tierBucket[d];
     if(loggedTier!==undefined&&hasTiers&&h.violationTiers[loggedTier]){
       let idx=loggedTier;
       if(isSin){
-        if(!calendarExempt){
+        // Each tier has its OWN calendar (t.sinCalendarDays) — a date marked there is always free
+        // for THAT tier specifically, unconditionally, no sinLimit consumed.
+        const tierCalExempt=(h.violationTiers[idx].sinCalendarDays||[]).includes(dateISO);
+        if(!tierCalExempt){
           sinUse[idx]=(sinUse[idx]||0)+1;
           while(h.violationTiers[idx].sinLimit!=null&&sinUse[idx]>h.violationTiers[idx].sinLimit&&idx<h.violationTiers.length-1){
             idx++;sinUse[idx]=(sinUse[idx]||0)+1;
@@ -1932,10 +1954,11 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
         pts+=h.violationTiers[idx].deltaMult*h.weight;
       }
     }else if(isSin&&hasTiers){
-      const r=resolveSinTierMiss(h,sinUse,calendarExempt);
+      const r=resolveSinTierMiss(h,sinUse,dateISO);
       if(r.unresolved){if(unresolvedOut)unresolvedOut.push(d);}
       else pts+=r.delta;
-    }else if(isSin&&!hasTiers&&calendarExempt){
+    }else if(isSin&&!hasTiers&&(h.sinCalendarDays||[]).includes(dateISO)){
+      // 0-tier habits use their OWN habit-level calendar instead (full-replacement once tiers exist).
       pts+=-1*h.weight;
     }else if(isSin&&!hasTiers&&h.sinMonthlyQuota){
       // Habit-level "any day" quota — only used when no violation tiers are configured (once
@@ -2029,26 +2052,36 @@ function availableTiersOnDay(h,m,d){
   const mk="m"+m;
   const isSin=!!(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d]);
   if(isSin){
-    const calendarExempt=(h.sinCalendarDays||[]).includes(ymdStr(activeYear(),m,d));
+    const dateISO=ymdStr(activeYear(),m,d);
     const sinUse={};
     habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
-    return sinTierAvailableIdxs(h,sinUse,calendarExempt);
+    return sinTierAvailableIdxs(h,sinUse,dateISO);
   }
   const tierUse={};
   habitPointsForMonth(h,activeYear(),m,state,null,tierUse,d);
   return tierAvailableIdxs(h,tierUse);
 }
-// Whether the sin-declare (🙏) icon should be offered on this day at all: the date is marked on
-// the habit's sin-calendar widget (always allowed, unlimited), OR the habit has violation tiers
-// and at least one still has conscious-quota room this month, OR (no tiers) the habit-level
-// monthly quota still has room left for an "any day" declare.
+// Whether dateISO is unconditionally free (no quota consumed) for THIS habit right now — checks
+// each tier's own calendar once tiers exist (full-replacement), else the habit-level calendar.
+// Shared by the grid tooltip and anywhere else that needs to say "always free" vs "uses a quota".
+function sinDateIsCalendarFree(h,dateISO){
+  if(h.violationTiers&&h.violationTiers.length){
+    return h.violationTiers.some(t=>(t.sinCalendarDays||[]).includes(dateISO));
+  }
+  return (h.sinCalendarDays||[]).includes(dateISO);
+}
+// Whether the sin-declare (🙏) icon should be offered on this day at all: with violation tiers
+// configured, sinTierAvailableIdxs already accounts for each tier's OWN calendar internally, so a
+// non-empty result covers both "some tier's calendar exempts this date" and "some tier's sinLimit
+// still has room". With no tiers, it's the habit-level calendar OR the habit-level monthly quota.
 function sinMarkAvailable(h,m,d){
-  if((h.sinCalendarDays||[]).includes(ymdStr(activeYear(),m,d)))return true;
+  const dateISO=ymdStr(activeYear(),m,d);
   if(h.violationTiers&&h.violationTiers.length){
     const sinUse={};
     habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
-    return sinTierAvailableIdxs(h,sinUse,false).length>0;
+    return sinTierAvailableIdxs(h,sinUse,dateISO).length>0;
   }
+  if((h.sinCalendarDays||[]).includes(dateISO))return true;
   if(h.sinMonthlyQuota){
     const sinUse={};
     habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
@@ -2664,12 +2697,12 @@ function renderGrid(){
             let mark="";
             if(!on&&h.type==="daily"&&isFutureOrToday&&sinMarkAvailable(h,m,d)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
-              // Differentiate the tooltip: a date marked on the habit's sin-calendar widget is
-              // unlimited (the direct replacement for the old recurring-weekday exemption); any
-              // OTHER day only shows this icon at all because some quota (tier-level or, with no
-              // tiers, the habit-level monthly quota) still has room — say so explicitly, since
-              // that "any day" mode has no other visible explanation anywhere in the UI otherwise.
-              const isCalendarDay=(h.sinCalendarDays||[]).includes(ymdStr(ay,m,d));
+              // Differentiate the tooltip: a date marked on the relevant calendar (the habit's own,
+              // or — once tiers exist — any tier's own) is unlimited; any OTHER day only shows this
+              // icon at all because some quota (tier sinLimit or the habit-level monthly quota)
+              // still has room — say so explicitly, since that "any day" mode has no other visible
+              // explanation anywhere in the UI otherwise.
+              const isCalendarDay=sinDateIsCalendarFree(h,ymdStr(ay,m,d));
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
               mark=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
             }else if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
@@ -2957,6 +2990,16 @@ function updateTypeSectionVisibility(){
   const sinSec=document.getElementById("fSinDaysSection");
   if(sinSec)sinSec.style.display=fEveryday?"":"none";
 }
+// Shared Monday-first weekday header row, reused by both the general sin-calendar and every
+// per-tier mini-calendar so column headers always line up with the day cells below them.
+function calWeekdayHeaderHTML(){
+  const order=[1,2,3,4,5,6,0];
+  return order.map(i=>`<span>${T.daysShort[i]}</span>`).join("");
+}
+function sinCalToggleLabel(count){
+  const ru=state.lang!=="en";
+  return `&#128197; ${count?(ru?count+" дат":count+" dates"):(ru?"даты не отмечены":"no dates marked")} <span class="sin-cal-arrow">&#9662;</span>`;
+}
 // Sin-calendar widget: marks SPECIFIC dates (not recurring weekdays) as always-free conscious
 // days. editSinCalDays holds the working list ("YYYY-MM-DD" strings) across month navigation;
 // sinCalYear/sinCalMonth is just the navigation cursor, defaulting to the real current month.
@@ -2966,10 +3009,21 @@ function resetSinCalNav(){
   const rt=realTodayParts();
   sinCalYear=rt.y;sinCalMonth=rt.m;
 }
+// Collapses the calendar dropdown back to closed — called whenever the edit form is (re)entered
+// fresh (new habit, editing a different habit, initial load) so it never stays open across habits.
+function collapseSinCal(){
+  const toggle=document.getElementById("fSinCalToggle"),body=document.getElementById("fSinCalBody");
+  if(body)body.style.display="none";
+  if(toggle)toggle.classList.remove("open");
+}
 function renderSinCal(){
   const grid=document.getElementById("fSinCalGrid");if(!grid)return;
   const label=document.getElementById("fSinCalLabel");
   if(label)label.textContent=T.months[sinCalMonth]+" "+sinCalYear;
+  const wdRow=document.getElementById("fSinCalWeekdays");
+  if(wdRow)wdRow.innerHTML=calWeekdayHeaderHTML();
+  const toggleLabel=document.getElementById("fSinCalToggleLabel");
+  if(toggleLabel)toggleLabel.innerHTML=sinCalToggleLabel(editSinCalDays.length);
   const totalDays=daysInMonthY(sinCalYear,sinCalMonth);
   const firstWd=new Date(sinCalYear,sinCalMonth,1).getDay();
   const leadBlanks=(firstWd+6)%7; // Monday-first offset, matches the rest of the app's week display
@@ -2987,6 +3041,7 @@ function renderSinCal(){
       const idx=editSinCalDays.indexOf(ds);
       if(idx>=0)editSinCalDays.splice(idx,1);else editSinCalDays.push(ds);
       c.classList.toggle("on");
+      if(toggleLabel)toggleLabel.innerHTML=sinCalToggleLabel(editSinCalDays.length);
     };
   });
 }
@@ -3018,7 +3073,21 @@ function tierRowHTML(t,idx){
     <div style="display:flex;gap:6px;align-items:center">
       <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'осознанно':'conscious'}</span>
       <input class="inp tier-sindelta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.sinDeltaMult!==undefined?t.sinDeltaMult:''}" placeholder="-1" title="${ru?'Множитель ×вес для заранее объявленного (осознанного) пропуска — обязательно отрицательное число':'Multiplier ×weight for a pre-declared (conscious) miss — must be negative'}">
-      <input class="inp tier-sinfree" type="number" min="0" style="width:56px;text-align:center" value="${t.sinLimit!=null?t.sinLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц можно заранее объявить этот уровень осознанным, помимо дней недели ниже (пусто = без ограничений)':'How many times per month this tier can be pre-declared conscious, besides the weekdays below (blank = unlimited)'}">
+      <input class="inp tier-sinfree" type="number" min="0" style="width:56px;text-align:center" value="${t.sinLimit!=null?t.sinLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц можно заранее объявить этот уровень осознанным сверх дат в календаре ниже (пусто = без ограничений)':'How many times per month this tier can be pre-declared conscious, on top of the calendar dates below (blank = unlimited)'}">
+    </div>
+    <div class="sin-cal tier-cal">
+      <div class="sin-cal-toggle tier-cal-toggle">
+        <span class="tier-cal-toggle-label">&#128197; &#9662;</span>
+      </div>
+      <div class="sin-cal-body tier-cal-body" style="display:none">
+        <div class="sin-cal-nav">
+          <button type="button" class="mini tier-cal-prev">&#8249;</button>
+          <span class="tier-cal-label"></span>
+          <button type="button" class="mini tier-cal-next">&#8250;</button>
+        </div>
+        <div class="sin-cal-weekdays tier-cal-weekdays"></div>
+        <div class="sin-cal-grid tier-cal-grid"></div>
+      </div>
     </div>
   </div>`;
 }
@@ -3043,6 +3112,58 @@ function renderTiersList(){
   box.querySelectorAll(".tier-label, .tier-sinfree").forEach(inp=>{
     inp.oninput=renderSinDaysTierSummary;
   });
+  // Each tier gets its OWN mini calendar (mirrors the general habit-level one, but scoped to just
+  // this tier's own sinCalendarDays) — collapsed by default, closure-scoped nav cursor per row so
+  // no extra module-level state array is needed; day-clicks mutate the tier object directly and
+  // repaint just this one grid, matching the general calendar's no-full-rerender approach.
+  box.querySelectorAll(".tier-row").forEach(row=>{
+    const idx=+row.dataset.idx;
+    const t=editTiers[idx];if(!t)return;
+    if(!Array.isArray(t.sinCalendarDays))t.sinCalendarDays=[];
+    const toggle=row.querySelector(".tier-cal-toggle");
+    const toggleLabel=row.querySelector(".tier-cal-toggle-label");
+    const body=row.querySelector(".tier-cal-body");
+    const grid=row.querySelector(".tier-cal-grid");
+    const wdRow=row.querySelector(".tier-cal-weekdays");
+    const label=row.querySelector(".tier-cal-label");
+    const rt=realTodayParts();
+    let navY=rt.y,navM=rt.m;
+    function paintTierCal(){
+      label.textContent=T.months[navM]+" "+navY;
+      wdRow.innerHTML=calWeekdayHeaderHTML();
+      toggleLabel.innerHTML=sinCalToggleLabel(t.sinCalendarDays.length);
+      const totalDays=daysInMonthY(navY,navM);
+      const firstWd=new Date(navY,navM,1).getDay();
+      const lead=(firstWd+6)%7;
+      const sel=new Set(t.sinCalendarDays);
+      let html="";
+      for(let i=0;i<lead;i++)html+=`<span class="sin-cal-cell blank"></span>`;
+      for(let d=1;d<=totalDays;d++){
+        const ds=ymdStr(navY,navM,d);
+        html+=`<button type="button" class="sin-cal-cell ${sel.has(ds)?'on':''}" data-date="${ds}">${d}</button>`;
+      }
+      grid.innerHTML=html;
+      grid.querySelectorAll(".sin-cal-cell[data-date]").forEach(c=>{
+        c.onclick=()=>{
+          const ds=c.dataset.date;
+          const di=t.sinCalendarDays.indexOf(ds);
+          if(di>=0)t.sinCalendarDays.splice(di,1);else t.sinCalendarDays.push(ds);
+          c.classList.toggle("on");
+          toggleLabel.innerHTML=sinCalToggleLabel(t.sinCalendarDays.length);
+          renderSinDaysTierSummary();
+        };
+      });
+    }
+    toggleLabel.innerHTML=sinCalToggleLabel(t.sinCalendarDays.length);
+    toggle.onclick=()=>{
+      const open=body.style.display==="none";
+      body.style.display=open?"":"none";
+      toggle.classList.toggle("open",open);
+      if(open)paintTierCal();
+    };
+    row.querySelector(".tier-cal-prev").onclick=()=>{navM--;if(navM<0){navM=11;navY--;}paintTierCal();};
+    row.querySelector(".tier-cal-next").onclick=()=>{navM++;if(navM>11){navM=0;navY++;}paintTierCal();};
+  });
   renderSinDaysTierSummary();
 }
 // Reads the tier rows / habit-level quota field straight from the DOM (same technique as
@@ -3065,10 +3186,13 @@ function renderSinDaysTierSummary(){
     return;
   }
   const rows=tierRows.map(row=>{
+    const idx=+row.dataset.idx;
     const label=row.querySelector(".tier-label").value.trim()||(ru?"(без названия)":"(unnamed)");
     const raw=row.querySelector(".tier-sinfree").value;
     const qty=raw===""?(ru?"без ограничений":"unlimited"):(raw+"×"+(ru?"/мес":"/mo"));
-    return `<span class="sin-tier-chip">${escapeHtml(label)}: ${qty}</span>`;
+    const calCount=(editTiers[idx]&&editTiers[idx].sinCalendarDays||[]).length;
+    const calPart=calCount?(ru?`, ${calCount} дат бесплатно`:`, ${calCount} free dates`):"";
+    return `<span class="sin-tier-chip">${escapeHtml(label)}: ${qty}${calPart}</span>`;
   });
   box.innerHTML=`<div class="hint" style="margin:8px 0 0"><b>${ru?'+ через уровни срыва, в любой ДРУГОЙ день (квота выше не используется):':'+ via violation tiers, on any OTHER day (the quota field above is not used):'}</b>
     <div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:6px">${rows.join('')}</div></div>`;
@@ -3189,7 +3313,7 @@ function clearForm(){
   document.getElementById("btnCancelEdit").style.display="none";
   document.getElementById("monthTargetsRow").style.display="none";
   renderMonthTargetsGrid();
-  editSinCalDays=[];resetSinCalNav();renderSinCal();
+  editSinCalDays=[];resetSinCalNav();renderSinCal();collapseSinCal();
   document.getElementById("fSinQuota").value="";
   editTiers=[];renderTiersList();
   editAchTiers=[];renderAchTiersList();
@@ -3212,7 +3336,7 @@ function startEdit(id){
   document.getElementById("monthTargetsRow").style.display=fEveryday?"none":"block";
   renderMonthTargetsGrid();
   if(h.monthTargets){for(let i=0;i<12;i++){const inp=document.getElementById("mt_"+i);if(inp&&h.monthTargets["m"+i]!==undefined)inp.value=h.monthTargets["m"+i]}}
-  editSinCalDays=[...(h.sinCalendarDays||[])];resetSinCalNav();renderSinCal();
+  editSinCalDays=[...(h.sinCalendarDays||[])];resetSinCalNav();renderSinCal();collapseSinCal();
   document.getElementById("fSinQuota").value=h.sinMonthlyQuota!=null?h.sinMonthlyQuota:"";
   editTiers=(h.violationTiers||[]).map(t=>({...t}));renderTiersList();
   editAchTiers=(h.achievementTiers||[]).map(t=>({...t}));renderAchTiersList();
@@ -4472,7 +4596,7 @@ function init(){
   if(!sync.code){sync.code=genCode();saveSyncCfg()}
   applyTheme();
   renderMonthTargetsGrid();
-  editSinCalDays=[];resetSinCalNav();renderSinCal();editTiers=[];renderTiersList();editAchTiers=[];renderAchTiersList();updateTypeSectionVisibility();
+  editSinCalDays=[];resetSinCalNav();renderSinCal();collapseSinCal();editTiers=[];renderTiersList();editAchTiers=[];renderAchTiersList();updateTypeSectionVisibility();
 
   if(memFallback)setTimeout(()=>toast(T.previewMode),600);
 
@@ -4489,7 +4613,7 @@ function init(){
   };
   document.getElementById("fTierAdd").onclick=()=>{
     readTiersFromForm(); // capture any in-progress edits before appending a new blank row
-    editTiers.push({label:"",deltaMult:-1,freeLimit:null,sinDeltaMult:-1,sinLimit:null});
+    editTiers.push({label:"",deltaMult:-1,freeLimit:null,sinDeltaMult:-1,sinLimit:null,sinCalendarDays:[]});
     renderTiersList();
   };
   document.getElementById("fAchTierAdd").onclick=()=>{
@@ -4504,6 +4628,12 @@ function init(){
   document.getElementById("fSinCalNext").onclick=()=>{
     sinCalMonth++;if(sinCalMonth>11){sinCalMonth=0;sinCalYear++;}
     renderSinCal();
+  };
+  document.getElementById("fSinCalToggle").onclick=()=>{
+    const toggle=document.getElementById("fSinCalToggle"),body=document.getElementById("fSinCalBody");
+    const open=body.style.display==="none";
+    body.style.display=open?"":"none";
+    toggle.classList.toggle("open",open);
   };
   document.getElementById("fSinQuota").oninput=renderSinDaysTierSummary;
   document.getElementById("btnSaveHabit").onclick=saveHabit;
