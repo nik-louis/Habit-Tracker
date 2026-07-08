@@ -261,6 +261,14 @@ textarea.inp{resize:vertical;min-height:60px}
   background:var(--accent);color:#000;font-weight:800;font-size:13px;padding:12px 18px;
   border-radius:12px;opacity:0;transition:.25s;z-index:60;pointer-events:none}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.undo-toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);
+  background:var(--panel);border:1px solid var(--line);color:var(--text);font-weight:700;font-size:13px;
+  padding:10px 10px 10px 16px;border-radius:12px;opacity:0;transition:.25s;z-index:61;
+  pointer-events:none;display:flex;align-items:center;gap:14px;max-width:90vw;box-shadow:0 8px 24px rgba(0,0,0,.35)}
+.undo-toast.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.undo-toast-btn{background:var(--accent);color:#000;border:none;border-radius:8px;padding:8px 14px;
+  font-weight:800;font-size:12px;cursor:pointer;white-space:nowrap;flex:0 0 auto}
+.undo-toast-btn:active{transform:scale(.95)}
 
 /* SETTINGS */
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
@@ -892,6 +900,7 @@ textarea.inp{resize:vertical;min-height:60px}
 </div>
 
 <div class="toast" id="toast"></div>
+<div class="undo-toast" id="undoToast"><span id="undoToastMsg"></span><button class="undo-toast-btn" id="undoToastBtn"></button></div>
 <div class="reward-overlay" id="summaryOverlay" style="display:none" onclick="closeSummaryModal()"></div>
 <div class="reward-popup" id="summaryModal" style="max-width:340px;max-height:80vh;overflow-y:auto;padding-bottom:20px">
   <div id="summaryContent"></div>
@@ -919,6 +928,7 @@ heatmapDesc:"Daily completion intensity across the year",daysLabel:"days",
 done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",bonusFreezes:"Bonus freezes",
 freezeToday:"Freeze today",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
 perfectDayToday:"Perfect day! The bonus applies once today has fully elapsed.",
+undoBtn:"Undo",undoCheckedMsg:"Checked: {0}",undoUncheckedMsg:"Unchecked: {0}",
 streak:"streak",notYearYet:"Not {0} yet",xpToday:"XP today",
 habit:"Habit",gridHint:"Tap a cell to mark a day. Yellow frame = today. Notes: click day number in header.",
 noHabitsYet:"No habits yet",goToHabits:"Go to Habits tab to add some.",
@@ -1029,6 +1039,7 @@ heatmapDesc:"Интенсивность выполнения по дням го�
 done:"выполнено",todayDone:"Сделано",remaining:"Осталось",freezesLeft:"Заморозок осталось",bonusFreezes:"Бонусных заморозок",
 freezeToday:"Заморозить день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
 perfectDayToday:"Идеальный день! Бонус применится, когда день полностью завершится.",
+undoBtn:"Отменить",undoCheckedMsg:"Отмечено: «{0}»",undoUncheckedMsg:"Снята отметка: «{0}»",
 streak:"серия",notYearYet:"Ещё не {0} год",xpToday:"XP сегодня",
 habit:"Привычка",gridHint:"Нажмите на ячейку, чтобы отметить день. Жёлтая рамка = сегодня. Заметки: нажмите на номер дня.",
 noHabitsYet:"Привычек пока нет",goToHabits:"Перейдите на вкладку Привычки, чтобы добавить.",
@@ -1139,6 +1150,7 @@ heatmapDesc:"Intensidad de cumplimiento diario durante el año",daysLabel:"días
 done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones rest.",bonusFreezes:"Congelaciones bonus",
 freezeToday:"Congelar hoy",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
 perfectDayToday:"¡Día perfecto! La bonificación se aplicará cuando termine el día.",
+undoBtn:"Deshacer",undoCheckedMsg:"Marcado: {0}",undoUncheckedMsg:"Desmarcado: {0}",
 streak:"racha",notYearYet:"Aún no es {0}",xpToday:"XP hoy",
 habit:"Hábito",gridHint:"Toca una celda para marcar un día. Marco amarillo = hoy. Notas: clic en número del día.",
 noHabitsYet:"Sin hábitos aún",goToHabits:"Ve a la pestaña Hábitos para agregar.",
@@ -1249,6 +1261,7 @@ heatmapDesc:"全年每日完成强度",daysLabel:"天",
 done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结",bonusFreezes:"奖励冻结",
 freezeToday:"冻结今天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
 perfectDayToday:"完美的一天！奖励将在今天结束后生效。",
+undoBtn:"撤销",undoCheckedMsg:"已完成：{0}",undoUncheckedMsg:"已取消：{0}",
 streak:"连续",notYearYet:"还不是{0}年",xpToday:"今日XP",
 habit:"习惯",gridHint:"点击单元格标记日期。黄色边框=今天。笔记：点击标题中的日期。",
 noHabitsYet:"还没有习惯",goToHabits:"前往习惯标签页添加。",
@@ -1359,6 +1372,7 @@ heatmapDesc:"Intensité d'achèvement quotidien sur l'année",daysLabel:"jours",
 done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",bonusFreezes:"Gels bonus",
 freezeToday:"Geler aujourd'hui",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
 perfectDayToday:"Journée parfaite ! Le bonus s'appliquera une fois la journée terminée.",
+undoBtn:"Annuler",undoCheckedMsg:"Coché : {0}",undoUncheckedMsg:"Décoché : {0}",
 streak:"série",notYearYet:"Pas encore {0}",xpToday:"XP aujourd'hui",
 habit:"Habitude",gridHint:"Appuyez sur une cellule pour marquer un jour. Cadre jaune = aujourd'hui. Notes: cliquez sur le numéro du jour.",
 noHabitsYet:"Pas encore d'habitudes",goToHabits:"Allez à l'onglet Habitudes pour en ajouter.",
@@ -2756,6 +2770,7 @@ function renderToday(){
       const hid=item.dataset.h;
       toggleCheck(m,hid,d);
       renderToday();renderXP();
+      offerCheckUndo(m,hid,d,()=>{renderToday();renderXP()});
     };
     item.onclick=e=>{
       if(e.target.classList.contains("ti-drag")||e.target.classList.contains("ach-chip"))return;
@@ -2763,6 +2778,7 @@ function renderToday(){
       const hid=item.dataset.h;
       toggleCheck(m,hid,d);
       renderToday();renderXP();
+      offerCheckUndo(m,hid,d,()=>{renderToday();renderXP()});
     };
   });
 
@@ -2940,10 +2956,12 @@ function renderGrid(){
   document.querySelectorAll(".chk").forEach(cell=>{
     cell.onclick=()=>{
       const h=state.habits.find(x=>x.id===cell.dataset.h);
-      toggleCheck(m,cell.dataset.h,+cell.dataset.d);
+      const hid=cell.dataset.h,d=+cell.dataset.d;
+      toggleCheck(m,hid,d);
       if(h&&h.achievementTiers&&h.achievementTiers.length){
         // achievement-tier state can't be represented by simple class/text patching — re-render fully
         renderGrid();renderHero();renderXP();
+        offerCheckUndo(m,hid,d,()=>{renderGrid();renderHero();renderXP()});
         return;
       }
       const on=cell.classList.toggle("on");
@@ -2955,6 +2973,7 @@ function renderGrid(){
       const tab=document.querySelector(`.m[data-m="${m}"] .badge`);
       if(tab)tab.textContent=monthScore(m)+"%";
       updateRowMeta(cell.closest("tr"),cell.dataset.h);
+      offerCheckUndo(m,hid,d,()=>{renderGrid();renderHero();renderXP()});
     };
   });
 
@@ -4821,6 +4840,30 @@ function fallbackCopy(t){
 /* ===== UI WIRING ===== */
 function toast(msg,ms){const t=document.getElementById("toast");t.textContent=msg;t.classList.add("show");
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),ms||2500)}
+
+// A dedicated toast (separate from the plain one above) that carries an action button — showing a
+// second one replaces whatever undo offer was still pending, since only the MOST RECENT check/uncheck
+// is ever meaningful to revert.
+function showUndoToast(msg,onUndo){
+  const t=document.getElementById("undoToast");
+  document.getElementById("undoToastMsg").textContent=msg;
+  document.getElementById("undoToastBtn").textContent=T.undoBtn;
+  document.getElementById("undoToastBtn").onclick=()=>{
+    t.classList.remove("show");clearTimeout(t._t);onUndo();
+  };
+  t.classList.add("show");
+  clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove("show"),4000);
+}
+// Offers to undo the check/uncheck that JUST happened at (m,hid,day) — always re-toggles (a plain
+// toggleCheck call is its own inverse) then fully re-renders via whatever callback the call site
+// provides, regardless of which rendering shortcut the original click took.
+function offerCheckUndo(m,hid,day,rerenderAfterUndo){
+  const h=state.habits.find(x=>x.id===hid);
+  if(!h)return;
+  const nowChecked=!!getChecks(m,hid)[day];
+  const msg=(nowChecked?T.undoCheckedMsg:T.undoUncheckedMsg).replace("{0}",h.name);
+  showUndoToast(msg,()=>{toggleCheck(m,hid,day);rerenderAfterUndo()});
+}
 
 let currentView="today";
 function switchView(v){
