@@ -339,6 +339,8 @@ textarea.inp{resize:vertical;min-height:60px}
 .reward-overlay.show{display:block}
 .notif-tabs{display:flex;gap:6px;margin-bottom:10px}
 .notif-tab{opacity:.55}
+.notif-bulk-acts{display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap}
+.notif-bulk-acts .mini{opacity:.85}
 .notif-tab.active{opacity:1;background:var(--accent);color:#0a0a0a;border-color:var(--accent)}
 .notif-item{background:var(--panel2);border-radius:12px;padding:10px 12px;margin-bottom:8px}
 .notif-item.read{opacity:.55}
@@ -900,6 +902,7 @@ textarea.inp{resize:vertical;min-height:60px}
     <button class="mini notif-tab" id="notifTabNew" data-tab="new">New</button>
     <button class="mini notif-tab" id="notifTabArchive" data-tab="archive">Archive</button>
   </div>
+  <div class="notif-bulk-acts" id="notifBulkActs"></div>
   <div id="notifList"></div>
 </div>
 
@@ -2034,6 +2037,25 @@ function resolveSinTierMiss(h,sinUse,dateISO){
   if(!tierCalExempt)sinUse[idx]=(sinUse[idx]||0)+1;
   return{delta:h.violationTiers[idx].sinDeltaMult*h.weight,unresolved:false};
 }
+// Continuous "did you also do this yesterday, and the day before" escalation for habits WITHOUT
+// configured tiers — tiers already have their own independent monthly-frequency escalation, so this
+// only ever touches the flat -3×/+1× baseline. Grows by STREAK_ESCALATION_STEP per day once the
+// streak reaches its start threshold, capped at a symmetric +STREAK_ESCALATION_CAP_DELTA swing from
+// baseline in both directions (penalty maxes at -6× around day 8, bonus maxes at +4× around day 10).
+// Resets to baseline the moment the streak breaks — matches longestStreak()'s existing per-month
+// scope, so like every other streak in this app it does not carry over across a month boundary.
+const STREAK_ESCALATION_STEP=0.5,STREAK_ESCALATION_CAP_DELTA=3.0;
+const MISS_STREAK_ESCALATION_START=3,SUCCESS_STREAK_ESCALATION_START=5;
+function missPenaltyMult(streakLen){
+  if(streakLen<MISS_STREAK_ESCALATION_START)return 3;
+  const extra=Math.min(STREAK_ESCALATION_CAP_DELTA,(streakLen-MISS_STREAK_ESCALATION_START+1)*STREAK_ESCALATION_STEP);
+  return 3+extra;
+}
+function successBonusMult(streakLen){
+  if(streakLen<SUCCESS_STREAK_ESCALATION_START)return 1;
+  const extra=Math.min(STREAK_ESCALATION_CAP_DELTA,(streakLen-SUCCESS_STREAK_ESCALATION_START+1)*STREAK_ESCALATION_STEP);
+  return 1+extra;
+}
 // Daily habit: check=+weight; an elapsed miss=-3×weight (or the habit's tier ladder if configured).
 // A miss pre-declared as conscious ("sin") uses the SAME tier ladder but each tier's sinDeltaMult
 // instead of deltaMult — on a date marked on the habit's sin-calendar widget that's unlimited
@@ -2060,17 +2082,18 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const tierUse=tierUseOut||{};
   const sinUse=sinUseOut||{};
   const hasAchTiers=h.achievementTiers&&h.achievementTiers.length>0;
-  let pts=0;
+  let pts=0,curMissStreak=0,curSuccessStreak=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(checksBucket[d]){
+      curSuccessStreak++;curMissStreak=0;
       if(hasAchTiers){
         const loggedAch=achBucket[d];
         const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
         pts+=h.achievementTiers[idx].plusMult*h.weight;
       }else{
-        pts+=h.weight;
+        pts+=successBonusMult(curSuccessStreak)*h.weight;
       }
       continue;
     }
@@ -2083,6 +2106,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     const dateISO=ymdStr(year,m,d);
     const loggedTier=tierBucket[d];
     if(loggedTier!==undefined&&hasTiers&&h.violationTiers[loggedTier]){
+      curMissStreak++;curSuccessStreak=0;
       let idx=loggedTier;
       if(isSin){
         // Each tier has its OWN calendar (t.sinCalendarDays) — a date marked there is always free
@@ -2103,11 +2127,13 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
         pts+=h.violationTiers[idx].deltaMult*h.weight;
       }
     }else if(isSin&&hasTiers){
+      curMissStreak++;curSuccessStreak=0;
       const r=resolveSinTierMiss(h,sinUse,dateISO);
       if(r.unresolved){if(unresolvedOut)unresolvedOut.push(d);}
       else pts+=r.delta;
     }else if(isSin&&!hasTiers&&(h.sinCalendarDays||[]).includes(dateISO)){
       // 0-tier habits use their OWN habit-level calendar instead (full-replacement once tiers exist).
+      // Unconditionally exempt, same as the tier-calendar case above — neutral, streaks untouched.
       pts+=-1*h.weight;
     }else if(isSin&&!hasTiers&&h.sinMonthlyQuota){
       // Habit-level "any day" quota — only used when no violation tiers are configured (once
@@ -2115,12 +2141,21 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
       // used everywhere else). sinUse is repurposed here under a non-numeric key so this counter
       // survives across the whole month's loop without a dedicated output parameter.
       sinUse._habit=(sinUse._habit||0)+1;
-      if(sinUse._habit<=h.sinMonthlyQuota)pts+=-1*h.weight;
-      else pts+=-3*h.weight;
+      if(sinUse._habit<=h.sinMonthlyQuota){
+        pts+=-1*h.weight; // within quota: neutral, streaks untouched
+      }else{
+        curMissStreak++;curSuccessStreak=0; // quota exhausted: a real miss from here on
+        pts+=-missPenaltyMult(curMissStreak)*h.weight;
+      }
     }else{
       const r=resolveUnloggedTierMiss(h,tierUse);
-      if(r===null)pts+=-3*h.weight;
-      else{pts+=r.delta;if(r.unresolved&&unresolvedOut)unresolvedOut.push(d);}
+      if(r===null){
+        curMissStreak++;curSuccessStreak=0;
+        pts+=-missPenaltyMult(curMissStreak)*h.weight;
+      }else{
+        curMissStreak++;curSuccessStreak=0;
+        pts+=r.delta;if(r.unresolved&&unresolvedOut)unresolvedOut.push(d);
+      }
     }
   }
   return pts;
@@ -2144,13 +2179,15 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
   const hasAchTiers=h.achievementTiers&&h.achievementTiers.length>0;
-  let doneSoFar=0,pts=0;
+  const hasTiers=h.violationTiers&&h.violationTiers.length>0;
+  let doneSoFar=0,pts=0,curMissStreak=0,curSuccessStreak=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(frozen.includes(d))continue;
     if(isArchivedOn(h,year,m,d))continue;
     if(checksBucket[d]){
+      curSuccessStreak++;curMissStreak=0;
       doneSoFar++;
       if(doneSoFar<=N){
         if(hasAchTiers){
@@ -2158,7 +2195,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
           const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
           pts+=h.achievementTiers[idx].plusMult*h.weight;
         }else{
-          pts+=h.weight;
+          pts+=successBonusMult(curSuccessStreak)*h.weight;
         }
       }
       continue;
@@ -2166,9 +2203,12 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     const isPast=isCurMonth?d<rt.d:true;
     if(!isPast||totalDays<=0||N<=0)continue;
     const minRequired=Math.floor(d/totalDays*N);
+    // Above the pace line, skipping is a free/neutral day (nothing owed yet) — streaks untouched,
+    // same "not yet obligatory" treatment the perfect-day bonus already gives this exact case.
     if(doneSoFar<minRequired){
       const loggedTier=tierBucket[d];
-      if(loggedTier!==undefined&&h.violationTiers&&h.violationTiers[loggedTier]){
+      if(loggedTier!==undefined&&hasTiers&&h.violationTiers[loggedTier]){
+        curMissStreak++;curSuccessStreak=0;
         let idx=loggedTier;
         tierUse[idx]=(tierUse[idx]||0)+1;
         while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
@@ -2176,8 +2216,9 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
         }
         pts+=h.violationTiers[idx].deltaMult*h.weight;
       }else{
+        curMissStreak++;curSuccessStreak=0;
         const r=resolveUnloggedTierMiss(h,tierUse);
-        if(r===null)pts+=-3*h.weight;
+        if(r===null)pts+=-missPenaltyMult(curMissStreak)*h.weight;
         else{pts+=r.delta;if(r.unresolved&&unresolvedOut)unresolvedOut.push(d);}
       }
     }
@@ -2433,6 +2474,22 @@ function deleteNotif(id){
   state.notifications=(state.notifications||[]).filter(x=>x.id!==id);
   save();renderNotifCenter();renderNotifBadge();
 }
+// Bulk actions all act on whatever's currently visible in notifActiveTab's filtered list, never
+// reaching across into the other tab — same scoping the per-item buttons already imply.
+function markAllNotifRead(){
+  (state.notifications||[]).filter(n=>notifActiveTab==="new"?!n.archived:n.archived).forEach(n=>n.read=true);
+  save();renderNotifCenter();renderNotifBadge();
+}
+function archiveAllNotif(){
+  (state.notifications||[]).filter(n=>!n.archived).forEach(n=>n.archived=true);
+  save();renderNotifCenter();renderNotifBadge();
+}
+function deleteAllNotif(){
+  const ru=state.lang!=="en";
+  if(!confirm(ru?"Удалить все уведомления в этой вкладке?":"Delete all notifications in this tab?"))return;
+  state.notifications=(state.notifications||[]).filter(n=>notifActiveTab==="new"?n.archived:!n.archived);
+  save();renderNotifCenter();renderNotifBadge();
+}
 // One-time-per-(year,month,habit) end-of-month warning: only for habits with 2+ configured tiers
 // (0/1-tier habits can never be ambiguous — resolveUnloggedTierMiss always resolves them on its
 // own) that actually left unresolved days behind. tierWarningKeys is a permanent dedup ledger so
@@ -2491,6 +2548,18 @@ function renderNotifCenter(){
   tabNew.classList.toggle("active",notifActiveTab==="new");
   tabArch.classList.toggle("active",notifActiveTab==="archive");
   const list=all.filter(n=>notifActiveTab==="new"?!n.archived:n.archived);
+  const bulkBox=document.getElementById("notifBulkActs");
+  if(!list.length){
+    bulkBox.innerHTML="";
+  }else{
+    let bulk=`<button class="mini" id="btnMarkAllRead">${ru?"Прочитать всё":"Mark all read"}</button>`;
+    if(notifActiveTab==="new")bulk+=`<button class="mini" id="btnArchiveAll">${ru?"Архивировать всё":"Archive all"}</button>`;
+    bulk+=`<button class="mini" id="btnDeleteAll">${ru?"Удалить всё":"Delete all"}</button>`;
+    bulkBox.innerHTML=bulk;
+    document.getElementById("btnMarkAllRead").onclick=markAllNotifRead;
+    const archAllBtn=document.getElementById("btnArchiveAll");if(archAllBtn)archAllBtn.onclick=archiveAllNotif;
+    document.getElementById("btnDeleteAll").onclick=deleteAllNotif;
+  }
   const box=document.getElementById("notifList");
   if(!list.length){
     box.innerHTML=`<div class="empty" style="padding:16px 0"><b>${notifActiveTab==="new"?(ru?"Нет новых уведомлений":"No new notifications"):(ru?"Архив пуст":"Archive is empty")}</b></div>`;
