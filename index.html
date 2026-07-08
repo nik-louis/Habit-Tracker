@@ -448,6 +448,38 @@ textarea.inp{resize:vertical;min-height:60px}
 .sum-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px;gap:10px}
 .sum-row span{color:var(--dim);flex:1}
 .sum-row b{flex:0 0 auto;font-size:15px}
+
+/* COSMETICS SHOP */
+@keyframes cosShift{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+@keyframes cosPulse{0%,100%{opacity:1}50%{opacity:.55}}
+@keyframes cosSpin{to{transform:rotate(360deg)}}
+.rewards-subtabs{display:flex;gap:6px;margin-bottom:12px}
+.rewards-subtab{flex:1;padding:9px;text-align:center;border-radius:10px;border:1px solid var(--line);
+  background:var(--panel2);color:var(--dim);font-size:13px;font-weight:700;cursor:pointer}
+.rewards-subtab.active{background:var(--accent);color:#0a0a0a;border-color:var(--accent)}
+.cos-cat-title{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--dim);margin:16px 0 8px}
+.cos-cat-title:first-child{margin-top:0}
+.cos-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:10px}
+.cos-card{border:1px solid var(--line);border-radius:12px;padding:10px 8px;text-align:center;background:var(--panel)}
+.cos-card.owned{border-color:var(--accent)}
+.cos-swatch{width:100%;aspect-ratio:1;border-radius:10px;margin:0 auto 6px;display:flex;align-items:center;justify-content:center;
+  font-size:26px;background:var(--panel2);border:1px solid var(--line)}
+.cos-swatch.frame-preview{background:var(--panel2)}
+.cos-name{font-size:11px;font-weight:700;line-height:1.25;min-height:28px;display:flex;align-items:center;justify-content:center}
+.cos-rarity{font-size:9px;letter-spacing:.06em;text-transform:uppercase;margin:2px 0 6px}
+.cos-rarity.common{color:var(--dim)} .cos-rarity.rare{color:#4aa3ff} .cos-rarity.epic{color:#b76bff} .cos-rarity.legendary{color:#ffd400}
+.cos-btn{width:100%;padding:6px;border-radius:8px;border:none;font-size:11px;font-weight:800;cursor:pointer;background:var(--accent);color:#0a0a0a}
+.cos-btn.equipped{background:var(--red);color:#fff}
+.cos-btn.locked{background:var(--line);color:var(--dim);cursor:default}
+.cos-btn:active{transform:scale(.96)}
+.profile-card{border-radius:16px;padding:16px;margin-bottom:14px;position:relative;overflow:hidden}
+.profile-card-inner{display:flex;align-items:center;gap:14px;position:relative;z-index:1}
+.profile-ring{width:64px;height:64px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;
+  background:var(--panel);font-size:15px;font-weight:800;position:relative;border:2px solid var(--line)}
+.profile-badge-emo{position:absolute;bottom:-4px;right:-4px;font-size:16px;background:var(--panel);border-radius:50%;padding:1px}
+.profile-name-row{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800}
+.profile-title-text{font-size:12px;color:var(--dim);margin-top:2px;font-style:italic}
+.cos-custom-title-inp{margin-top:8px;width:100%}
 /* rewards tab */
 .rsummary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .rgroup{margin-bottom:11px}
@@ -1609,6 +1641,12 @@ function freshState(){
     // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger,
     // and XP/level progression — both derived fresh by recalcPoints()/recalcXP(), never patched)
     points:0,purchases:[],xp:0,
+    // Cosmetics: purely a record of fact (owned/equipped), never derived — mirrors purchases'
+    // shape (a cost ledger recalcPoints() subtracts) but kept in its own array since these are a
+    // different catalog (COSMETIC_CATALOG, not state.bigRewards) and behave differently (owned
+    // once, then equipped/unequipped for free, never bought repeatedly).
+    cosmetics:{owned:{},equipped:{background:null,frame:null,badge:null,title:null},customTitleText:"",unlockedViaAchievement:{}},
+    cosmeticPurchases:[],
     // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
     // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
@@ -1770,6 +1808,12 @@ function migrate(){
   T=I18N[state.lang]||I18N.en;
   if(!Array.isArray(state.notifications))state.notifications=[];
   if(!Array.isArray(state.tierWarningKeys))state.tierWarningKeys=[];
+  if(!state.cosmetics)state.cosmetics={owned:{},equipped:{background:null,frame:null,badge:null,title:null},customTitleText:"",unlockedViaAchievement:{}};
+  if(!state.cosmetics.owned)state.cosmetics.owned={};
+  if(!state.cosmetics.equipped)state.cosmetics.equipped={background:null,frame:null,badge:null,title:null};
+  if(state.cosmetics.customTitleText===undefined)state.cosmetics.customTitleText="";
+  if(!state.cosmetics.unlockedViaAchievement)state.cosmetics.unlockedViaAchievement={};
+  if(!Array.isArray(state.cosmeticPurchases))state.cosmeticPurchases=[];
   recalcXP();
   recalcPoints();
   scanTierWarnings();
@@ -2140,7 +2184,9 @@ function recalcPoints(){
     });
   }
   pts-=(state.purchases||[]).reduce((s,p)=>s+(p.cost||0),0);
+  pts-=(state.cosmeticPurchases||[]).reduce((s,p)=>s+(p.cost||0),0);
   state.points=pts;
+  checkCosmeticAchievementUnlocks();
 }
 /* ===== MONEY POOL (weighted, no cliff — replaces per-habit zone-rate escalation) =====
    pool = income × ratePct; each failed habit owes pool × (weight / Σ weight of active habits).
@@ -2454,6 +2500,30 @@ function renderPoints(){
 }
 
 /* ===== LEVEL PROGRESSION MODAL ===== */
+// Steam/Discord-style "profile card": equipped background behind, equipped frame around the
+// level ring, equipped badge as a small overlay emoji, equipped title as a line of text below the
+// rank name. Reads live from state.cosmetics.equipped — no cached/derived copy, so re-equipping
+// anything is instantly reflected the next time this (or renderXP, for the compact header) renders.
+function profileCardHTML(){
+  const lv=levelFromXp(state.xp||0);
+  const ru=state.lang!=="en";
+  const eq=(state.cosmetics&&state.cosmetics.equipped)||{};
+  const bg=eq.background?cosmeticById(eq.background):null;
+  const frame=eq.frame?cosmeticById(eq.frame):null;
+  const badge=eq.badge?cosmeticById(eq.badge):null;
+  const titleItem=eq.title?cosmeticById(eq.title):null;
+  const titleText=titleItem?(titleItem.custom?(state.cosmetics.customTitleText||""):(ru?titleItem.name:titleItem.nameEn)):"";
+  return`<div class="profile-card" style="${bg?bg.css:'background:var(--panel2)'}">
+    <div class="profile-card-inner">
+      <div class="profile-ring" style="${frame?frame.css:''}">Lv.${lv}${badge?`<span class="profile-badge-emo">${badge.emo}</span>`:''}</div>
+      <div>
+        <div class="profile-name-row">${rankName(lv)}</div>
+        ${titleText?`<div class="profile-title-text">${escapeHtml(titleText)}</div>`:`<div class="profile-title-text">${ru?'Нет титула — выбери в Эстетике':'No title set — pick one in Aesthetics'}</div>`}
+      </div>
+    </div>
+  </div>
+  <button class="btn ghost" id="btnGotoCosmetics" style="width:100%;margin-bottom:14px">&#10024; ${ru?'Настроить внешний вид':'Customize appearance'}</button>`;
+}
 function openLevelModal(){
   const lv=levelFromXp(state.xp||0);
   const cur=state.xp-xpForLevel(lv);
@@ -2463,13 +2533,15 @@ function openLevelModal(){
   document.getElementById("lLevelProgression").textContent=T.levelProgression;
   document.getElementById("lBtnCloseLevel").textContent=T.closeBtn2||T.closeBtn;
 
-  document.getElementById("levelSummary").innerHTML=`
+  document.getElementById("levelSummary").innerHTML=profileCardHTML()+`
     <div class="level-summary">
       <div class="ls"><div class="lsl">${T.currentLevel}</div><div class="lsv">Lv.${lv}</div></div>
       <div class="ls"><div class="lsl">${rankName(lv)}</div><div class="lsv">${((lv-1)%5)+1}/5</div></div>
       <div class="ls"><div class="lsl">${T.totalXP}</div><div class="lsv">${state.xp||0}</div></div>
       <div class="ls"><div class="lsl">${T.xpToNext}</div><div class="lsv">${lv>=100?'MAX':toNext}</div></div>
     </div>`;
+  const gotoBtn=document.getElementById("btnGotoCosmetics");
+  if(gotoBtn)gotoBtn.onclick=()=>{closeLevelModal();rewardsSubTab="cosmetics";switchView("rewards")};
 
   let html='';
   for(let l=1;l<=100;l++){
@@ -3812,14 +3884,14 @@ function achievementsForMonth(m){
   const anyStreak=Math.max(0,...hs.map(h=>longestStreak(m,h.id)));
   const allMet=hs.length>0&&hs.every(h=>metTarget(h,m));
   return[
-    {emo:"&#128142;",title:T.achPerfectMonth,desc:T.achPerfectMonthD,on:allMet},
-    {emo:"&#128293;",title:T.achOnFire,desc:T.achOnFireD,on:anyStreak>=7},
-    {emo:"&#9889;",title:T.achStreak14,desc:T.achStreak14D,on:anyStreak>=14},
-    {emo:"&#129482;",title:T.achCleanMonth,desc:T.achCleanMonthD,on:avoidedHarshestTier(m)},
-    {emo:"&#127919;",title:T.ach80,desc:T.ach80D,on:sc>=80},
-    {emo:"&#128176;",title:T.achZeroPenalty,desc:T.achZeroPenaltyD,on:monthMoneyOwed(m)===0&&hs.length>0},
-    {emo:"&#128176;",title:T.achMonthPositive,desc:T.achMonthPositiveD,on:hs.length>0&&monthPointsNet(m)>0},
-    {emo:"&#10052;",title:T.achNoFreeze,desc:T.achNoFreezeD,on:hs.length>0&&getFreezes(m).length===0},
+    {key:"achPerfectMonth",emo:"&#128142;",title:T.achPerfectMonth,desc:T.achPerfectMonthD,on:allMet},
+    {key:"achOnFire",emo:"&#128293;",title:T.achOnFire,desc:T.achOnFireD,on:anyStreak>=7},
+    {key:"achStreak14",emo:"&#9889;",title:T.achStreak14,desc:T.achStreak14D,on:anyStreak>=14},
+    {key:"achCleanMonth",emo:"&#129482;",title:T.achCleanMonth,desc:T.achCleanMonthD,on:avoidedHarshestTier(m)},
+    {key:"ach80",emo:"&#127919;",title:T.ach80,desc:T.ach80D,on:sc>=80},
+    {key:"achZeroPenalty",emo:"&#128176;",title:T.achZeroPenalty,desc:T.achZeroPenaltyD,on:monthMoneyOwed(m)===0&&hs.length>0},
+    {key:"achMonthPositive",emo:"&#128176;",title:T.achMonthPositive,desc:T.achMonthPositiveD,on:hs.length>0&&monthPointsNet(m)>0},
+    {key:"achNoFreeze",emo:"&#10052;",title:T.achNoFreeze,desc:T.achNoFreezeD,on:hs.length>0&&getFreezes(m).length===0},
   ];
 }
 function achievementsForYear(){
@@ -3832,23 +3904,121 @@ function achievementsForYear(){
   const yearNet=T.months.reduce((s,_,m)=>s+monthPointsNet(m),0);
   const level=levelFromXp(state.xp||0);
   return[
-    {emo:"&#128081;",title:T.achHalfYear,desc:T.achHalfYearD,on:goodMonths>=6},
-    {emo:"&#127942;",title:T.achYear,desc:T.achYearD,on:goodMonths>=12},
-    {emo:"&#128142;",title:T.achPerfectionist,desc:T.achPerfectionistD,on:perfectMonths>=3},
-    {emo:"&#129482;",title:T.ach6Clean,desc:T.ach6CleanD,on:cleanMonths>=6},
-    {emo:"&#128293;",title:T.achUnbreakable,desc:T.achUnbreakableD,on:maxStreak>=21},
-    {emo:"&#127805;",title:T.achRewardCollector,desc:T.achRewardCollectorD,on:totalRew>=50},
-    {emo:"&#128176;",title:T.achYearPositive,desc:T.achYearPositiveD,on:hs.length>0&&yearNet>0},
-    {emo:"&#11088;",title:T.achLevel25,desc:T.achLevel25D,on:level>=25},
+    {key:"achHalfYear",emo:"&#128081;",title:T.achHalfYear,desc:T.achHalfYearD,on:goodMonths>=6},
+    {key:"achYear",emo:"&#127942;",title:T.achYear,desc:T.achYearD,on:goodMonths>=12},
+    {key:"achPerfectionist",emo:"&#128142;",title:T.achPerfectionist,desc:T.achPerfectionistD,on:perfectMonths>=3},
+    {key:"ach6Clean",emo:"&#129482;",title:T.ach6Clean,desc:T.ach6CleanD,on:cleanMonths>=6},
+    {key:"achUnbreakable",emo:"&#128293;",title:T.achUnbreakable,desc:T.achUnbreakableD,on:maxStreak>=21},
+    {key:"achRewardCollector",emo:"&#127805;",title:T.achRewardCollector,desc:T.achRewardCollectorD,on:totalRew>=50},
+    {key:"achYearPositive",emo:"&#128176;",title:T.achYearPositive,desc:T.achYearPositiveD,on:hs.length>0&&yearNet>0},
+    {key:"achLevel25",emo:"&#11088;",title:T.achLevel25,desc:T.achLevel25D,on:level>=25},
   ];
+}
+
+/* ===== COSMETICS (profile customization shop) =====
+   A hardcoded catalog (like defaultBigRewards — not user-editable, hand-designed) of purely
+   visual SVG/CSS items across 4 slots: background, frame, badge, title. Most are bought with
+   INLI; a few are free but gated behind an achievement (achKey) actually having fired at least
+   once — those never cost points, so they're excluded from the shop's buy flow entirely and only
+   ever show as locked/unlocked. Rarity is cosmetic-only (no gameplay effect), just pricing flavor. */
+const COSMETIC_CATALOG=[
+  {id:"bg_midnight",cat:"background",name:"Полночь",nameEn:"Midnight",cost:30,rarity:"common",
+    css:"background:linear-gradient(135deg,#1a1a2e,#0f0f1a)"},
+  {id:"bg_aurora",cat:"background",name:"Аврора",nameEn:"Aurora",cost:100,rarity:"rare",
+    css:"background:linear-gradient(120deg,#00c9a7,#6a3093,#ff6a88);background-size:200% 200%;animation:cosShift 6s ease infinite"},
+  {id:"bg_neon",cat:"background",name:"Неонсетка",nameEn:"Neon Grid",cost:100,rarity:"rare",
+    css:"background-color:#0a0a12;background-image:linear-gradient(rgba(0,255,200,.25) 1px,transparent 1px),linear-gradient(90deg,rgba(0,255,200,.25) 1px,transparent 1px);background-size:16px 16px"},
+  {id:"bg_gold",cat:"background",name:"Золото",nameEn:"Gold",cost:250,rarity:"epic",
+    css:"background:linear-gradient(135deg,#bf953f,#fcf6ba,#b38728,#fbf5b7,#aa771c);background-size:200% 200%;animation:cosShift 8s ease infinite"},
+  {id:"bg_magma",cat:"background",name:"Магма",nameEn:"Magma",cost:250,rarity:"epic",
+    css:"background:linear-gradient(135deg,#2b0a00,#ff4d00,#7a0c00);background-size:200% 200%;animation:cosShift 5s ease infinite"},
+  {id:"bg_cosmos",cat:"background",name:"Космос",nameEn:"Cosmos",cost:500,rarity:"legendary",
+    css:"background-color:#04040c;background-image:radial-gradient(1.5px 1.5px at 20px 30px,#fff,transparent),radial-gradient(1.5px 1.5px at 60px 80px,#fff,transparent),radial-gradient(1px 1px at 90px 20px,#fff,transparent),radial-gradient(1px 1px at 130px 60px,#fff,transparent),radial-gradient(2px 2px at 160px 100px,#fff,transparent);background-size:180px 120px"},
+
+  {id:"frame_simple",cat:"frame",name:"Простая рамка",nameEn:"Simple",cost:20,rarity:"common",css:"border:2px solid var(--accent)"},
+  {id:"frame_dashed",cat:"frame",name:"Пунктир",nameEn:"Dashed",cost:20,rarity:"common",css:"border:2px dashed var(--accent2)"},
+  {id:"frame_double",cat:"frame",name:"Двойная",nameEn:"Double",cost:80,rarity:"rare",css:"border:3px double var(--accent)"},
+  {id:"frame_pulse",cat:"frame",name:"Пульс",nameEn:"Pulse",cost:80,rarity:"rare",css:"border:2px solid var(--accent);animation:cosPulse 1.6s ease-in-out infinite"},
+  {id:"frame_rainbow",cat:"frame",name:"Радуга",nameEn:"Rainbow",cost:200,rarity:"epic",
+    css:"border:3px solid transparent;background-image:linear-gradient(var(--panel),var(--panel)),conic-gradient(from 0deg,#ff3d86,#ffd400,#2ecc71,#00c9a7,#6a3093,#ff3d86);background-origin:border-box;background-clip:padding-box,border-box;animation:cosSpin 3s linear infinite"},
+  {id:"frame_flame",cat:"frame",name:"Огненное кольцо",nameEn:"Flame Ring",cost:null,rarity:"legendary",achKey:"achUnbreakable",
+    css:"border:3px solid #ff7a00;box-shadow:0 0 12px 2px #ff7a00,0 0 22px 6px rgba(255,69,0,.5);animation:cosPulse 1.2s ease-in-out infinite"},
+
+  {id:"badge_star",cat:"badge",name:"Звезда",nameEn:"Star",cost:15,rarity:"common",emo:"⭐"},
+  {id:"badge_bolt",cat:"badge",name:"Молния",nameEn:"Bolt",cost:15,rarity:"common",emo:"⚡"},
+  {id:"badge_shield",cat:"badge",name:"Щит",nameEn:"Shield",cost:60,rarity:"rare",emo:"🛡️"},
+  {id:"badge_crown",cat:"badge",name:"Корона",nameEn:"Crown",cost:180,rarity:"epic",emo:"👑"},
+  {id:"badge_flame",cat:"badge",name:"Пламя",nameEn:"Flame",cost:null,rarity:"legendary",achKey:"achUnbreakable",emo:"🔥"},
+  {id:"badge_target",cat:"badge",name:"Мишень",nameEn:"Target",cost:null,rarity:"epic",achKey:"achPerfectMonth",emo:"🎯"},
+  {id:"badge_coin",cat:"badge",name:"Монета",nameEn:"Coin",cost:null,rarity:"rare",achKey:"achRewardCollector",emo:"🪙"},
+
+  {id:"title_discipline",cat:"title",name:"Дисциплина превыше всего",nameEn:"Discipline above all",cost:20,rarity:"common"},
+  {id:"title_iron",cat:"title",name:"Железная воля",nameEn:"Iron will",cost:20,rarity:"common"},
+  {id:"title_nostop",cat:"title",name:"Не сдаюсь",nameEn:"Never stop",cost:20,rarity:"common"},
+  {id:"title_custom",cat:"title",name:"Свой титул",nameEn:"Custom title",cost:100,rarity:"rare",custom:true},
+];
+function cosmeticById(id){return COSMETIC_CATALOG.find(c=>c.id===id)}
+// Achievement-gated items unlock permanently the first time their underlying achievement is
+// detected true — checked here (called from the end of every recalcPoints()) against the CURRENT
+// month/year only, same "always re-derive from current truth" scope the achievement system itself
+// already uses, but latched into a persisted flag so it can never be un-earned by later changes.
+function checkCosmeticAchievementUnlocks(){
+  if(!state.cosmetics)return;
+  if(!state.cosmetics.unlockedViaAchievement)state.cosmetics.unlockedViaAchievement={};
+  const gated=COSMETIC_CATALOG.filter(c=>c.achKey);
+  if(!gated.length)return;
+  const rt=realTodayParts();
+  const onKeys=new Set();
+  achievementsForYear().forEach(a=>{if(a.on)onKeys.add(a.key)});
+  if(activeYear()===rt.y){
+    achievementsForMonth(rt.m).forEach(a=>{if(a.on)onKeys.add(a.key)});
+  }
+  gated.forEach(c=>{if(onKeys.has(c.achKey))state.cosmetics.unlockedViaAchievement[c.id]=true});
+}
+function cosmeticOwned(item){
+  if(item.achKey)return!!(state.cosmetics.unlockedViaAchievement&&state.cosmetics.unlockedViaAchievement[item.id]);
+  return!!(state.cosmetics.owned&&state.cosmetics.owned[item.id]);
+}
+function buyCosmetic(id){
+  const item=cosmeticById(id);if(!item||item.achKey||cosmeticOwned(item))return;
+  const ru=state.lang!=="en";
+  if(!confirm(ru?`Купить «${item.name}» за ${item.cost} ${CURRENCY_TICKER}?`:`Buy "${item.nameEn}" for ${item.cost} ${CURRENCY_TICKER}?`))return;
+  if(!state.cosmeticPurchases)state.cosmeticPurchases=[];
+  state.cosmeticPurchases.push({id:uid(),itemId:id,cost:item.cost,date:Date.now()});
+  state.cosmetics.owned[id]=true;
+  recalcPoints();save();renderRewards();renderXP();
+  toast(ru?`Куплено: ${item.name}`:`Bought: ${item.nameEn}`);
+}
+function equipCosmetic(id){
+  const item=cosmeticById(id);if(!item||!cosmeticOwned(item))return;
+  state.cosmetics.equipped[item.cat]=(state.cosmetics.equipped[item.cat]===id)?null:id;
+  save();renderRewards();renderXP();
 }
 
 /* ===== REWARDS VIEW (unified points shop) ===== */
 let bigRewardEditId=null; // null=off, 'new'=adding, id=editing
+let rewardsSubTab="rewards"; // "rewards" | "cosmetics"
+function rewardsSubtabsHTML(ru){
+  return`<div class="rewards-subtabs">
+    <div class="rewards-subtab ${rewardsSubTab==='rewards'?'active':''}" data-rst="rewards">${ru?'Награды':'Rewards'}</div>
+    <div class="rewards-subtab ${rewardsSubTab==='cosmetics'?'active':''}" data-rst="cosmetics">&#10024; ${ru?'Эстетика':'Aesthetics'}</div>
+  </div>`;
+}
+function wireRewardsSubtabs(body){
+  body.querySelectorAll("[data-rst]").forEach(el=>el.onclick=()=>{rewardsSubTab=el.dataset.rst;renderRewards()});
+}
 function renderRewards(){
   const body=document.getElementById("rewardsBody");
   const ru=state.lang!=="en";
   const avail=state.points||0;
+
+  if(rewardsSubTab==="cosmetics"){
+    body.innerHTML=rewardsSubtabsHTML(ru)+cosmeticsShopHTML(avail,ru);
+    wireRewardsSubtabs(body);
+    wireCosmeticsShop(body);
+    return;
+  }
+
   const bigR=(state.bigRewards||[]);
   const purchases=(state.purchases||[]).slice().sort((a,b)=>b.date-a.date);
 
@@ -3897,7 +4067,7 @@ function renderRewards(){
     `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${CURRENCY_TICKER}</div></div>`
   ).join('');
 
-  body.innerHTML=`
+  body.innerHTML=rewardsSubtabsHTML(ru)+`
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h3 style="margin:0">🏆 ${ru?'Магазин':'Shop'}</h3>
@@ -3952,6 +4122,7 @@ function renderRewards(){
       buyRewardFlat(r);
     };
   });
+  wireRewardsSubtabs(body);
 }
 function buyRewardFlat(r){
   const ru=state.lang!=="en";
@@ -3960,6 +4131,55 @@ function buyRewardFlat(r){
   state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now()});
   recalcPoints();save();renderRewards();renderXP();
   toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${CURRENCY_TICKER})`);
+}
+
+/* ===== COSMETICS SHOP UI (sub-tab of Rewards) ===== */
+function cosmeticCardHTML(item,ru){
+  const owned=cosmeticOwned(item);
+  const equipped=state.cosmetics.equipped[item.cat]===item.id;
+  const name=ru?item.name:item.nameEn;
+  let swatch;
+  if(item.cat==="badge")swatch=`<div class="cos-swatch">${item.emo}</div>`;
+  else if(item.cat==="title")swatch=`<div class="cos-swatch" style="font-size:10px;padding:4px;text-align:center">&ldquo;${escapeHtml(name.slice(0,16))}&rdquo;</div>`;
+  else if(item.cat==="frame")swatch=`<div class="cos-swatch frame-preview" style="${item.css}"></div>`;
+  else swatch=`<div class="cos-swatch" style="${item.css}"></div>`;
+  const rarityLabel={common:ru?"обычный":"common",rare:ru?"редкий":"rare",epic:ru?"эпик":"epic",legendary:ru?"легендарный":"legendary"}[item.rarity];
+  let btn;
+  if(item.achKey&&!owned)btn=`<button class="cos-btn locked" disabled>&#128274; ${ru?"условие":"locked"}</button>`;
+  else if(!owned)btn=`<button class="cos-btn" data-cosbuy="${item.id}">${item.cost} ${CURRENCY_TICKER}</button>`;
+  else if(equipped)btn=`<button class="cos-btn equipped" data-cosequip="${item.id}">${ru?"Снять":"Unequip"}</button>`;
+  else btn=`<button class="cos-btn" data-cosequip="${item.id}">${ru?"Надеть":"Equip"}</button>`;
+  return`<div class="cos-card ${owned?'owned':''}">${swatch}<div class="cos-name">${escapeHtml(name)}</div><div class="cos-rarity ${item.rarity}">${rarityLabel}</div>${btn}</div>`;
+}
+function cosmeticsShopHTML(avail,ru){
+  const cats=[
+    {key:"background",label:ru?"Фоны":"Backgrounds"},
+    {key:"frame",label:ru?"Рамки":"Frames"},
+    {key:"badge",label:ru?"Значки":"Badges"},
+    {key:"title",label:ru?"Титулы":"Titles"},
+  ];
+  const sections=cats.map(c=>{
+    const items=COSMETIC_CATALOG.filter(i=>i.cat===c.key);
+    return`<div class="cos-cat-title">${c.label}</div><div class="cos-grid">${items.map(i=>cosmeticCardHTML(i,ru)).join('')}</div>`;
+  }).join('');
+  const customTitleSection=state.cosmetics.equipped.title==="title_custom"?`
+    <div class="cos-cat-title">${ru?"Текст своего титула":"Your custom title text"}</div>
+    <input class="inp cos-custom-title-inp" id="cosCustomTitleInp" maxlength="40" value="${escapeHtml(state.cosmetics.customTitleText||'')}" placeholder="${ru?"Напиши свой титул...":"Type your title..."}">`:"";
+  return`<div class="card">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">&#10024; ${ru?"Эстетика профиля":"Profile aesthetics"}</h3>
+      <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?"Баланс":"Balance"} ${CURRENCY_TICKER}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail}</div></div>
+    </div>
+    <p class="hint" style="margin:0 0 4px">${ru?"Покупается за INLI, надевается и снимается бесплатно в любой момент. Предметы с замком открываются достижениями.":"Bought with INLI, equip/unequip freely anytime. Locked items unlock via achievements."}</p>
+    ${sections}
+    ${customTitleSection}
+  </div>`;
+}
+function wireCosmeticsShop(body){
+  body.querySelectorAll("[data-cosbuy]").forEach(b=>b.onclick=()=>buyCosmetic(b.dataset.cosbuy));
+  body.querySelectorAll("[data-cosequip]").forEach(b=>b.onclick=()=>equipCosmetic(b.dataset.cosequip));
+  const titleInp=document.getElementById("cosCustomTitleInp");
+  if(titleInp)titleInp.oninput=()=>{state.cosmetics.customTitleText=titleInp.value.slice(0,40);save();renderXP()};
 }
 
 /* ===== MONTHLY SUMMARY ===== */
