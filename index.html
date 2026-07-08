@@ -444,6 +444,8 @@ textarea.inp{resize:vertical;min-height:60px}
 .br-info{flex:1;min-width:0}
 .br-name{font-size:14px;font-weight:800;line-height:1.2}
 .br-cost{font-size:12px;color:var(--dim);margin-top:2px}
+.br-progress{height:4px;background:var(--line);border-radius:99px;overflow:hidden;margin-top:5px}
+.br-progress-fill{height:100%;border-radius:99px;transition:width .3s}
 .br-btns{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
 .sum-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0;font-size:13px;gap:10px}
 .sum-row span{color:var(--dim);flex:1}
@@ -1612,6 +1614,33 @@ function freshYearData(){
 // state.years rather than inside it.
 const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs"];
 function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
+function addDaysISO(iso,days){
+  const d=new Date(iso+"T00:00:00");
+  d.setDate(d.getDate()+days);
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+/* ===== SAVINGS ("вклад") — lock INLI for a continuous, duration-scaled bonus =====
+   Deliberately a smooth formula (0.5%/day, capped at 40%) rather than a handful of fixed-duration
+   tiers — the whole economy already avoids discrete cliffs everywhere else (the money pool, the
+   pace-line, tier escalation), so a "pick 7/30/90 days" preset ladder here would be the one place
+   that reintroduces exactly the dead-zone-adjacent effect this project keeps designing away from. */
+function savingsBonusPctForDays(days){return Math.min(40,Math.round(days*0.5*10)/10)}
+function createSavingsDeposit(amount,days){
+  if(!(amount>0)||!(days>0))return null;
+  const start=todayISO();
+  const dep={id:uid(),principal:Math.round(amount),startDate:start,maturesDate:addDaysISO(start,Math.round(days)),bonusPct:savingsBonusPctForDays(days),collected:false};
+  if(!state.savings)state.savings=[];
+  state.savings.push(dep);
+  recalcPoints();save();
+  return dep;
+}
+function collectSavingsDeposit(id){
+  const dep=(state.savings||[]).find(s=>s.id===id);
+  if(!dep||dep.collected||dep.maturesDate>todayISO())return false;
+  dep.collected=true;
+  recalcPoints();save();
+  return true;
+}
 // Scans every year/month/habit's real check data for the earliest date ever marked done —
 // used only as a one-time migration default for trackingStart (see migrate()).
 function findEarliestCheckedDate(){
@@ -1647,6 +1676,9 @@ function freshState(){
     // once, then equipped/unequipped for free, never bought repeatedly).
     cosmetics:{owned:{},equipped:{background:null,frame:null,badge:null,title:null},customTitleText:"",unlockedViaAchievement:{}},
     cosmeticPurchases:[],
+    // Savings ("вклад"): lock INLI away for N days for a continuous (never a fixed-tier cliff)
+    // bonus on collection — a lifetime ledger of fact, not derived, mirroring purchases' shape.
+    savings:[],
     // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
     // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
@@ -1814,6 +1846,7 @@ function migrate(){
   if(state.cosmetics.customTitleText===undefined)state.cosmetics.customTitleText="";
   if(!state.cosmetics.unlockedViaAchievement)state.cosmetics.unlockedViaAchievement={};
   if(!Array.isArray(state.cosmeticPurchases))state.cosmeticPurchases=[];
+  if(!Array.isArray(state.savings))state.savings=[];
   recalcXP();
   recalcPoints();
   scanTierWarnings();
@@ -2185,6 +2218,13 @@ function recalcPoints(){
   }
   pts-=(state.purchases||[]).reduce((s,p)=>s+(p.cost||0),0);
   pts-=(state.cosmeticPurchases||[]).reduce((s,p)=>s+(p.cost||0),0);
+  // Savings: an uncollected deposit's principal is locked away (subtracted); once collected, the
+  // principal is simply no longer subtracted (i.e. it's back) and the earned bonus is added on
+  // top — never a separate mutable "current savings value" field, just these two derived terms.
+  (state.savings||[]).forEach(dep=>{
+    if(!dep.collected)pts-=dep.principal;
+    else pts+=Math.round(dep.principal*dep.bonusPct/100);
+  });
   state.points=pts;
   checkCosmeticAchievementUnlocks();
 }
@@ -3997,11 +4037,12 @@ function equipCosmetic(id){
 
 /* ===== REWARDS VIEW (unified points shop) ===== */
 let bigRewardEditId=null; // null=off, 'new'=adding, id=editing
-let rewardsSubTab="rewards"; // "rewards" | "cosmetics"
+let rewardsSubTab="rewards"; // "rewards" | "cosmetics" | "savings"
 function rewardsSubtabsHTML(ru){
   return`<div class="rewards-subtabs">
     <div class="rewards-subtab ${rewardsSubTab==='rewards'?'active':''}" data-rst="rewards">${ru?'Награды':'Rewards'}</div>
     <div class="rewards-subtab ${rewardsSubTab==='cosmetics'?'active':''}" data-rst="cosmetics">&#10024; ${ru?'Эстетика':'Aesthetics'}</div>
+    <div class="rewards-subtab ${rewardsSubTab==='savings'?'active':''}" data-rst="savings">&#128176; ${ru?'Вклад':'Savings'}</div>
   </div>`;
 }
 function wireRewardsSubtabs(body){
@@ -4016,6 +4057,12 @@ function renderRewards(){
     body.innerHTML=rewardsSubtabsHTML(ru)+cosmeticsShopHTML(avail,ru);
     wireRewardsSubtabs(body);
     wireCosmeticsShop(body);
+    return;
+  }
+  if(rewardsSubTab==="savings"){
+    body.innerHTML=rewardsSubtabsHTML(ru)+savingsShopHTML(avail,ru);
+    wireRewardsSubtabs(body);
+    wireSavingsShop(body);
     return;
   }
 
@@ -4046,10 +4093,14 @@ function renderRewards(){
     const owned=(state.purchases||[]).filter(p=>p.rewardId===r.id).length;
     const tag=r.tagId?getTag(r.tagId):null;
     const linkedHabit=r.linkedHabitId?state.habits.find(h=>h.id===r.linkedHabitId):null;
+    // Progress toward affording this specific reward — clamps at 0/100 so an already-negative
+    // balance or an already-affordable reward both still render a sane, non-overflowing bar.
+    const pct=r.cost>0?Math.min(100,Math.max(0,Math.round(avail/r.cost*100))):100;
     return`<div class="br-item">
       <span class="br-emo">${r.emo||'🎁'}</span>
       <div class="br-info"><div class="br-name">${tag?`<span class="dot" style="background:${tag.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px"></span>`:''}${escapeHtml(r.name)}</div>
         <div class="br-cost">${r.cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${linkedHabit?' · &#128279; '+(ru?'для: ':'for: ')+escapeHtml(linkedHabit.name):''}</div>
+        <div class="br-progress"><div class="br-progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--accent)'}"></div></div>
       </div>
       <div class="br-btns">
         <button class="usebtn" data-brbuy="${r.id}">${ru?'купить':'buy'}</button>
@@ -4180,6 +4231,67 @@ function wireCosmeticsShop(body){
   body.querySelectorAll("[data-cosequip]").forEach(b=>b.onclick=()=>equipCosmetic(b.dataset.cosequip));
   const titleInp=document.getElementById("cosCustomTitleInp");
   if(titleInp)titleInp.oninput=()=>{state.cosmetics.customTitleText=titleInp.value.slice(0,40);save();renderXP()};
+}
+
+/* ===== SAVINGS SHOP UI (sub-tab of Rewards) ===== */
+function savingsDepositRowHTML(dep,ru){
+  const mature=dep.maturesDate<=todayISO();
+  const payout=dep.principal+Math.round(dep.principal*dep.bonusPct/100);
+  return`<div class="br-item">
+    <span class="br-emo" style="font-size:18px">&#128176;</span>
+    <div class="br-info">
+      <div class="br-name">${dep.principal} ${CURRENCY_TICKER} &rarr; ${payout} ${CURRENCY_TICKER} <span style="color:var(--green)">(+${dep.bonusPct}%)</span></div>
+      <div class="br-cost">${mature?(ru?'Готово к снятию':'Ready to collect'):(ru?'Созревает: ':'Matures: ')+dep.maturesDate}</div>
+    </div>
+    <div class="br-btns">${mature?`<button class="usebtn" data-savcollect="${dep.id}">${ru?'забрать':'collect'}</button>`:''}</div>
+  </div>`;
+}
+function savingsShopHTML(avail,ru){
+  const active=(state.savings||[]).filter(s=>!s.collected).sort((a,b)=>a.maturesDate<b.maturesDate?-1:1);
+  const rows=active.length?active.map(d=>savingsDepositRowHTML(d,ru)).join(''):`<div class="empty" style="padding:12px 0"><b>${ru?'Нет активных вкладов':'No active deposits'}</b></div>`;
+  return`<div class="card" style="margin-bottom:12px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;flex-wrap:wrap;gap:8px">
+      <h3 style="margin:0">&#128176; ${ru?'Вклад':'Savings'}</h3>
+      <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Баланс':'Balance'} ${CURRENCY_TICKER}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail}</div></div>
+    </div>
+    <p class="hint" style="margin:0 0 10px">${ru?'Заморозь баллы на N дней — при снятии получишь их обратно плюс бонус. Чем дольше срок, тем выше процент (0.5%/день, максимум 40% при 80+ днях). Забрать раньше срока нельзя.':'Lock points away for N days — collect them back plus a bonus once matured. Longer locks earn a higher rate (0.5%/day, capped at 40% at 80+ days). Can\'t be collected early.'}</p>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input type="number" min="1" class="inp" id="savAmountInp" placeholder="${CURRENCY_TICKER}" style="flex:1">
+      <input type="number" min="1" class="inp" id="savDaysInp" placeholder="${ru?'дней':'days'}" style="width:90px">
+    </div>
+    <p class="hint" id="savPreview" style="margin:0 0 8px"></p>
+    <button class="btn primary" id="btnCreateSavings" style="width:100%">${ru?'Заморозить':'Lock it in'}</button>
+  </div>
+  <div class="card"><h3 style="margin-top:0">${ru?'Мои вклады':'My deposits'}</h3>${rows}</div>`;
+}
+function updateSavingsPreview(){
+  const el=document.getElementById("savPreview");if(!el)return;
+  const ru=state.lang!=="en";
+  const amount=+((document.getElementById("savAmountInp")||{}).value)||0;
+  const days=+((document.getElementById("savDaysInp")||{}).value)||0;
+  if(amount<=0||days<=0){el.textContent=ru?'Укажи сумму и срок в днях':'Enter an amount and a number of days';return}
+  const pct=savingsBonusPctForDays(days);
+  const payout=Math.round(amount)+Math.round(amount*pct/100);
+  el.textContent=ru?`Через ${days} дн. получишь ${payout} ${CURRENCY_TICKER} (+${pct}%)`:`In ${days} day(s) you'll get ${payout} ${CURRENCY_TICKER} (+${pct}%)`;
+}
+function wireSavingsShop(body){
+  const amountInp=document.getElementById("savAmountInp"),daysInp=document.getElementById("savDaysInp");
+  if(amountInp)amountInp.oninput=updateSavingsPreview;
+  if(daysInp)daysInp.oninput=updateSavingsPreview;
+  updateSavingsPreview();
+  const btn=document.getElementById("btnCreateSavings");
+  if(btn)btn.onclick=()=>{
+    const ru=state.lang!=="en";
+    const amount=+((amountInp||{}).value)||0,days=+((daysInp||{}).value)||0;
+    if(amount<=0||days<=0){toast(ru?'Укажи сумму и срок':'Enter an amount and duration');return}
+    createSavingsDeposit(amount,days);
+    toast(ru?`Заморожено: ${Math.round(amount)} ${CURRENCY_TICKER}`:`Locked: ${Math.round(amount)} ${CURRENCY_TICKER}`);
+    renderRewards();renderXP();
+  };
+  body.querySelectorAll("[data-savcollect]").forEach(b=>b.onclick=()=>{
+    const ru=state.lang!=="en";
+    if(collectSavingsDeposit(b.dataset.savcollect)){toast(ru?'Вклад получен!':'Deposit collected!');renderRewards();renderXP();}
+  });
 }
 
 /* ===== MONTHLY SUMMARY ===== */
