@@ -3096,6 +3096,7 @@ function renderTiersList(){
   const box=document.getElementById("fTiersList");if(!box)return;
   box.innerHTML=(editTiers.length?tiersHeaderHTML():"")+editTiers.map((t,i)=>tierRowHTML(t,i)).join("");
   box.querySelectorAll("[data-tierdel]").forEach(b=>b.onclick=()=>{
+    readTiersFromForm(); // capture any in-progress edits in OTHER rows before this one is removed
     editTiers.splice(+b.dataset.tierdel,1);renderTiersList();
   });
   // Live visual feedback: a non-negative multiplier would silently zero out the tier's penalty
@@ -3266,6 +3267,7 @@ function renderAchTiersList(){
   const box=document.getElementById("fAchTiersList");if(!box)return;
   box.innerHTML=(editAchTiers.length?achTiersHeaderHTML():"")+editAchTiers.map((t,i)=>achTierRowHTML(t,i)).join("");
   box.querySelectorAll("[data-achtierdel]").forEach(b=>b.onclick=()=>{
+    readAchTiersFromForm(); // capture any in-progress edits in OTHER rows before this one is removed
     editAchTiers.splice(+b.dataset.achtierdel,1);renderAchTiersList();
   });
   // Mirrors the violation-tier live-invalid marking, just inverted: a non-positive reward
@@ -4056,7 +4058,8 @@ function exportCSV(){
 }
 function exportPDF(){
   const m=statScope==="year"?-1:statScope;
-  const title=m>=0?T.months[m]+" 2026":"Year 2026";
+  const yr=activeYear();
+  const title=m>=0?T.months[m]+" "+yr:"Year "+yr;
   const hs=activeHabits();
   let html=`<html><head><title>Report ${title}</title><style>
     body{font-family:sans-serif;padding:24px;max-width:800px;margin:0 auto;color:#1a1a1a}
@@ -4105,7 +4108,8 @@ function exportPDF(){
 }
 function exportPNG(){
   const m=statScope==="year"?-1:statScope;
-  const title=m>=0?T.months[m]+" 2026":"Year 2026";
+  const yr=activeYear();
+  const title=m>=0?T.months[m]+" "+yr:"Year "+yr;
   const hs=activeHabits();
   const W=800,H=600;
   const canvas=document.createElement("canvas");
@@ -4114,7 +4118,7 @@ function exportPNG(){
 
   ctx.fillStyle="#0a0a0a";ctx.fillRect(0,0,W,H);
   ctx.fillStyle="#ffd400";ctx.font="bold 28px sans-serif";
-  ctx.fillText("Realization 2026",30,50);
+  ctx.fillText("Realization "+yr,30,50);
   ctx.fillStyle="#9a9a9a";ctx.font="16px sans-serif";
   ctx.fillText(title,30,75);
 
