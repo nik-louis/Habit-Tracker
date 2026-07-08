@@ -167,14 +167,12 @@ td.frozen-cell{position:relative}
 .inp.invalid{border-color:var(--red);background:rgba(231,76,60,.1)}
 textarea.inp{resize:vertical;min-height:60px}
 .row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
 .btn{width:100%;border:none;border-radius:12px;padding:14px;font-size:14px;font-weight:800;
   letter-spacing:.03em;cursor:pointer;transition:transform .1s}
 .btn.primary{background:var(--accent);color:#000}
 .btn.ghost{background:var(--panel2);color:var(--text);border:1px solid var(--line)}
 .btn.danger{background:transparent;color:var(--red);border:1px solid var(--red)}
 .btn:active{transform:scale(.98)}
-.btn.sm{padding:10px 14px;font-size:12px;width:auto}
 .toggle{display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none}
 .switch{width:46px;height:27px;border-radius:99px;background:var(--line);position:relative;flex:0 0 auto;transition:.2s}
 .switch::after{content:"";position:absolute;width:21px;height:21px;border-radius:50%;background:#fff;top:3px;left:3px;transition:.2s}
@@ -238,9 +236,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .reward-item:last-child{border-bottom:none}
 .reward-item .ri-name{font-size:13px;font-weight:700;flex:1}
 .reward-item .ri-reward{font-size:12px;color:var(--accent)}
-.reward-item .ri-claim{font-size:11px;padding:5px 10px;border-radius:8px;cursor:pointer;
-  background:var(--panel2);border:1px solid var(--line);color:var(--dim);font-weight:700}
-.reward-item .ri-claim.claimed{background:var(--green);color:#000;border-color:var(--green)}
 
 /* CHARITY */
 .charity-box{background:linear-gradient(135deg,#1a1a2e,#16213e);border:1px solid #2a3a5c;
@@ -274,7 +269,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .setting-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--line)}
 .setting-row:last-child{border-bottom:none}
 .setting-row .sr-label{font-size:13px;font-weight:700}
-.setting-row .sr-desc{font-size:11px;color:var(--dim);margin-top:2px}
 .accent-grid{display:flex;gap:6px;flex-wrap:wrap}
 .accent-swatch{width:28px;height:28px;border-radius:8px;cursor:pointer;border:2px solid transparent}
 .accent-swatch.sel{border-color:var(--text)}
@@ -294,10 +288,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .empty{padding:34px 16px;text-align:center;color:var(--dim)}
 .empty b{color:var(--text);display:block;font-size:16px;margin-bottom:6px}
 .hint{font-size:11px;color:var(--dim);line-height:1.5;margin-top:10px}
-
-.weight-bar{display:flex;gap:3px;margin-top:4px}
-.weight-bar .wb{width:100%;height:6px;border-radius:3px;background:var(--line)}
-.weight-bar .wb.fill{background:var(--accent2)}
 
 .select-wrap{position:relative}
 .select-wrap select{appearance:none;width:100%;background:var(--panel2);border:1px solid var(--line);
@@ -409,8 +399,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .hero-zones{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
 .zone-chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--panel2)}
 .zone-chip.zr{background:rgba(255,61,134,.15);color:var(--pink)}
-.zone-chip.zn{background:var(--panel2);color:var(--dim)}
-.zone-chip.zk1{background:rgba(255,122,0,.15);color:var(--accent2)}
 .zone-chip.zk2{background:rgba(231,76,60,.2);color:var(--red)}
 .zone-chip.zrate{background:rgba(231,76,60,.3);color:var(--red)}
 /* zone badges in grid */
@@ -497,16 +485,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .profile-name-row{display:flex;align-items:center;gap:6px;font-size:15px;font-weight:800}
 .profile-title-text{font-size:12px;color:var(--dim);margin-top:2px;font-style:italic}
 .cos-custom-title-inp{margin-top:8px;width:100%}
-/* rewards tab */
-.rsummary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
-.rgroup{margin-bottom:11px}
-.rgroup .rhead{display:flex;align-items:center;gap:10px}
-.rgroup .rtext{flex:1;font-size:15px;font-weight:800;line-height:1.2}
-.rgroup .rtext.done{text-decoration:line-through;color:var(--dim)}
-.qty{flex:0 0 auto;background:var(--pink);color:#0a0a0a;font-weight:800;font-size:12px;border-radius:999px;padding:5px 11px}
-.qty.zero{background:var(--panel2);color:var(--dim)}
-.rinst{display:flex;align-items:center;gap:9px;padding:8px 0 0;margin-left:4px;font-size:12px;color:var(--dim)}
-.rinst .src{flex:1}
 .usebtn{background:var(--accent);color:#0a0a0a;border:none;border-radius:8px;padding:7px 12px;font-size:12px;font-weight:800;cursor:pointer}
 .usebtn.used{background:transparent;color:var(--dim);border:1px solid var(--line)}
 .usebtn:active{transform:scale(.96)}
@@ -517,16 +495,6 @@ textarea.inp{resize:vertical;min-height:60px}
 .move-btn:active{transform:scale(.9)}
 .move-btn:disabled{opacity:.3}
 
-/* month norms quick panel */
-.norms-panel{padding:14px 16px;margin-bottom:14px}
-.norms-panel summary{cursor:pointer;font-size:14px;font-weight:800;list-style:none}
-.norms-panel summary::-webkit-details-marker{display:none}
-.norms-panel summary b{color:var(--accent)}
-.norm-zone-hint{font-size:10px;color:var(--dim);margin-top:2px;white-space:nowrap}
-.normrow{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
-.normrow:last-child{border-bottom:none}
-.normrow .nm2{flex:1;font-size:13px;font-weight:600;min-width:0}
-.normrow input.nnum{width:64px;background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:9px;padding:8px;text-align:center;font-size:16px}
 </style>
 </head>
 <body>
@@ -964,8 +932,7 @@ penaltyBankLabel:"Penalty Bank",setIncome:"set income",everyDay:"every day",days
 resetTitle:"Reset",resetDesc:"Load default 19 habits (your check marks stay).",loadDefaults:"Load defaults",
 confirmReset:"Replace current habits with default 19?",defaultsLoaded:"Defaults loaded",
 fullYear:"Full Year",completionByHabit:"Completion by habit",pctOfTarget:"% of target for",
-noHabits:"No habits",rewardBank:"Reward Bank",earnedThisMonth:"Earned this month",
-claim:"Claim",claimedLabel:"Claimed",
+noHabits:"No habits",
 correlationsTitle:"Correlations",corrDesc:"How habits affect each other next day",
 nextDayEffect:"next-day effect",dataPoints:"data points",
 achievementsTitle:"Achievements",disciplineByMonth:"Discipline by month",avgCompletion:"Average completion %",
@@ -1079,8 +1046,7 @@ penaltyBankLabel:"Банк штрафов",setIncome:"укажите доход"
 resetTitle:"Сброс",resetDesc:"Загрузить 19 привычек по умолчанию (отметки сохранятся).",loadDefaults:"Загрузить стандартные",
 confirmReset:"Заменить текущие привычки на 19 стандартных?",defaultsLoaded:"Стандартные загружены",
 fullYear:"Весь год",completionByHabit:"Выполнение по привычкам",pctOfTarget:"% от цели за",
-noHabits:"Нет привычек",rewardBank:"Банк наград",earnedThisMonth:"Заработано в этом месяце",
-claim:"Забрать",claimedLabel:"Забрано",
+noHabits:"Нет привычек",
 correlationsTitle:"Корреляции",corrDesc:"Как привычки влияют друг на друга на следующий день",
 nextDayEffect:"эффект на следующий день",dataPoints:"точек данных",
 achievementsTitle:"Достижения",disciplineByMonth:"Дисциплина по месяцам",avgCompletion:"Средний % выполнения",
@@ -1194,8 +1160,7 @@ penaltyBankLabel:"Banco de multas",setIncome:"indicar ingreso",everyDay:"cada d�
 resetTitle:"Restablecer",resetDesc:"Cargar 19 hábitos predeterminados (las marcas se mantienen).",loadDefaults:"Cargar predeterminados",
 confirmReset:"¿Reemplazar hábitos actuales con los 19 predeterminados?",defaultsLoaded:"Predeterminados cargados",
 fullYear:"Año completo",completionByHabit:"Cumplimiento por hábito",pctOfTarget:"% del objetivo para",
-noHabits:"Sin hábitos",rewardBank:"Banco de recompensas",earnedThisMonth:"Ganado este mes",
-claim:"Reclamar",claimedLabel:"Reclamado",
+noHabits:"Sin hábitos",
 correlationsTitle:"Correlaciones",corrDesc:"Cómo los hábitos se afectan mutuamente al día siguiente",
 nextDayEffect:"efecto día siguiente",dataPoints:"puntos de datos",
 achievementsTitle:"Logros",disciplineByMonth:"Disciplina por mes",avgCompletion:"% promedio de cumplimiento",
@@ -1309,8 +1274,7 @@ penaltyBankLabel:"罚款库",setIncome:"设置收入",everyDay:"每天",daysPerM
 resetTitle:"重置",resetDesc:"加载默认19个习惯（打卡记录保留）。",loadDefaults:"加载默认值",
 confirmReset:"用19个默认习惯替换当前习惯？",defaultsLoaded:"默认值已加载",
 fullYear:"全年",completionByHabit:"按习惯完成度",pctOfTarget:"目标完成率",
-noHabits:"无习惯",rewardBank:"奖励库",earnedThisMonth:"本月获得",
-claim:"领取",claimedLabel:"已领取",
+noHabits:"无习惯",
 correlationsTitle:"相关性",corrDesc:"习惯如何影响第二天的表现",
 nextDayEffect:"次日效果",dataPoints:"数据点",
 achievementsTitle:"成就",disciplineByMonth:"月度纪律",avgCompletion:"平均完成率",
@@ -1424,8 +1388,7 @@ penaltyBankLabel:"Banque de pénalités",setIncome:"indiquer revenu",everyDay:"c
 resetTitle:"Réinitialiser",resetDesc:"Charger les 19 habitudes par défaut (les coches restent).",loadDefaults:"Charger par défaut",
 confirmReset:"Remplacer les habitudes actuelles par les 19 par défaut ?",defaultsLoaded:"Par défaut chargées",
 fullYear:"Année complète",completionByHabit:"Achèvement par habitude",pctOfTarget:"% de l'objectif pour",
-noHabits:"Pas d'habitudes",rewardBank:"Banque de récompenses",earnedThisMonth:"Gagné ce mois",
-claim:"Réclamer",claimedLabel:"Réclamé",
+noHabits:"Pas d'habitudes",
 correlationsTitle:"Corrélations",corrDesc:"Comment les habitudes s'influencent mutuellement le lendemain",
 nextDayEffect:"effet jour suivant",dataPoints:"points de données",
 achievementsTitle:"Réalisations",disciplineByMonth:"Discipline par mois",avgCompletion:"% moyen d'achèvement",
@@ -1589,7 +1552,7 @@ function defaultTags(){
   ];
 }
 function defaultHabits(){
-  const H=(name,tagId,reward,weight,order)=>({id:uid(),name,tagId,everyday:true,target:0,monthTargets:{},weight,reward,zoneMode:"pct",zonePct:null,zoneAbs:null,archived:false,deleted:false,deletedAt:null,order});
+  const H=(name,tagId,reward,weight,order)=>({id:uid(),name,tagId,everyday:true,target:0,monthTargets:{},weight,reward,archived:false,deleted:false,deletedAt:null,order});
   return[
     H("Привычка 1","biohacking","Награда 1",9,0),
     H("Привычка 2","biohacking","Награда 2",4,1),
@@ -1657,11 +1620,11 @@ function defaultBigRewards(){
 let state=null,memFallback=false;
 // Per-year data lives in state.years[YYYY]; shared data (habits/tags/bigRewards/theme...) at top level.
 function freshYearData(){
-  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{}};
+  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{}};
 }
 // xp intentionally NOT per-year (see below) — it's a lifetime field like points, sitting alongside
 // state.years rather than inside it.
-const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","claimedRewards","rewardSnapshots","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs"];
+const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs"];
 function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
 function addDaysISO(iso,days){
   const d=new Date(iso+"T00:00:00");
@@ -1713,7 +1676,7 @@ function findEarliestCheckedDate(){
 function freshState(){
   const startYear=Math.min(LAST_YEAR,Math.max(FIRST_YEAR,new Date().getFullYear()));
   const s={
-    globalZonePct:{reward:85,nothing:65,knut1:45,knut2:25},tags:defaultTags(),habits:defaultHabits(),
+    tags:defaultTags(),habits:defaultHabits(),
     bigRewards:defaultBigRewards(),reminders:[],notifPermAsked:false,theme:"dark",accentColor:"#ffd400",lang:"ru",
     currentYear:startYear,years:{},
     // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger,
@@ -1737,7 +1700,7 @@ function freshState(){
     // in the UI) so the end-of-month tier-ambiguity warning fires exactly once per month per habit.
     notifications:[],tierWarningKeys:[],
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
-    checks:{},notes:{},freezesUsed:{},incomeHistory:{},claimedRewards:{},rewardSnapshots:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},
+    checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},
     _t:Date.now()
   };
   s.years[startYear]=freshYearData();
@@ -1805,7 +1768,7 @@ function migrate(){
   // Bind active year into live top-level fields
   bindYear(state,state.currentYear);
 
-  if(!state.globalZonePct)state.globalZonePct={reward:85,nothing:65,knut1:45,knut2:25};
+  delete state.globalZonePct; // old zone-based system, never read anywhere anymore
   if(!state.bigRewards||!Array.isArray(state.bigRewards))state.bigRewards=defaultBigRewards();
   state.bigRewards.forEach(r=>{
     if(r.tagId===undefined)r.tagId=null;
@@ -1856,15 +1819,16 @@ function migrate(){
       h.tagId=map[h.color]||"influence";
     }
     if(!h.tagId)h.tagId="influence";
-    if(h.zoneMode===undefined)h.zoneMode="pct";
-    if(h.zonePct===undefined)h.zonePct=null;
-    if(h.zoneAbs===undefined)h.zoneAbs=null;
+    // The old zone-based percentage system is fully gone (replaced by the weighted points economy)
+    // and these fields are never read anywhere anymore — actively strip them from real saved data
+    // instead of just leaving them as permanent unread clutter.
+    delete h.zoneMode;delete h.zonePct;delete h.zoneAbs;
     // New points-economy fields (additive, default reproduces current behavior untouched)
     if(h.type===undefined)h.type=h.everyday?"daily":"event";
     // sinDays (old weekday-recurring chips) is retired — superseded by sinCalendarDays (specific
     // dates, picked via a calendar widget) + sinMonthlyQuota (habit-level "any day" allowance,
     // fixes the old 0-tier gap where declaring a conscious skip on a non-weekday did nothing).
-    // Existing h.sinDays values are left untouched in storage but no longer read anywhere.
+    delete h.sinDays;
     if(!Array.isArray(h.sinCalendarDays))h.sinCalendarDays=[];
     if(h.sinMonthlyQuota===undefined)h.sinMonthlyQuota=null;
     if(!Array.isArray(h.violationTiers))h.violationTiers=[];
@@ -1931,7 +1895,7 @@ function visibleHabits(filter){
 
 function monthCharityAmount(m){return monthMoneyOwed(m)}
 
-/* ===== POINTS ECONOMY (new, additive — runs alongside the zone system above during the migration) =====
+/* ===== POINTS ECONOMY =====
    Lifetime, derived-not-stored: recalcPoints() rebuilds state.points from scratch every time,
    the same way recalcXP() rebuilds XP — so import/sync/reset can never leave a stale balance
    (that was exactly the class of bug we fixed for XP earlier). */
@@ -2830,9 +2794,9 @@ function renderToday(){
         const paceBadge=done?`<span style="color:var(--green)">${T.paceOnTrack}</span>`
           :p.obligatory?`<b style="color:var(--red)">&#9888; ${T.paceObligatory}</b>`
           :`<span style="color:var(--dim)">${T.paceOnTrack}</span>`;
-        metaLine=`${p.totalDone}/${p.N} ${T.paceThisMonth} &middot; ${paceBadge} &middot; +${xpForCheck(h.weight)} XP`;
+        metaLine=`${p.totalDone}/${p.N} ${T.paceThisMonth} &middot; ${paceBadge} &middot; <span class="ti-xp">+${xpForCheck(h.weight)} XP</span>`;
       }else{
-        metaLine=`${T.streak} ${streak} &middot; +${xpForCheck(h.weight)} XP`;
+        metaLine=`${T.streak} ${streak} &middot; <span class="ti-xp">+${xpForCheck(h.weight)} XP</span>`;
       }
       let achRow="";
       if(done&&(h.achievementTiers||[]).length>0){
@@ -3134,36 +3098,6 @@ function updateRowMeta(tr,hid){
   const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
   const meta=tr.querySelector(".rowmeta");
   if(meta)meta.innerHTML=`<b class="${bal>0?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(curMonth,hid)} ${balBadge}`;
-}
-function renderMonthNorms(){
-  const m=curMonth,ru=state.lang==="ru";
-  const mn=document.getElementById("mnpMonth");if(mn)mn.textContent=T.months[m];
-  const lbl=document.getElementById("mnpLabel");if(lbl)lbl.textContent=ru?"Нормы на":"Targets for";
-  const body=document.getElementById("mnpBody");if(!body)return;
-  const hs=activeHabits().sort((a,b)=>(a.order||0)-(b.order||0));
-  if(!hs.length){body.innerHTML=`<div class="hint">${ru?"Нет привычек":"No habits"}</div>`;return}
-  body.innerHTML=`<p class="hint" style="margin-top:0">${ru?"Своя норма для этого месяца. Пусто = по умолчанию.":"Per-month target. Empty = default."}</p>`+hs.map(h=>{
-    const def=h.everyday?daysInMonth(m):(h.target||0);
-    const mt=h.monthTargets&&h.monthTargets["m"+m];
-    const val=(mt!==undefined&&mt!==null&&mt!=="")?mt:"";
-    return`<div class="normrow"><span class="dot" style="background:${getTagColor(h.tagId)}"></span>
-      <div class="nm2">${escapeHtml(h.name)}</div>
-      <div style="text-align:right">
-        <input class="nnum" type="number" inputmode="numeric" data-mh="${h.id}" value="${val}" placeholder="${def}">
-      </div></div>`;
-  }).join("");
-  body.querySelectorAll(".nnum").forEach(inp=>{
-    inp.oninput=()=>{
-      const hid=inp.dataset.mh,h=state.habits.find(x=>x.id===hid);
-      if(!h.monthTargets)h.monthTargets={};
-      if(inp.value.trim()==="")delete h.monthTargets["m"+m];
-      else h.monthTargets["m"+m]=+inp.value;
-      recalcPoints();save();
-      renderHero();renderMonthTabs();renderXP();
-      const tr=[...document.querySelectorAll("#gridScroll tr")].find(t=>t.querySelector(`.chk[data-h="${hid}"]`));
-      if(tr)updateRowMeta(tr,hid);
-    };
-  });
 }
 function renderTrack(){renderMonthTabs();renderHero();renderSummaryButton();renderGrid()}
 
@@ -5280,7 +5214,6 @@ function fireNotification(title,body,tag){
   }catch(_){}
 }
 function _todayKey(){const d=new Date();return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate()}
-function _hm(d){return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0")}
 function _minOfDay(hm){const[a,b]=(hm||"0:0").split(":").map(Number);return a*60+b}
 function habitDoneToday(habitId){
   // is this habit checked for today's date in the active year?
