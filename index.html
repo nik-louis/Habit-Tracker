@@ -825,6 +825,7 @@ textarea.inp{resize:vertical;min-height:60px}
 
     <div class="card">
       <h3 id="lBackupExport">Backup &amp; Export</h3>
+      <p class="sub" id="backupStatusLine"></p>
       <div class="row2" style="margin-bottom:10px">
         <button class="btn ghost" id="btnExport"><span id="lBtnExport">JSON Backup</span></button>
         <button class="btn ghost" id="btnCSV"><span id="lBtnCSV">CSV Export</span></button>
@@ -929,6 +930,10 @@ done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",bo
 freezeToday:"Freeze today",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
 perfectDayToday:"Perfect day! The bonus applies once today has fully elapsed.",
 undoBtn:"Undo",undoCheckedMsg:"Checked: {0}",undoUncheckedMsg:"Unchecked: {0}",
+backupReminderTitle:"💾 Time for a backup",
+backupNeverMsg:"You haven't backed up yet — {0} day(s) of data at risk. Export a JSON backup in Settings.",
+backupAgoMsg:"Last backup was {0} day(s) ago. Export a fresh JSON backup in Settings.",
+backupTodayMsg:"✅ Backed up today.",
 streak:"streak",notYearYet:"Not {0} yet",xpToday:"XP today",
 habit:"Habit",gridHint:"Tap a cell to mark a day. Yellow frame = today. Notes: click day number in header.",
 noHabitsYet:"No habits yet",goToHabits:"Go to Habits tab to add some.",
@@ -1040,6 +1045,10 @@ done:"выполнено",todayDone:"Сделано",remaining:"Осталось
 freezeToday:"Заморозить день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
 perfectDayToday:"Идеальный день! Бонус применится, когда день полностью завершится.",
 undoBtn:"Отменить",undoCheckedMsg:"Отмечено: «{0}»",undoUncheckedMsg:"Снята отметка: «{0}»",
+backupReminderTitle:"💾 Пора сделать бэкап",
+backupNeverMsg:"Бэкапа ещё не было — под риском {0} дн. данных. Сделай экспорт JSON в Настройках.",
+backupAgoMsg:"Последний бэкап был {0} дн. назад. Сделай свежий экспорт JSON в Настройках.",
+backupTodayMsg:"✅ Бэкап сделан сегодня.",
 streak:"серия",notYearYet:"Ещё не {0} год",xpToday:"XP сегодня",
 habit:"Привычка",gridHint:"Нажмите на ячейку, чтобы отметить день. Жёлтая рамка = сегодня. Заметки: нажмите на номер дня.",
 noHabitsYet:"Привычек пока нет",goToHabits:"Перейдите на вкладку Привычки, чтобы добавить.",
@@ -1151,6 +1160,10 @@ done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones r
 freezeToday:"Congelar hoy",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
 perfectDayToday:"¡Día perfecto! La bonificación se aplicará cuando termine el día.",
 undoBtn:"Deshacer",undoCheckedMsg:"Marcado: {0}",undoUncheckedMsg:"Desmarcado: {0}",
+backupReminderTitle:"💾 Hora de hacer una copia de seguridad",
+backupNeverMsg:"Aún no hay copia de seguridad — {0} día(s) de datos en riesgo. Exporta un backup JSON en Ajustes.",
+backupAgoMsg:"La última copia de seguridad fue hace {0} día(s). Exporta un nuevo backup JSON en Ajustes.",
+backupTodayMsg:"✅ Copia de seguridad hecha hoy.",
 streak:"racha",notYearYet:"Aún no es {0}",xpToday:"XP hoy",
 habit:"Hábito",gridHint:"Toca una celda para marcar un día. Marco amarillo = hoy. Notas: clic en número del día.",
 noHabitsYet:"Sin hábitos aún",goToHabits:"Ve a la pestaña Hábitos para agregar.",
@@ -1262,6 +1275,10 @@ done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结
 freezeToday:"冻结今天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
 perfectDayToday:"完美的一天！奖励将在今天结束后生效。",
 undoBtn:"撤销",undoCheckedMsg:"已完成：{0}",undoUncheckedMsg:"已取消：{0}",
+backupReminderTitle:"💾 该备份了",
+backupNeverMsg:"还没有备份过 — {0} 天的数据存在风险。请在设置中导出 JSON 备份。",
+backupAgoMsg:"上次备份是 {0} 天前。请在设置中导出新的 JSON 备份。",
+backupTodayMsg:"✅ 今天已备份。",
 streak:"连续",notYearYet:"还不是{0}年",xpToday:"今日XP",
 habit:"习惯",gridHint:"点击单元格标记日期。黄色边框=今天。笔记：点击标题中的日期。",
 noHabitsYet:"还没有习惯",goToHabits:"前往习惯标签页添加。",
@@ -1373,6 +1390,10 @@ done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",bon
 freezeToday:"Geler aujourd'hui",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
 perfectDayToday:"Journée parfaite ! Le bonus s'appliquera une fois la journée terminée.",
 undoBtn:"Annuler",undoCheckedMsg:"Coché : {0}",undoUncheckedMsg:"Décoché : {0}",
+backupReminderTitle:"💾 Il est temps de sauvegarder",
+backupNeverMsg:"Aucune sauvegarde pour l'instant — {0} jour(s) de données à risque. Exportez une sauvegarde JSON dans les Paramètres.",
+backupAgoMsg:"Dernière sauvegarde il y a {0} jour(s). Exportez une nouvelle sauvegarde JSON dans les Paramètres.",
+backupTodayMsg:"✅ Sauvegardé aujourd'hui.",
 streak:"série",notYearYet:"Pas encore {0}",xpToday:"XP aujourd'hui",
 habit:"Habitude",gridHint:"Appuyez sur une cellule pour marquer un jour. Cadre jaune = aujourd'hui. Notes: cliquez sur le numéro du jour.",
 noHabitsYet:"Pas encore d'habitudes",goToHabits:"Allez à l'onglet Habitudes pour en ajouter.",
@@ -1513,6 +1534,7 @@ function applyLang(){
   setSyncStatus(sync.on?(es?"live":"off"):"off");
   renderMonthTargetsGrid();
   renderSinCal();renderTiersList();renderAchTiersList();
+  updateBackupStatusLine();
   rerenderActive();
 }
 
@@ -4540,12 +4562,59 @@ function renderVersionList(){
 }
 
 /* ===== EXPORT ===== */
+// Backup-reminder metadata lives in its own localStorage key, deliberately OUTSIDE state — it's a
+// device-local nag about THIS browser's storage, not user data, so it must never travel through
+// JSON export/import, version restore, or cloud sync (those would silence the reminder on other
+// devices/backups that were never actually exported here).
+const BACKUP_KEY="rt_backup_meta_2026";
+const BACKUP_REMINDER_DAYS=14;
+const DAY_MS=86400000;
+let backupMeta={firstSeenAt:null,lastBackupAt:null,lastReminderAt:null};
+// firstSeenAt is set ONCE, the very first time this browser ever loads the app — deliberately its
+// own field rather than reusing state._t, which looks similar but is actually a last-MODIFIED
+// timestamp (save() rewrites it on every change, for cloud-sync conflict resolution), so it would
+// have silently read as "0 days ago" in any actively-used session instead of the real install age.
+function loadBackupMeta(){
+  try{const r=localStorage.getItem(BACKUP_KEY);if(r)backupMeta=JSON.parse(r)}catch(e){}
+  if(!backupMeta.firstSeenAt){backupMeta.firstSeenAt=Date.now();saveBackupMeta();}
+}
+function saveBackupMeta(){try{localStorage.setItem(BACKUP_KEY,JSON.stringify(backupMeta))}catch(e){}}
+function daysSinceBackup(){return Math.floor((Date.now()-(backupMeta.lastBackupAt||backupMeta.firstSeenAt||Date.now()))/DAY_MS)}
+function updateBackupStatusLine(){
+  const el=document.getElementById("backupStatusLine");if(!el)return;
+  const days=daysSinceBackup();
+  if(!backupMeta.lastBackupAt){
+    el.textContent=T.backupNeverMsg.replace("{0}",days);
+    el.style.color=days>=BACKUP_REMINDER_DAYS?"var(--red)":"var(--dim)";
+  }else if(days<=0){
+    el.textContent=T.backupTodayMsg;el.style.color="var(--dim)";
+  }else{
+    el.textContent=T.backupAgoMsg.replace("{0}",days);
+    el.style.color=days>=BACKUP_REMINDER_DAYS?"var(--red)":"var(--dim)";
+  }
+}
+// Nags at most once per BACKUP_REMINDER_DAYS window (not once ever, unlike scanTierWarnings' permanent
+// dedup ledger) — a stale backup keeps being genuinely at-risk, so it deserves to resurface periodically.
+function checkBackupReminder(){
+  const days=daysSinceBackup();
+  if(days<BACKUP_REMINDER_DAYS)return;
+  if(backupMeta.lastReminderAt&&(Date.now()-backupMeta.lastReminderAt)<BACKUP_REMINDER_DAYS*DAY_MS)return;
+  const body=backupMeta.lastBackupAt?T.backupAgoMsg.replace("{0}",days):T.backupNeverMsg.replace("{0}",days);
+  addNotification("backupReminder",T.backupReminderTitle,body);
+  renderNotifBadge();
+  // This runs during init(), which unconditionally clears any pending debounced save() a few lines
+  // later (a deliberate "settle clean after load" step) — the usual save() would be cancelled before
+  // its timer ever fires, silently losing this notification on the very next reload. Persist directly.
+  persistLocal();
+  backupMeta.lastReminderAt=Date.now();saveBackupMeta();
+}
 function exportJSON(){
   const blob=new Blob([JSON.stringify(state,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob);
   const a=document.createElement("a");
   a.href=url;a.download="tracker-backup-"+new Date().toISOString().slice(0,10)+".json";
   document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url);
+  backupMeta.lastBackupAt=Date.now();saveBackupMeta();updateBackupStatusLine();
   toast(T.backupDownloaded);
 }
 function importData(file){
@@ -5139,10 +5208,13 @@ function init(){
   load();
   loadSyncCfg();
   loadVersions();
+  loadBackupMeta();
   if(!sync.code){sync.code=genCode();saveSyncCfg()}
   applyTheme();
   renderMonthTargetsGrid();
   editSinCalDays=[];resetSinCalNav();renderSinCal();collapseSinCal();editTiers=[];renderTiersList();editAchTiers=[];renderAchTiersList();updateTypeSectionVisibility();
+  updateBackupStatusLine();
+  checkBackupReminder();
 
   if(memFallback)setTimeout(()=>toast(T.previewMode),600);
 
