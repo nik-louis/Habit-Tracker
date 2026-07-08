@@ -152,6 +152,8 @@ td.frozen-cell{position:relative}
   padding:12px;text-align:center;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px}
 .freeze-btn:active{transform:scale(.97)}
 .freeze-btn.used{opacity:.5;pointer-events:none}
+.perfect-day-banner{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#0a0a0a;
+  border-radius:12px;padding:12px;text-align:center;font-size:13px;font-weight:800;margin-bottom:14px}
 
 /* CARDS */
 .card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:14px}
@@ -916,6 +918,7 @@ topStreaks:"Top streaks across all months",avgByDay:"Average completion by day o
 heatmapDesc:"Daily completion intensity across the year",daysLabel:"days",
 done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",bonusFreezes:"Bonus freezes",
 freezeToday:"Freeze today",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
+perfectDayToday:"Perfect day! The bonus applies once today has fully elapsed.",
 streak:"streak",notYearYet:"Not {0} yet",xpToday:"XP today",
 habit:"Habit",gridHint:"Tap a cell to mark a day. Yellow frame = today. Notes: click day number in header.",
 noHabitsYet:"No habits yet",goToHabits:"Go to Habits tab to add some.",
@@ -1025,6 +1028,7 @@ topStreaks:"Лучшие серии за все месяцы",avgByDay:"Сред
 heatmapDesc:"Интенсивность выполнения по дням года",daysLabel:"дн.",
 done:"выполнено",todayDone:"Сделано",remaining:"Осталось",freezesLeft:"Заморозок осталось",bonusFreezes:"Бонусных заморозок",
 freezeToday:"Заморозить день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
+perfectDayToday:"Идеальный день! Бонус применится, когда день полностью завершится.",
 streak:"серия",notYearYet:"Ещё не {0} год",xpToday:"XP сегодня",
 habit:"Привычка",gridHint:"Нажмите на ячейку, чтобы отметить день. Жёлтая рамка = сегодня. Заметки: нажмите на номер дня.",
 noHabitsYet:"Привычек пока нет",goToHabits:"Перейдите на вкладку Привычки, чтобы добавить.",
@@ -1134,6 +1138,7 @@ topStreaks:"Mejores rachas de todos los meses",avgByDay:"Promedio de cumplimient
 heatmapDesc:"Intensidad de cumplimiento diario durante el año",daysLabel:"días",
 done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones rest.",bonusFreezes:"Congelaciones bonus",
 freezeToday:"Congelar hoy",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
+perfectDayToday:"¡Día perfecto! La bonificación se aplicará cuando termine el día.",
 streak:"racha",notYearYet:"Aún no es {0}",xpToday:"XP hoy",
 habit:"Hábito",gridHint:"Toca una celda para marcar un día. Marco amarillo = hoy. Notas: clic en número del día.",
 noHabitsYet:"Sin hábitos aún",goToHabits:"Ve a la pestaña Hábitos para agregar.",
@@ -1243,6 +1248,7 @@ topStreaks:"所有月份最佳连续记录",avgByDay:"按星期几的平均完�
 heatmapDesc:"全年每日完成强度",daysLabel:"天",
 done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结",bonusFreezes:"奖励冻结",
 freezeToday:"冻结今天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
+perfectDayToday:"完美的一天！奖励将在今天结束后生效。",
 streak:"连续",notYearYet:"还不是{0}年",xpToday:"今日XP",
 habit:"习惯",gridHint:"点击单元格标记日期。黄色边框=今天。笔记：点击标题中的日期。",
 noHabitsYet:"还没有习惯",goToHabits:"前往习惯标签页添加。",
@@ -1352,6 +1358,7 @@ topStreaks:"Meilleures séries de tous les mois",avgByDay:"Moyenne d'achèvement
 heatmapDesc:"Intensité d'achèvement quotidien sur l'année",daysLabel:"jours",
 done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",bonusFreezes:"Gels bonus",
 freezeToday:"Geler aujourd'hui",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
+perfectDayToday:"Journée parfaite ! Le bonus s'appliquera une fois la journée terminée.",
 streak:"série",notYearYet:"Pas encore {0}",xpToday:"XP aujourd'hui",
 habit:"Habitude",gridHint:"Appuyez sur une cellule pour marquer un jour. Cadre jaune = aujourd'hui. Notes: cliquez sur le numéro du jour.",
 noHabitsYet:"Pas encore d'habitudes",goToHabits:"Allez à l'onglet Habitudes pour en ajouter.",
@@ -2203,6 +2210,58 @@ function eventPaceStatus(h,m,d){
   const doneToday=!!c[d];
   return{doneSoFar,totalDone:doneSoFar+(doneToday?1:0),minRequired,N,obligatory:!doneToday&&doneSoFar<minRequired};
 }
+// A "perfect day" bonus, scaled continuously by that day's total habit weight rather than a flat
+// amount — a day with more/heavier habits earns proportionally more, the same weight-proportional
+// principle the money pool and tier system already use, so this never becomes a flat reward
+// disconnected from what was actually asked of you that day. A habit counts as "satisfied" if
+// checked, or neutrally excused (frozen, archived that day, or — for event habits — simply not yet
+// obligatory per the pace-line that day); none of those should cost you the bonus, since none of
+// them are actual misses. year-explicit throughout (not eventPaceStatus, which only ever reads the
+// currently-bound year) so this works correctly across every year in state.years, not just the active one.
+const PERFECT_DAY_BONUS_RATE=0.15;
+function perfectDaysBonusForMonth(year,m,yd){
+  const hs=(state.habits||[]).filter(h=>!h.deleted&&!h.archived);
+  if(!hs.length)return 0;
+  const totalDays=daysInMonthY(year,m);
+  const elapsed=elapsedDaysInMonthY(year,m);
+  const rt=realTodayParts();
+  const isCurMonth=(year===rt.y&&m===rt.m);
+  if(elapsed<=0&&!isCurMonth)return 0;
+  const upper=isCurMonth?rt.d-1:totalDays;
+  if(upper<1)return 0;
+  const mk="m"+m;
+  const totalWeight=hs.reduce((s,h)=>s+(h.weight||1),0);
+  const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const eventDoneSoFar={};
+  hs.filter(h=>h.type==="event").forEach(h=>{
+    const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
+    const arr=[0];
+    let done=0;
+    for(let d=1;d<=upper;d++){
+      arr[d]=done;
+      if(!frozen.includes(d)&&checksBucket[d])done++;
+    }
+    eventDoneSoFar[h.id]=arr;
+  });
+  let bonus=0;
+  for(let d=1;d<=upper;d++){
+    if(beforeTrackingStart(year,m,d))continue;
+    const allSatisfied=hs.every(h=>{
+      const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
+      if(checksBucket[d])return true;
+      if(frozen.includes(d))return true;
+      if(isArchivedOn(h,year,m,d))return true;
+      if(h.type==="event"){
+        const N=effTargetForYear(h,year,m,yd);
+        const minRequired=(totalDays>0&&N>0)?Math.floor(d/totalDays*N):0;
+        if(eventDoneSoFar[h.id][d]>=minRequired)return true;
+      }
+      return false;
+    });
+    if(allSatisfied)bonus+=totalWeight*PERFECT_DAY_BONUS_RATE;
+  }
+  return Math.round(bonus);
+}
 // Rebuilds the lifetime points balance from scratch: every habit × every month × every year the
 // user has ever touched, minus everything ever spent in the shop. Never patched incrementally.
 function recalcPoints(){
@@ -2214,6 +2273,7 @@ function recalcPoints(){
       (state.habits||[]).forEach(h=>{
         for(let m=0;m<12;m++)pts+=habitPointsForMonth(h,yNum,m,yd);
       });
+      for(let m=0;m<12;m++)pts+=perfectDaysBonusForMonth(yNum,m,yd);
     });
   }
   pts-=(state.purchases||[]).reduce((s,p)=>s+(p.cost||0),0);
@@ -2643,6 +2703,10 @@ function renderToday(){
     html+=`<div class="freeze-btn ${totalFreezesLeft<=0?'used':''}" id="btnFreezeToday">&#10052; ${T.freezeToday} (${totalFreezesLeft} ${T.left})</div>`;
   }else{
     html+=`<div class="freeze-btn" id="btnUnfreezeToday">&#10052; ${T.dayFrozen}</div>`;
+  }
+
+  if(hs.length>0&&doneCount===hs.length){
+    html+=`<div class="perfect-day-banner">&#127881; ${T.perfectDayToday}</div>`;
   }
 
   for(const tid of tagOrderList()){
