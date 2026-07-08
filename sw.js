@@ -1,9 +1,9 @@
-/* Service Worker — Carrot & Stick / Реализация
+/* Service Worker — Habitunity
    Provides: offline caching of the app shell + notification display from page.
    Note: scheduling happens in the page (setInterval). The SW shows notifications
    via reg.showNotification() so they appear even when the tab is backgrounded. */
 
-const CACHE = "realization-v1";
+const CACHE = "habitunity-v1";
 const ASSETS = ["./", "./index.html", "./manifest.json"];
 
 self.addEventListener("install", (e) => {
