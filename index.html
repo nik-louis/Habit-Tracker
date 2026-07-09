@@ -1860,9 +1860,16 @@ function migrate(){
       r.days=r.cost/(dailyUnit()||1);
       delete r.cost;
     }
-    if(typeof r.days!=="number"||!isFinite(r.days))r.days=1;
     if(r.priceMode===undefined)r.priceMode=r.rubEstimate?"wishlist":"tier";
     if(r.rubEstimate===undefined)r.rubEstimate=null;
+    if(r.priceMode==="wishlist"&&r.rubEstimate){
+      // Wishlist rewards freeze only the real ₽ face value — days is always re-derived live from
+      // rubEstimate/rublePerDay() (see rewardDays()), never a stored snapshot, so strip any stale
+      // one left over from an earlier version of this migration.
+      r.days=null;
+    }else if(typeof r.days!=="number"||!isFinite(r.days)){
+      r.days=1;
+    }
   });
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
@@ -2381,7 +2388,17 @@ function rublePerDay(){
   }
   return inc>0?inc/daysInMonthY(rt.y,rt.m):DEFAULT_RUBLE_PER_DAY;
 }
-function rewardPrice(r){return Math.max(0,Math.round((r.days||0)*dailyUnit()))}
+// Wishlist rewards freeze only the real ₽ face value (rubEstimate) — the day-count is always
+// re-derived live from the CURRENT income/month, never a stored snapshot. Otherwise a reward
+// created in a 28-day month vs. a 31-day month (or before/after an income change) would silently
+// bake in a different "size" purely from when it happened to be created, not what it's worth.
+// Tier rewards have no such issue — their `days` was never derived from rublePerDay() to begin
+// with, so freezing it at creation is exactly right.
+function rewardDays(r){
+  if(r.priceMode==="wishlist"&&r.rubEstimate)return r.rubEstimate/rublePerDay();
+  return r.days||0;
+}
+function rewardPrice(r){return Math.max(0,Math.round(rewardDays(r)*dailyUnit()))}
 function getEffectiveRatePct(m){
   let rate=+(state.penaltyRate||15);
   const inc=+(state.rateIncrement||1);
@@ -4304,7 +4321,8 @@ function renderRewards(){
     const id=r?r.id:'new';
     const emo=r?escapeHtml(r.emo||''):'';
     const nm=r?escapeHtml(r.name):'';
-    const days=r&&r.days?r.days:'';
+    const isWishlist=!!(r&&r.priceMode==="wishlist"&&r.rubEstimate);
+    const days=r?(isWishlist?rewardDays(r):(r.days||'')):'';
     const rubEst=r&&r.rubEstimate?r.rubEstimate:'';
     const tagOpts=`<option value="">${ru?'Без тега':'No tag'}</option>`+state.tags.map(t=>`<option value="${t.id}" ${r&&r.tagId===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
     const habitOpts=`<option value="">${ru?'Не привязано':'Not linked'}</option>`+activeHabits().map(h=>`<option value="${h.id}" ${r&&r.linkedHabitId===h.id?'selected':''}>${escapeHtml(h.name)}</option>`).join('');
@@ -4324,10 +4342,10 @@ function renderRewards(){
         <div style="display:flex;gap:5px;flex-wrap:wrap">${smallBtns}</div>
         <div class="hint" style="margin:8px 0 6px">${ru?'Большая (несколько дней)':'Big (multiple days)'}</div>
         <div style="display:flex;gap:5px;flex-wrap:wrap">${bigBtns}</div>
-        <div class="hint" style="margin:8px 0 6px">${ru?'…или реальная цена в ₽ (wishlist / дорогая цель)':'…or a real ₽ price (wishlist / big goal)'}</div>
+        <div class="hint" style="margin:8px 0 6px">${ru?'…или реальная цена в ₽ (wishlist / дорогая цель) — фиксируется сама сумма, дни всегда считаются заново от текущего курса':'…or a real ₽ price (wishlist / big goal) — the ₽ amount is what freezes, days are always recomputed from the current rate'}</div>
         <input class="inp" type="number" id="brfRub_${id}" value="${rubEst}" min="0" placeholder="${ru?'например 5000':'e.g. 5000'}">
-        <div class="hint" style="margin:8px 0 4px">${ru?'Итого дней (можно поправить руками)':'Total days (editable)'}</div>
-        <input class="inp" type="number" step="0.05" id="brfDays_${id}" value="${days}" min="0.05" placeholder="${ru?'дней':'days'}">
+        <div class="hint" style="margin:8px 0 4px">${isWishlist?(ru?'Дней сейчас (от ₽ и текущего курса, не хранится)':'Days right now (from ₽ and the current rate, not stored)'):(ru?'Дней (можно поправить руками)':'Days (editable)')}</div>
+        <input class="inp" type="number" step="0.05" id="brfDays_${id}" value="${days?(+days).toFixed(2):''}" min="0.05" placeholder="${ru?'дней':'days'}" ${isWishlist?'readonly style="opacity:.65"':''}>
         <div class="hint" id="brfPreview_${id}" style="margin-top:4px">≈ <b>${previewPrice}</b> ${CURRENCY_TICKER} ${ru?'сейчас':'now'}</div>
       </div>
     </div>`;
@@ -4356,8 +4374,8 @@ function renderRewards(){
     </div>`;
   }
 
-  const normalR=bigR.filter(r=>(r.days||0)<REWARD_FAR_GOAL_DAYS);
-  const farR=bigR.filter(r=>(r.days||0)>=REWARD_FAR_GOAL_DAYS);
+  const normalR=bigR.filter(r=>rewardDays(r)<REWARD_FAR_GOAL_DAYS);
+  const farR=bigR.filter(r=>rewardDays(r)>=REWARD_FAR_GOAL_DAYS);
   const shopRows=normalR.map(rewardRowHTML).join('');
   const farRows=farR.map(rewardRowHTML).join('');
 
@@ -4391,12 +4409,14 @@ function renderRewards(){
     const tagEl=document.getElementById('brfTag_'+id);
     const habitEl=document.getElementById('brfHabit_'+id);
     if(!nmEl||!nmEl.value.trim()){toast(ru?'Введите название':'Enter a name');return}
-    if(!daysEl||!(+daysEl.value>0)){toast(ru?'Укажите размер (кнопка или ₽)':'Set a size (button or ₽)');return}
-    const emo=emoEl?emoEl.value.trim():'🎁';
-    const name=nmEl.value.trim();
-    const days=Math.max(0.05,+daysEl.value);
     const rubEstimate=rubEl&&+rubEl.value>0?+rubEl.value:null;
     const priceMode=rubEstimate?"wishlist":"tier";
+    if(!rubEstimate&&(!daysEl||!(+daysEl.value>0))){toast(ru?'Укажите размер (кнопка или ₽)':'Set a size (button or ₽)');return}
+    const emo=emoEl?emoEl.value.trim():'🎁';
+    const name=nmEl.value.trim();
+    // Wishlist mode: only the ₽ face value freezes — days is never stored, always re-derived live
+    // (see rewardDays()). Tier mode: days is the direct, hand-picked, frozen size.
+    const days=priceMode==="wishlist"?null:Math.max(0.05,+daysEl.value);
     const tagId=tagEl&&tagEl.value?tagEl.value:null;
     const linkedHabitId=habitEl&&habitEl.value?habitEl.value:null;
     if(id==='new'){
@@ -4422,14 +4442,26 @@ function renderRewards(){
     daysEl.oninput=refreshPreview;
     if(rubEl)rubEl.oninput=()=>{
       const rub=+rubEl.value||0;
-      if(rub>0)daysEl.value=Math.round((rub/rublePerDay())*100)/100;
+      if(rub>0){
+        // Wishlist mode: days becomes a live, read-only reflection of ₽/rublePerDay() — not
+        // something the user hand-tunes independently, since the ₽ amount is the frozen fact now.
+        daysEl.value=Math.round((rub/rublePerDay())*100)/100;
+        daysEl.readOnly=true;daysEl.style.opacity=.65;
+      }else{
+        daysEl.readOnly=false;daysEl.style.opacity='';
+      }
       refreshPreview();
     };
   }
   body.querySelectorAll('[data-brtier]').forEach(b=>{
     b.onclick=()=>{
       const daysEl=document.getElementById('brfDays_'+bigRewardEditId);
+      const rubEl=document.getElementById('brfRub_'+bigRewardEditId);
       if(!daysEl)return;
+      // Picking a tier size switches the form back to tier mode: clears any ₽ estimate and makes
+      // days directly editable again.
+      if(rubEl)rubEl.value='';
+      daysEl.readOnly=false;daysEl.style.opacity='';
       daysEl.value=b.dataset.brtier;
       daysEl.dispatchEvent(new Event('input'));
     };
