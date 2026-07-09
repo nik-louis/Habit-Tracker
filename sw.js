@@ -1,7 +1,9 @@
 /* Service Worker — Habitunity
-   Provides: offline caching of the app shell + notification display from page.
-   Note: scheduling happens in the page (setInterval). The SW shows notifications
-   via reg.showNotification() so they appear even when the tab is backgrounded. */
+   Provides: offline caching of the app shell + notification display.
+   Two notification sources: (1) the page's own setInterval-based reminder loop, which only
+   fires while the tab is open — shown via reg.showNotification() so they still appear when
+   backgrounded but not fully closed; (2) real Web Push (see the "push" listener below), sent
+   by a GitHub Actions job while the app is fully closed — the OS wakes this SW directly. */
 
 const CACHE = "habitunity-v1";
 const ASSETS = ["./", "./index.html", "./manifest.json"];
@@ -33,6 +35,27 @@ self.addEventListener("fetch", (e) => {
         return res;
       })
       .catch(() => caches.match(req).then((r) => r || caches.match("./index.html")))
+  );
+});
+
+// Real Web Push: fired by the browser itself (woken by the OS push service) even when the app is
+// fully closed — unlike the page's own setInterval-based reminder loop, which only runs while the
+// tab is open and foregrounded. Payload is sent by the GitHub Actions script (see
+// .github/scripts/send-push-reminders.js) — deliberately generic, no personal reminder text (see
+// pushRemindersProjection() in index.html for why).
+self.addEventListener("push", (e) => {
+  let data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) { data = {}; }
+  const title = data.title || "⏰ Habitunity";
+  e.waitUntil(
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      tag: data.tag || "push",
+      icon: "icon-192.png",
+      badge: "icon-192.png",
+      renotify: true,
+      vibrate: [80, 40, 80],
+    })
   );
 });
 

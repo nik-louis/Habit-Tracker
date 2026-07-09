@@ -1523,6 +1523,10 @@ const MAX_FREEZES=3;
 const CURRENCY_NAME="Inlounity";
 const CURRENCY_TICKER="INLI";
 
+// Web Push VAPID public key — safe to ship in client code (only the matching private key, held only
+// by the GitHub Actions secret, can actually sign push sends). See the REAL WEB PUSH section below.
+const VAPID_PUBLIC_KEY="BH-chKHvIQiJieSbiY83VoYpmen-F1UNFOotOaZwwxShKIMVACgsZvU9zQvX-P98ipelYUqR8l3LVCWy2sKUgAA";
+
 const ACCENT_COLORS=["#ffd400","#ff7a00","#ff3d86","#4A90D9","#2ecc71","#9B59B6","#e74c3c","#00bcd4","#ff6b6b","#1abc9c"];
 const COLOR_PALETTE=[
   "#ef4444","#f97316","#f59e0b","#eab308","#84cc16",
@@ -4991,6 +4995,7 @@ function connectSync(){
   const ru=state.lang!=="en";
   if(!sync.pass){setSyncStatus("off");toast(ru?"Введите пароль шифрования":"Enter encryption password");return}
   sync.on=true;saveSyncCfg();
+  subscribeForPush(); // best-effort, no-op until notifications are also granted — see REAL WEB PUSH
   if(es){es.close();es=null}
   clearTimeout(saveTimer);clearTimeout(pushTimer2);
   setSyncStatus("connecting");
@@ -5079,6 +5084,81 @@ function fallbackCopy(t){
   const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();
   try{document.execCommand("copy");toast(T.keyCopied)}catch(e){toast(T.copyManually)}
   ta.remove();
+}
+
+/* ===== REAL WEB PUSH (works even with the app fully closed — see .github/scripts/send-push-reminders.js) =====
+   The page's own reminder loop (checkReminders() below) only runs while the tab is open, because it's
+   a plain setInterval — iOS suspends that the moment the tab backgrounds. A real push subscription is
+   woken directly by the OS, independent of the page, but nothing on our side can locally schedule a
+   future push — an outside sender has to trigger it. A GitHub Actions job fills that role, polling
+   every ~10min for whose reminder time has arrived (see the workflow + script for the sending side).
+   That script is SHARED across every installation using this repo — it never sees anyone's encryption
+   password, so it can only read whatever is written here in the clear. Deliberately minimal: reminder
+   SCHEDULE only (type/time/days/count/from/to), never title text or habit names — the push body is
+   always a generic string, chosen only by state.lang. Reused sync.url/sync.code (same Firebase project
+   as Cloud Sync) so this rides the existing "/sync/$c" security rule — no new Firebase Rules needed. */
+const PUSH_DEVICE_ID_KEY="rt_push_device_id";
+let pushDeviceId=null;
+function getPushDeviceId(){
+  if(pushDeviceId)return pushDeviceId;
+  try{pushDeviceId=localStorage.getItem(PUSH_DEVICE_ID_KEY);}catch(e){}
+  if(!pushDeviceId){pushDeviceId=uid();try{localStorage.setItem(PUSH_DEVICE_ID_KEY,pushDeviceId)}catch(e){}}
+  return pushDeviceId;
+}
+function urlBase64ToUint8Array(base64String){
+  const padding="=".repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+  const raw=atob(base64);const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+function pushBasePath(){return sync.url.trim().replace(/\/+$/,"")+"/sync/"+sync.code+"/push/"+getPushDeviceId()}
+// Only reminder types whose firing NEVER depends on live habit-completion state are safe to mirror —
+// the server never sees decrypted checks, so it cannot replicate untilDone's "skip if already done"
+// (nor a habit-bound smart reminder's same skip). Those two keep working normally whenever the app
+// happens to be open (checkReminders() below is unaffected by any of this), just without a push backup.
+function pushRemindersProjection(){
+  return(state.reminders||[]).filter(r=>r.enabled&&r.type!=="untilDone"&&!(r.type==="smart"&&r.habitId))
+    .map(r=>({id:r.id,type:r.type,time:r.time,days:r.days||[],count:r.count,from:r.from,to:r.to}));
+}
+function pushPublishMeta(sub){
+  if(!sync.on||!sync.url||!sync.code)return Promise.resolve();
+  // PATCH, not PUT: a full-node PUT would silently wipe the server's own lastFired bookkeeping
+  // (stored as a sibling key under the same device record) every time this republishes.
+  const body=JSON.stringify({
+    sub:sub?sub.toJSON():undefined,
+    reminders:pushRemindersProjection(),
+    lang:state.lang||"ru",
+    tzOffsetMin:-new Date().getTimezoneOffset(),
+    _t:Date.now(),
+  });
+  return fetch(pushBasePath()+".json",{method:"PATCH",headers:{"Content-Type":"application/json"},body}).catch(()=>{});
+}
+async function subscribeForPush(){
+  if(!sync.on||!sync.url||!sync.code)return; // nowhere to publish the subscription without cloud sync configured
+  if(notifPerm()!=="granted")return;
+  if(!("serviceWorker"in navigator)||!("PushManager"in window))return;
+  // iOS Safari only supports Web Push for an installed (Add to Home Screen) PWA — subscribing from a
+  // plain browser tab fails silently there, so skip rather than surface a confusing error.
+  const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!standalone)return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    await pushPublishMeta(sub);
+  }catch(e){/* best-effort background enhancement — never blocks the app */}
+}
+// Re-publish just the schedule (not a fresh subscribe) whenever reminders change or cloud sync
+// (re)connects — cheap no-op if no subscription exists yet.
+async function syncPushMeta(){
+  if(!sync.on||!sync.url||!sync.code)return;
+  if(!("serviceWorker"in navigator))return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub)await pushPublishMeta(sub);
+  }catch(e){}
 }
 
 /* ===== UI WIRING ===== */
@@ -5171,7 +5251,7 @@ function renderRemindersUI(){
     if(perm==="default"||perm==="denied"){
       permRow.innerHTML=`<button class="btn primary" id="btnNotifPerm" style="width:100%;margin-bottom:10px">${ru?'🔔 Разрешить уведомления':'🔔 Enable notifications'}</button>`;
       const b=document.getElementById("btnNotifPerm");
-      if(b)b.onclick=async()=>{const p=await requestNotifPerm();renderRemindersUI();if(p==="granted"){startReminderLoop();toast(ru?"Уведомления включены":"Notifications on");}else if(p==="denied")toast(ru?"Заблокировано в браузере":"Blocked in browser");};
+      if(b)b.onclick=async()=>{const p=await requestNotifPerm();renderRemindersUI();if(p==="granted"){startReminderLoop();subscribeForPush();toast(ru?"Уведомления включены":"Notifications on");}else if(p==="denied")toast(ru?"Заблокировано в браузере":"Blocked in browser");};
     }else permRow.innerHTML="";
   }
   // list
@@ -5194,12 +5274,12 @@ function renderRemindersUI(){
       }).join("");
       list.querySelectorAll("[data-remtoggle]").forEach(el=>el.onclick=()=>{
         const r=state.reminders.find(x=>x.id===el.dataset.remtoggle);if(!r)return;
-        r.enabled=!r.enabled;if(r.enabled&&r.lastFired)r.lastFired={};save();renderRemindersUI();
+        r.enabled=!r.enabled;if(r.enabled&&r.lastFired)r.lastFired={};save();renderRemindersUI();syncPushMeta();
       });
       list.querySelectorAll("[data-remedit]").forEach(el=>el.onclick=()=>{reminderEditId=el.dataset.remedit;renderReminderEditor();});
       list.querySelectorAll("[data-remdel]").forEach(el=>el.onclick=()=>{
         if(!confirm(ru?'Удалить напоминание?':'Delete reminder?'))return;
-        state.reminders=state.reminders.filter(x=>x.id!==el.dataset.remdel);save();renderRemindersUI();
+        state.reminders=state.reminders.filter(x=>x.id!==el.dataset.remdel);save();renderRemindersUI();syncPushMeta();
       });
     }
   }
@@ -5276,8 +5356,8 @@ function renderReminderEditor(){
     if(editing){Object.assign(r,obj);}
     else{if(!state.reminders)state.reminders=[];obj.id=uid();state.reminders.push(obj);}
     save();reminderEditId=null;renderRemindersUI();
-    if(notifPerm()!=="granted"){requestNotifPerm().then(p=>{if(p==="granted")startReminderLoop();});}
-    else startReminderLoop();
+    if(notifPerm()!=="granted"){requestNotifPerm().then(p=>{if(p==="granted"){startReminderLoop();subscribeForPush();}});}
+    else{startReminderLoop();syncPushMeta();}
     toast(ru?'Напоминание сохранено':'Reminder saved');
   };
 }
@@ -5492,7 +5572,10 @@ function init(){
   startReminderLoop();
   // Register service worker for PWA + background notifications
   if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
+    // Re-subscribe on every load (covers: permission was already granted in an earlier session,
+    // before this feature existed; the OS silently rotated the push subscription; etc.) — cheap
+    // no-op via subscribeForPush()'s own guards when there's nothing to do.
+    navigator.serviceWorker.register("sw.js").then(()=>subscribeForPush()).catch(()=>{});
   }
 
   // sync
