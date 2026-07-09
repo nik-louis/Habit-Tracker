@@ -1,0 +1,8 @@
+name = "habitunity-push-reminders"
+main = "worker.js"
+compatibility_date = "2026-07-09"
+
+# Every 5 minutes — tighter than GitHub Actions' nominal 10 minutes, and unlike GitHub Actions'
+# `schedule` trigger, Cloudflare actually runs this on time instead of silently skipping it under load.
+[triggers]
+crons = ["*/5 * * * *"]

@@ -1,0 +1,16 @@
+{
+  "name": "habitunity-push-reminders-worker",
+  "private": true,
+  "type": "module",
+  "description": "Second, independent Cron Trigger for the same push-reminder job .github/scripts/send-push-reminders.js runs on a GitHub Actions schedule — see worker.js for why.",
+  "scripts": {
+    "deploy": "wrangler deploy",
+    "tail": "wrangler tail"
+  },
+  "dependencies": {
+    "@pushforge/builder": "^2.0.5"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}
