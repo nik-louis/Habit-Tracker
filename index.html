@@ -5012,6 +5012,26 @@ async function decryptPayload(remote){
   }
   return remote; // legacy plain object
 }
+// A freshly-initialized install (fresh localStorage, or a PWA reinstalled after a cache/service-
+// worker reset) stamps state._t to "right now" the moment it first loads — see migrate()'s
+// `if(!state._t)state._t=Date.now()`. That "just now" timestamp beats any real device's older
+// (but data-rich) save under the plain newest-wins comparison below, so a brand-new empty device
+// could silently overwrite — in EITHER direction — another device's actual history the instant it
+// connects. looksEmpty() lets both connectSync() and onStreamEvent() refuse that specific case:
+// never let an empty side win over a non-empty one just because its clock reads more recently.
+function looksEmpty(obj){
+  if(!obj||typeof obj!=="object")return true;
+  const years=obj.years||{};
+  const anyChecks=Object.keys(years).some(y=>{
+    const checks=(years[y]&&years[y].checks)||{};
+    return Object.keys(checks).some(mk=>{
+      const bucket=checks[mk]||{};
+      return Object.keys(bucket).some(hid=>bucket[hid]&&Object.keys(bucket[hid]).length>0);
+    });
+  });
+  const hasPurchases=(Array.isArray(obj.purchases)&&obj.purchases.length>0)||(Array.isArray(obj.cosmeticPurchases)&&obj.cosmeticPurchases.length>0);
+  return !anyChecks&&!hasPurchases;
+}
 
 function loadSyncCfg(){try{const r=localStorage.getItem(SYNC_KEY);if(r)sync=JSON.parse(r)}catch(e){}}
 function saveSyncCfg(){try{localStorage.setItem(SYNC_KEY,JSON.stringify(sync))}catch(e){}}
@@ -5032,21 +5052,30 @@ function connectSync(){
   clearTimeout(saveTimer);clearTimeout(pushTimer2);
   setSyncStatus("connecting");
   fetch(syncUrl()).then(r=>r.json()).then(remote=>{
-    const remoteT=(remote&&typeof remote==="object")?(remote._t||0):0;
-    if(remote&&typeof remote==="object"&&(remote.enc===1||remote.habits)){
-      const localT=state._t||0;
-      if(remoteT>localT){
-        decryptPayload(remote).then(obj=>{
-          if(obj&&obj.habits)adoptRemote(obj); else cloudPushNow();
-          startStream();toast(T.syncConnected);
-        }).catch(err=>{
-          sync.on=false;saveSyncCfg();setSyncStatus("off");
-          if(err.message==="ENC_BAD_PASS")toast(ru?"Неверный пароль шифрования":"Wrong encryption password");
-          else toast(ru?"Нужен пароль для этих данных":"Password required for this data");
-        });
+    const hasRemoteData=remote&&typeof remote==="object"&&(remote.enc===1||remote.habits);
+    if(!hasRemoteData){cloudPushNow();startStream();toast(T.syncConnected);return;}
+    const remoteT=remote._t||0;
+    const localT=state._t||0;
+    const localEmpty=looksEmpty(state);
+    decryptPayload(remote).then(obj=>{
+      const remoteEmpty=looksEmpty(obj);
+      // Emptiness beats the timestamp race in both directions — see looksEmpty()'s comment. Only
+      // once neither side is trivially empty does "newest _t wins" get to decide, same as before.
+      if(localEmpty&&!remoteEmpty){
+        if(obj&&obj.habits)adoptRemote(obj); else cloudPushNow();
+        startStream();toast(T.syncConnected);
+      }else if(remoteEmpty&&!localEmpty){
+        cloudPushNow();startStream();toast(T.syncConnected);
+      }else if(remoteT>localT){
+        if(obj&&obj.habits)adoptRemote(obj); else cloudPushNow();
+        startStream();toast(T.syncConnected);
       }else if(remoteT<localT){cloudPushNow();startStream();toast(T.syncConnected);
       }else{startStream();toast(T.syncConnected);}
-    }else{cloudPushNow();startStream();toast(T.syncConnected);}
+    }).catch(err=>{
+      sync.on=false;saveSyncCfg();setSyncStatus("off");
+      if(err.message==="ENC_BAD_PASS")toast(ru?"Неверный пароль шифрования":"Wrong encryption password");
+      else toast(ru?"Нужен пароль для этих данных":"Password required for this data");
+    });
   }).catch(()=>{setSyncStatus("off");toast(T.connectionFailed)});
 }
 function startStream(){
@@ -5064,7 +5093,12 @@ function onStreamEvent(e){
     const remoteT=p.data._t||0;
     if(remoteT&&remoteT===_lastPushT){setSyncStatus("live");return;}
     if(remoteT>(state._t||0)){
-      decryptPayload(p.data).then(obj=>{if(obj&&obj.habits)adoptRemote(obj);setSyncStatus("live");}).catch(()=>{});
+      decryptPayload(p.data).then(obj=>{
+        // Never adopt an empty incoming update over real local data just because it's newer —
+        // see looksEmpty()'s comment (this is the exact "fresh device wipes a real one" bug).
+        if(obj&&obj.habits&&(!looksEmpty(obj)||looksEmpty(state)))adoptRemote(obj);
+        setSyncStatus("live");
+      }).catch(()=>{});
     }else setSyncStatus("live");
     return;
   }
@@ -5073,7 +5107,10 @@ function onStreamEvent(e){
     const remoteT=remote._t||0;
     if(remoteT&&remoteT===_lastPushT){setSyncStatus("live");return;}
     if(remote&&(remote.enc===1||remote.habits)&&remoteT>(state._t||0)){
-      decryptPayload(remote).then(obj=>{if(obj&&obj.habits)adoptRemote(obj);setSyncStatus("live");}).catch(()=>{});
+      decryptPayload(remote).then(obj=>{
+        if(obj&&obj.habits&&(!looksEmpty(obj)||looksEmpty(state)))adoptRemote(obj);
+        setSyncStatus("live");
+      }).catch(()=>{});
     }else setSyncStatus("live");
   }).catch(()=>{});
 }
