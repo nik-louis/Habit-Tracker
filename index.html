@@ -1523,6 +1523,10 @@ const MAX_FREEZES=3;
 const CURRENCY_NAME="Inlounity";
 const CURRENCY_TICKER="INLI";
 
+// Web Push VAPID public key — safe to ship in client code (only the matching private key, held only
+// by the GitHub Actions secret, can actually sign push sends). See the REAL WEB PUSH section below.
+const VAPID_PUBLIC_KEY="BH-chKHvIQiJieSbiY83VoYpmen-F1UNFOotOaZwwxShKIMVACgsZvU9zQvX-P98ipelYUqR8l3LVCWy2sKUgAA";
+
 const ACCENT_COLORS=["#ffd400","#ff7a00","#ff3d86","#4A90D9","#2ecc71","#9B59B6","#e74c3c","#00bcd4","#ff6b6b","#1abc9c"];
 const COLOR_PALETTE=[
   "#ef4444","#f97316","#f59e0b","#eab308","#84cc16",
@@ -1598,21 +1602,21 @@ function rankName(lv){
 }
 
 function defaultBigRewards(){
-  // Prices are in the points currency (see POINTS ECONOMY below) — generic template values,
-  // scaled for a fresh install's default habit weights. Names stay generic on purpose: this file
-  // is a shared template, personal reward catalogs are configured per-install, not hardcoded here.
-  const R=(name,cost,emo)=>({id:uid(),name,cost,emo,tagId:null,linkedHabitId:null});
+  // Prices are day-equivalents (see REWARD AUTO-PRICING below), not flat INLI — generic template
+  // values. Names stay generic on purpose: this file is a shared template, personal reward
+  // catalogs are configured per-install, not hardcoded here.
+  const R=(name,days,emo)=>({id:uid(),name,days,emo,tagId:null,linkedHabitId:null,priceMode:"tier",rubEstimate:null});
   return[
-    R("Большая награда 1",100,"🎁"),
-    R("Большая награда 2",200,"🎁"),
-    R("Большая награда 3",300,"🎁"),
-    R("Большая награда 4",400,"🎁"),
-    R("Большая награда 5",500,"🎁"),
-    R("Большая награда 6",600,"🎁"),
-    R("Большая награда 7",700,"🎁"),
-    R("Большая награда 8",800,"🎁"),
-    R("Большая награда 9",900,"🎁"),
-    R("Большая награда 10",1000,"🎁"),
+    R("Большая награда 1",2,"🎁"),
+    R("Большая награда 2",4,"🎁"),
+    R("Большая награда 3",6,"🎁"),
+    R("Большая награда 4",8,"🎁"),
+    R("Большая награда 5",10,"🎁"),
+    R("Большая награда 6",12,"🎁"),
+    R("Большая награда 7",15,"🎁"),
+    R("Большая награда 8",18,"🎁"),
+    R("Большая награда 9",21,"🎁"),
+    R("Большая награда 10",25,"🎁"),
   ];
 }
 
@@ -1847,6 +1851,18 @@ function migrate(){
     // Positive mirror of violationTiers — defaults to [] (no behavior change: a plain check keeps
     // giving the flat +weight it always has, until the user opts in).
     if(!Array.isArray(h.achievementTiers))h.achievementTiers=[];
+  });
+  // Reward pricing: old flat-INLI `cost` → derived `days` (see REWARD AUTO-PRICING below), so the
+  // price stays exactly what it was the moment this migration runs and only starts floating with
+  // dailyUnit() from here on — same "no jump on upgrade" principle as every other migration here.
+  state.bigRewards.forEach(r=>{
+    if(r.cost!==undefined){
+      r.days=r.cost/(dailyUnit()||1);
+      delete r.cost;
+    }
+    if(typeof r.days!=="number"||!isFinite(r.days))r.days=1;
+    if(r.priceMode===undefined)r.priceMode=r.rubEstimate?"wishlist":"tier";
+    if(r.rubEstimate===undefined)r.rubEstimate=null;
   });
   if(!state._t)state._t=Date.now();
   if(!state.lang)state.lang="ru";
@@ -2336,6 +2352,36 @@ function recalcPoints(){
    pool = income × ratePct; each failed habit owes pool × (weight / Σ weight of active habits).
    Failing every active habit costs exactly the pool, never more — no matter how many habits exist. */
 function activeMoneyWeight(){return activeHabits().reduce((s,h)=>s+(h.weight||1),0)}
+/* ===== REWARD AUTO-PRICING =====
+   A reward stores `days` — how many "perfect days" it's worth, frozen at creation — never a flat
+   INLI number picked by hand. Its INLI price is always re-derived: days × dailyUnit(). Grow your
+   habits and every reward in the shop gets proportionally more expensive in INLI, because a
+   perfect day is now worth more — exactly like real prices float with income, without anyone
+   having to go back and re-tag every price sticker by hand. Already-completed purchases are the
+   one exception: state.purchases[].cost is a frozen receipt, never re-derived (see buyRewardFlat). */
+function dailyUnit(){return Math.max(1,activeMoneyWeight())*(1+PERFECT_DAY_BONUS_RATE)}
+const REWARD_TIER_DAYS_SMALL={xs:0.25,s:0.4,m:0.7,l:1.1,xl:1.6};
+const REWARD_TIER_DAYS_BIG={s:5,m:8,l:11,xl:15,xxl:22};
+const REWARD_FAR_GOAL_DAYS=25; // rewards at/above this many days show in a separate "far goals" section
+const DEFAULT_RUBLE_PER_DAY=650; // fallback only until a real income figure is entered
+// Real ₽-per-day-of-discipline exchange rate, for converting a wishlist/Improvement reward's real-
+// world ₽ price into days. Always reads the actual current month's income (not whatever year/month
+// is currently being browsed in Track), so this stays meaningful regardless of navigation state.
+function rublePerDay(){
+  const rt=realTodayParts();
+  const yd=state.years&&state.years[rt.y];
+  let inc=0;
+  if(yd){
+    const hist=yd.incomeHistory||{};
+    if(hist["m"+rt.m]!==undefined)inc=hist["m"+rt.m];
+    else{
+      inc=yd.income||0;
+      for(let i=rt.m-1;i>=0;i--)if(hist["m"+i]!==undefined){inc=hist["m"+i];break}
+    }
+  }
+  return inc>0?inc/daysInMonthY(rt.y,rt.m):DEFAULT_RUBLE_PER_DAY;
+}
+function rewardPrice(r){return Math.max(0,Math.round((r.days||0)*dailyUnit()))}
 function getEffectiveRatePct(m){
   let rate=+(state.penaltyRate||15);
   const inc=+(state.rateIncrement||1);
@@ -4252,37 +4298,54 @@ function renderRewards(){
   const bigR=(state.bigRewards||[]);
   const purchases=(state.purchases||[]).slice().sort((a,b)=>b.date-a.date);
 
-  /* ---- inline edit form (name/emoji/cost + optional tag + optional linked-habit day-buyout) ---- */
+  /* ---- inline edit form: name/emoji/tag/linked-habit + auto-priced days (tier buttons or a real
+     ₽ estimate) instead of a hand-typed INLI cost — see REWARD AUTO-PRICING ---- */
   function editForm(r){
     const id=r?r.id:'new';
     const emo=r?escapeHtml(r.emo||''):'';
     const nm=r?escapeHtml(r.name):'';
-    const co=r?r.cost:'';
+    const days=r&&r.days?r.days:'';
+    const rubEst=r&&r.rubEstimate?r.rubEstimate:'';
     const tagOpts=`<option value="">${ru?'Без тега':'No tag'}</option>`+state.tags.map(t=>`<option value="${t.id}" ${r&&r.tagId===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
     const habitOpts=`<option value="">${ru?'Не привязано':'Not linked'}</option>`+activeHabits().map(h=>`<option value="${h.id}" ${r&&r.linkedHabitId===h.id?'selected':''}>${escapeHtml(h.name)}</option>`).join('');
+    const tierBtn=(val,label)=>`<button type="button" class="usebtn" style="opacity:.85;font-size:11px;padding:6px 8px" data-brtier="${val}">${label} · ${val}${ru?'д':'d'}</button>`;
+    const smallBtns=Object.entries(REWARD_TIER_DAYS_SMALL).map(([k,v])=>tierBtn(v,k.toUpperCase())).join('');
+    const bigBtns=Object.entries(REWARD_TIER_DAYS_BIG).map(([k,v])=>tierBtn(v,k.toUpperCase())).join('');
+    const previewPrice=days?Math.round((+days)*dailyUnit()):0;
     return`<div class="br-edit-row" style="flex-wrap:wrap">
       <input class="inp br-inp-emo" id="brfEmo_${id}" value="${emo}" placeholder="🎁">
       <input class="inp br-inp-name" id="brfName_${id}" value="${nm}" placeholder="${ru?'Название':'Name'}">
-      <input class="inp br-inp-cost" type="number" id="brfCost_${id}" value="${co}" min="1" placeholder="${CURRENCY_TICKER}">
       <button class="usebtn" data-brsave="${id}">✓</button>
       <button class="usebtn used" data-brcancel>✕</button>
       <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfTag_${id}">${tagOpts}</select></div>
       <div class="select-wrap" style="flex:1 1 100%;margin-top:6px"><select class="inp" id="brfHabit_${id}">${habitOpts}</select></div>
+      <div style="flex:1 1 100%;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+        <div class="hint" style="margin:0 0 6px">${ru?'Маленькая (доля дня)':'Small (fraction of a day)'}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${smallBtns}</div>
+        <div class="hint" style="margin:8px 0 6px">${ru?'Большая (несколько дней)':'Big (multiple days)'}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap">${bigBtns}</div>
+        <div class="hint" style="margin:8px 0 6px">${ru?'…или реальная цена в ₽ (wishlist / дорогая цель)':'…or a real ₽ price (wishlist / big goal)'}</div>
+        <input class="inp" type="number" id="brfRub_${id}" value="${rubEst}" min="0" placeholder="${ru?'например 5000':'e.g. 5000'}">
+        <div class="hint" style="margin:8px 0 4px">${ru?'Итого дней (можно поправить руками)':'Total days (editable)'}</div>
+        <input class="inp" type="number" step="0.05" id="brfDays_${id}" value="${days}" min="0.05" placeholder="${ru?'дней':'days'}">
+        <div class="hint" id="brfPreview_${id}" style="margin-top:4px">≈ <b>${previewPrice}</b> ${CURRENCY_TICKER} ${ru?'сейчас':'now'}</div>
+      </div>
     </div>`;
   }
 
-  const shopRows=bigR.map(r=>{
+  function rewardRowHTML(r){
     if(bigRewardEditId===r.id) return editForm(r);
     const owned=(state.purchases||[]).filter(p=>p.rewardId===r.id).length;
     const tag=r.tagId?getTag(r.tagId):null;
     const linkedHabit=r.linkedHabitId?state.habits.find(h=>h.id===r.linkedHabitId):null;
+    const cost=rewardPrice(r);
     // Progress toward affording this specific reward — clamps at 0/100 so an already-negative
     // balance or an already-affordable reward both still render a sane, non-overflowing bar.
-    const pct=r.cost>0?Math.min(100,Math.max(0,Math.round(avail/r.cost*100))):100;
+    const pct=cost>0?Math.min(100,Math.max(0,Math.round(avail/cost*100))):100;
     return`<div class="br-item">
       <span class="br-emo">${r.emo||'🎁'}</span>
       <div class="br-info"><div class="br-name">${tag?`<span class="dot" style="background:${tag.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px"></span>`:''}${escapeHtml(r.name)}</div>
-        <div class="br-cost">${r.cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${linkedHabit?' · &#128279; '+(ru?'для: ':'for: ')+escapeHtml(linkedHabit.name):''}</div>
+        <div class="br-cost">${cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${linkedHabit?' · &#128279; '+(ru?'для: ':'for: ')+escapeHtml(linkedHabit.name):''}</div>
         <div class="br-progress"><div class="br-progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--accent)'}"></div></div>
       </div>
       <div class="br-btns">
@@ -4291,7 +4354,12 @@ function renderRewards(){
         <button class="move-btn" data-brdel="${r.id}" title="${ru?'Удалить':'Delete'}">✕</button>
       </div>
     </div>`;
-  }).join('');
+  }
+
+  const normalR=bigR.filter(r=>(r.days||0)<REWARD_FAR_GOAL_DAYS);
+  const farR=bigR.filter(r=>(r.days||0)>=REWARD_FAR_GOAL_DAYS);
+  const shopRows=normalR.map(rewardRowHTML).join('');
+  const farRows=farR.map(rewardRowHTML).join('');
 
   const addSection=bigRewardEditId==='new'
     ?editForm(null)
@@ -4310,6 +4378,7 @@ function renderRewards(){
       <div class="br-list">${shopRows}</div>
       ${addSection}
     </div>
+    ${farR.length?`<div class="card" style="margin-bottom:12px"><h3 style="margin-top:0">🎯 ${ru?'Далёкие цели':'Far goals'}</h3><div class="br-list">${farRows}</div></div>`:''}
     ${purchases.length?`<div class="card"><h3 style="margin-top:0">${ru?'История покупок':'Purchase history'}</h3>${historyRows}</div>`
       :`<div class="card"><div class="empty"><b>${ru?'Пока нет покупок':'No purchases yet'}</b></div></div>`}`;
 
@@ -4317,26 +4386,55 @@ function renderRewards(){
   function saveEditForm(id){
     const emoEl=document.getElementById('brfEmo_'+id);
     const nmEl=document.getElementById('brfName_'+id);
-    const coEl=document.getElementById('brfCost_'+id);
+    const daysEl=document.getElementById('brfDays_'+id);
+    const rubEl=document.getElementById('brfRub_'+id);
     const tagEl=document.getElementById('brfTag_'+id);
     const habitEl=document.getElementById('brfHabit_'+id);
     if(!nmEl||!nmEl.value.trim()){toast(ru?'Введите название':'Enter a name');return}
+    if(!daysEl||!(+daysEl.value>0)){toast(ru?'Укажите размер (кнопка или ₽)':'Set a size (button or ₽)');return}
     const emo=emoEl?emoEl.value.trim():'🎁';
     const name=nmEl.value.trim();
-    const cost=Math.max(1,+coEl.value||1);
+    const days=Math.max(0.05,+daysEl.value);
+    const rubEstimate=rubEl&&+rubEl.value>0?+rubEl.value:null;
+    const priceMode=rubEstimate?"wishlist":"tier";
     const tagId=tagEl&&tagEl.value?tagEl.value:null;
     const linkedHabitId=habitEl&&habitEl.value?habitEl.value:null;
     if(id==='new'){
       if(!state.bigRewards)state.bigRewards=[];
-      state.bigRewards.push({id:uid(),name,cost,emo,tagId,linkedHabitId});
+      state.bigRewards.push({id:uid(),name,days,priceMode,rubEstimate,emo,tagId,linkedHabitId});
       toast(ru?'Награда добавлена':'Reward added');
     }else{
       const r=state.bigRewards.find(x=>x.id===id);
-      if(r)Object.assign(r,{name,cost,emo,tagId,linkedHabitId});
+      if(r)Object.assign(r,{name,days,priceMode,rubEstimate,emo,tagId,linkedHabitId});
       toast(ru?'Обновлено':'Updated');
     }
     bigRewardEditId=null;save();renderRewards();
   }
+  /* ---- live tier-button / ₽-estimate → days wiring for whichever edit form is open ---- */
+  function wireDaysPreview(id){
+    const daysEl=document.getElementById('brfDays_'+id);
+    const rubEl=document.getElementById('brfRub_'+id);
+    const prev=document.getElementById('brfPreview_'+id);
+    if(!daysEl)return;
+    const refreshPreview=()=>{
+      if(prev)prev.innerHTML=`≈ <b>${Math.round((+daysEl.value||0)*dailyUnit())}</b> ${CURRENCY_TICKER} ${ru?'сейчас':'now'}`;
+    };
+    daysEl.oninput=refreshPreview;
+    if(rubEl)rubEl.oninput=()=>{
+      const rub=+rubEl.value||0;
+      if(rub>0)daysEl.value=Math.round((rub/rublePerDay())*100)/100;
+      refreshPreview();
+    };
+  }
+  body.querySelectorAll('[data-brtier]').forEach(b=>{
+    b.onclick=()=>{
+      const daysEl=document.getElementById('brfDays_'+bigRewardEditId);
+      if(!daysEl)return;
+      daysEl.value=b.dataset.brtier;
+      daysEl.dispatchEvent(new Event('input'));
+    };
+  });
+  if(bigRewardEditId)wireDaysPreview(bigRewardEditId);
   body.querySelectorAll('[data-brsave]').forEach(b=>b.onclick=()=>saveEditForm(b.dataset.brsave));
   body.querySelectorAll('[data-brcancel]').forEach(b=>b.onclick=()=>{bigRewardEditId=null;renderRewards()});
   body.querySelectorAll('[data-bredit]').forEach(b=>b.onclick=()=>{bigRewardEditId=b.dataset.bredit;renderRewards()});
@@ -4360,11 +4458,14 @@ function renderRewards(){
 }
 function buyRewardFlat(r){
   const ru=state.lang!=="en";
-  if(!confirm(ru?`Купить «${r.name}» за ${r.cost} ${CURRENCY_TICKER}?`:`Buy "${r.name}" for ${r.cost} ${CURRENCY_TICKER}?`))return;
+  const cost=rewardPrice(r);
+  if(!confirm(ru?`Купить «${r.name}» за ${cost} ${CURRENCY_TICKER}?`:`Buy "${r.name}" for ${cost} ${CURRENCY_TICKER}?`))return;
   if(!state.purchases)state.purchases=[];
-  state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost:r.cost,date:Date.now()});
+  // Frozen receipt: cost is captured here at the price actually paid, and never re-derived by
+  // recalcPoints() afterward — only the still-unpurchased shop listing floats with dailyUnit().
+  state.purchases.push({id:uid(),rewardId:r.id,name:r.name,emo:r.emo,cost,date:Date.now()});
   recalcPoints();save();renderRewards();renderXP();
-  toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${r.cost} ${CURRENCY_TICKER})`);
+  toast(`${r.emo||'🎁'} ${r.name} — ${ru?'куплено!':'bought!'} (&minus;${cost} ${CURRENCY_TICKER})`);
 }
 
 /* ===== COSMETICS SHOP UI (sub-tab of Rewards) ===== */
@@ -4894,6 +4995,7 @@ function connectSync(){
   const ru=state.lang!=="en";
   if(!sync.pass){setSyncStatus("off");toast(ru?"Введите пароль шифрования":"Enter encryption password");return}
   sync.on=true;saveSyncCfg();
+  subscribeForPush(); // best-effort, no-op until notifications are also granted — see REAL WEB PUSH
   if(es){es.close();es=null}
   clearTimeout(saveTimer);clearTimeout(pushTimer2);
   setSyncStatus("connecting");
@@ -4982,6 +5084,81 @@ function fallbackCopy(t){
   const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();
   try{document.execCommand("copy");toast(T.keyCopied)}catch(e){toast(T.copyManually)}
   ta.remove();
+}
+
+/* ===== REAL WEB PUSH (works even with the app fully closed — see .github/scripts/send-push-reminders.js) =====
+   The page's own reminder loop (checkReminders() below) only runs while the tab is open, because it's
+   a plain setInterval — iOS suspends that the moment the tab backgrounds. A real push subscription is
+   woken directly by the OS, independent of the page, but nothing on our side can locally schedule a
+   future push — an outside sender has to trigger it. A GitHub Actions job fills that role, polling
+   every ~10min for whose reminder time has arrived (see the workflow + script for the sending side).
+   That script is SHARED across every installation using this repo — it never sees anyone's encryption
+   password, so it can only read whatever is written here in the clear. Deliberately minimal: reminder
+   SCHEDULE only (type/time/days/count/from/to), never title text or habit names — the push body is
+   always a generic string, chosen only by state.lang. Reused sync.url/sync.code (same Firebase project
+   as Cloud Sync) so this rides the existing "/sync/$c" security rule — no new Firebase Rules needed. */
+const PUSH_DEVICE_ID_KEY="rt_push_device_id";
+let pushDeviceId=null;
+function getPushDeviceId(){
+  if(pushDeviceId)return pushDeviceId;
+  try{pushDeviceId=localStorage.getItem(PUSH_DEVICE_ID_KEY);}catch(e){}
+  if(!pushDeviceId){pushDeviceId=uid();try{localStorage.setItem(PUSH_DEVICE_ID_KEY,pushDeviceId)}catch(e){}}
+  return pushDeviceId;
+}
+function urlBase64ToUint8Array(base64String){
+  const padding="=".repeat((4-base64String.length%4)%4);
+  const base64=(base64String+padding).replace(/-/g,"+").replace(/_/g,"/");
+  const raw=atob(base64);const arr=new Uint8Array(raw.length);
+  for(let i=0;i<raw.length;i++)arr[i]=raw.charCodeAt(i);
+  return arr;
+}
+function pushBasePath(){return sync.url.trim().replace(/\/+$/,"")+"/sync/"+sync.code+"/push/"+getPushDeviceId()}
+// Only reminder types whose firing NEVER depends on live habit-completion state are safe to mirror —
+// the server never sees decrypted checks, so it cannot replicate untilDone's "skip if already done"
+// (nor a habit-bound smart reminder's same skip). Those two keep working normally whenever the app
+// happens to be open (checkReminders() below is unaffected by any of this), just without a push backup.
+function pushRemindersProjection(){
+  return(state.reminders||[]).filter(r=>r.enabled&&r.type!=="untilDone"&&!(r.type==="smart"&&r.habitId))
+    .map(r=>({id:r.id,type:r.type,time:r.time,days:r.days||[],count:r.count,from:r.from,to:r.to}));
+}
+function pushPublishMeta(sub){
+  if(!sync.on||!sync.url||!sync.code)return Promise.resolve();
+  // PATCH, not PUT: a full-node PUT would silently wipe the server's own lastFired bookkeeping
+  // (stored as a sibling key under the same device record) every time this republishes.
+  const body=JSON.stringify({
+    sub:sub?sub.toJSON():undefined,
+    reminders:pushRemindersProjection(),
+    lang:state.lang||"ru",
+    tzOffsetMin:-new Date().getTimezoneOffset(),
+    _t:Date.now(),
+  });
+  return fetch(pushBasePath()+".json",{method:"PATCH",headers:{"Content-Type":"application/json"},body}).catch(()=>{});
+}
+async function subscribeForPush(){
+  if(!sync.on||!sync.url||!sync.code)return; // nowhere to publish the subscription without cloud sync configured
+  if(notifPerm()!=="granted")return;
+  if(!("serviceWorker"in navigator)||!("PushManager"in window))return;
+  // iOS Safari only supports Web Push for an installed (Add to Home Screen) PWA — subscribing from a
+  // plain browser tab fails silently there, so skip rather than surface a confusing error.
+  const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
+  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!standalone)return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    let sub=await reg.pushManager.getSubscription();
+    if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
+    await pushPublishMeta(sub);
+  }catch(e){/* best-effort background enhancement — never blocks the app */}
+}
+// Re-publish just the schedule (not a fresh subscribe) whenever reminders change or cloud sync
+// (re)connects — cheap no-op if no subscription exists yet.
+async function syncPushMeta(){
+  if(!sync.on||!sync.url||!sync.code)return;
+  if(!("serviceWorker"in navigator))return;
+  try{
+    const reg=await navigator.serviceWorker.ready;
+    const sub=await reg.pushManager.getSubscription();
+    if(sub)await pushPublishMeta(sub);
+  }catch(e){}
 }
 
 /* ===== UI WIRING ===== */
@@ -5074,7 +5251,7 @@ function renderRemindersUI(){
     if(perm==="default"||perm==="denied"){
       permRow.innerHTML=`<button class="btn primary" id="btnNotifPerm" style="width:100%;margin-bottom:10px">${ru?'🔔 Разрешить уведомления':'🔔 Enable notifications'}</button>`;
       const b=document.getElementById("btnNotifPerm");
-      if(b)b.onclick=async()=>{const p=await requestNotifPerm();renderRemindersUI();if(p==="granted"){startReminderLoop();toast(ru?"Уведомления включены":"Notifications on");}else if(p==="denied")toast(ru?"Заблокировано в браузере":"Blocked in browser");};
+      if(b)b.onclick=async()=>{const p=await requestNotifPerm();renderRemindersUI();if(p==="granted"){startReminderLoop();subscribeForPush();toast(ru?"Уведомления включены":"Notifications on");}else if(p==="denied")toast(ru?"Заблокировано в браузере":"Blocked in browser");};
     }else permRow.innerHTML="";
   }
   // list
@@ -5097,12 +5274,12 @@ function renderRemindersUI(){
       }).join("");
       list.querySelectorAll("[data-remtoggle]").forEach(el=>el.onclick=()=>{
         const r=state.reminders.find(x=>x.id===el.dataset.remtoggle);if(!r)return;
-        r.enabled=!r.enabled;if(r.enabled&&r.lastFired)r.lastFired={};save();renderRemindersUI();
+        r.enabled=!r.enabled;if(r.enabled&&r.lastFired)r.lastFired={};save();renderRemindersUI();syncPushMeta();
       });
       list.querySelectorAll("[data-remedit]").forEach(el=>el.onclick=()=>{reminderEditId=el.dataset.remedit;renderReminderEditor();});
       list.querySelectorAll("[data-remdel]").forEach(el=>el.onclick=()=>{
         if(!confirm(ru?'Удалить напоминание?':'Delete reminder?'))return;
-        state.reminders=state.reminders.filter(x=>x.id!==el.dataset.remdel);save();renderRemindersUI();
+        state.reminders=state.reminders.filter(x=>x.id!==el.dataset.remdel);save();renderRemindersUI();syncPushMeta();
       });
     }
   }
@@ -5179,8 +5356,8 @@ function renderReminderEditor(){
     if(editing){Object.assign(r,obj);}
     else{if(!state.reminders)state.reminders=[];obj.id=uid();state.reminders.push(obj);}
     save();reminderEditId=null;renderRemindersUI();
-    if(notifPerm()!=="granted"){requestNotifPerm().then(p=>{if(p==="granted")startReminderLoop();});}
-    else startReminderLoop();
+    if(notifPerm()!=="granted"){requestNotifPerm().then(p=>{if(p==="granted"){startReminderLoop();subscribeForPush();}});}
+    else{startReminderLoop();syncPushMeta();}
     toast(ru?'Напоминание сохранено':'Reminder saved');
   };
 }
@@ -5395,7 +5572,10 @@ function init(){
   startReminderLoop();
   // Register service worker for PWA + background notifications
   if("serviceWorker" in navigator){
-    navigator.serviceWorker.register("sw.js").catch(()=>{});
+    // Re-subscribe on every load (covers: permission was already granted in an earlier session,
+    // before this feature existed; the OS silently rotated the push subscription; etc.) — cheap
+    // no-op via subscribeForPush()'s own guards when there's nothing to do.
+    navigator.serviceWorker.register("sw.js").then(()=>subscribeForPush()).catch(()=>{});
   }
 
   // sync

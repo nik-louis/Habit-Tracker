@@ -1,0 +1,9 @@
+{
+  "name": "habitunity-push-reminders",
+  "private": true,
+  "description": "Scheduled GitHub Actions job: sends real Web Push notifications for due reminders. Kept separate from the app itself, which stays a build-free single HTML file.",
+  "type": "commonjs",
+  "dependencies": {
+    "web-push": "^3.6.7"
+  }
+}
