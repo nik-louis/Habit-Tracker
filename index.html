@@ -101,12 +101,14 @@ td.cell{border-left:1px solid var(--line)}
   font-size:14px;color:#000;transition:transform .08s;position:relative}
 .chk:active{transform:scale(.86)}
 .chk.on{border-color:var(--chkcolor,var(--accent))}
-.cell-mark{position:absolute;top:-5px;right:-5px;width:15px;height:15px;border-radius:50%;
+.cell-marks{position:absolute;top:-5px;right:-5px;display:flex;gap:2px;z-index:1}
+.cell-mark{width:15px;height:15px;border-radius:50%;
   background:var(--panel);border:1.5px solid var(--line);font-size:9px;line-height:12px;
-  text-align:center;color:var(--dim);cursor:pointer;z-index:1}
+  text-align:center;color:var(--dim);cursor:pointer}
 .cell-mark.sin-on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a}
 .cell-mark.tier-set{background:var(--red);border-color:var(--red);color:#fff}
 .cell-mark.ach-mark{background:var(--green);border-color:var(--green);color:#062}
+.cell-mark.hf-on{background:#4A90D9;border-color:#4A90D9;color:#fff}
 td.today-col,th.today-col{box-shadow:inset 0 0 0 2px var(--accent)}
 .rowmeta{font-size:10px;color:var(--dim);margin-top:2px;font-weight:600}
 .rowmeta b.ok{color:var(--green)} .rowmeta b.bad{color:var(--accent2)}
@@ -631,6 +633,19 @@ textarea.inp{resize:vertical;min-height:60px}
         </div>
         <div id="fSinDaysTierSummary"></div>
       </div>
+      <!-- Per-habit freeze: a literal zero (not a discount like sin above) for a limited number of
+           days a month, for THIS habit only — independent of the global whole-day freeze pool.
+           Available for past and future days alike, unlike sin (which must be pre-declared). -->
+      <div class="zone-editor" id="fHabitFreezeSection">
+        <div class="zone-ed-header">
+          <span style="font-size:13px;font-weight:700" id="lHabitFreezeTitle">Заморозка по привычке</span>
+        </div>
+        <p class="hint" id="lHabitFreezeHintText" style="margin:0 0 8px">Ограниченное число дней в месяц, которые можно заморозить именно для ЭТОЙ привычки — настоящий ноль, не в плюс и не в минус, серию не трогает. Работает и для прошлых, и для будущих дней.</p>
+        <div class="field">
+          <label id="lHabitFreezeQuotaLabel">Бесплатных заморозок в месяц</label>
+          <input class="inp" type="number" min="0" id="fHabitFreezeQuota" placeholder="0">
+        </div>
+      </div>
       <!-- Optional violation-tier ladder (daily habits only): default miss is always -3×weight -->
       <div class="zone-editor" id="fTiersSection">
         <div class="zone-ed-header">
@@ -920,6 +935,7 @@ monthTargetsLabel:"Per-month targets (empty = default)",
 weightLabel:"Weight (1-10)",
 sinDaysTitle:"Conscious skip days",sinDaysHint:"Mark specific dates on the calendar below — a skip pre-declared on one of them always costs −1×weight (or that tier's own conscious rate if you configure violation tiers), with no limit. For any OTHER day, use the monthly quota field: it lets you pre-declare a limited number of conscious skips per month at the same rate. Once tiers are configured, each tier gets its own quota instead and the flat field below is ignored.",
 sinQuotaLabel:"Conscious skip on any other day, times/month",
+habitFreezeTitle:"Per-habit freeze",habitFreezeHintText:"A limited number of days per month you can freeze for just THIS habit — a true zero, doesn't help or hurt, doesn't touch streaks. Works for past and future days alike.",habitFreezeQuotaLabel:"Free freezes per month",habitFreezeHint:"Freeze this day for this habit (zero, streak untouched)",
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight). First number = penalty multiplier, must be negative. Second number = free uses per month before it escalates to the next tier — leave blank for unlimited.",
 achTiersTitle:"Success tiers (optional)",achTierAdd:"tier",achTiersHint:"By default any check is +1×weight. Add tiers to reward different ways of succeeding differently (e.g. \"cold shower\" +1×weight, \"cold bath\" +2×weight) — only ONE tier counts per day, your choice, even if you technically did several. Number = reward multiplier, must be positive.",
 sinDeclareHint:"Declare a conscious skip for this day",sinDeclareQuotaHint:"Conscious skip via the monthly quota (not a marked calendar date)",tierLogHint:"Tap to log which severity tier this miss was",achTierLogHint:"Tap to cycle which success tier this check counts as",
@@ -1034,6 +1050,7 @@ monthTargetsLabel:"Норма по месяцам (пусто = по умолч�
 weightLabel:"Вес (1-10)",
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Отметь конкретные даты в календаре ниже — пропуск, объявленный заранее в отмеченный день, всегда стоит −1×вес (или по осознанной ставке нужного уровня, если ниже настроены уровни срыва), без ограничений. Для ЛЮБОГО другого дня используй поле месячной квоты — оно позволяет объявить ограниченное число осознанных пропусков в месяц по той же ставке. Как только настроены уровни срыва, у каждого появляется своя квота, и общее поле ниже больше не используется.",
 sinQuotaLabel:"Осознанный пропуск в любой другой день, раз/мес",
+habitFreezeTitle:"Заморозка по привычке",habitFreezeHintText:"Ограниченное число дней в месяц, которые можно заморозить именно для ЭТОЙ привычки — настоящий ноль, не в плюс и не в минус, серию не трогает. Работает и для прошлых, и для будущих дней.",habitFreezeQuotaLabel:"Бесплатных заморозок в месяц",habitFreezeHint:"Заморозить этот день для привычки (ноль, серия не рвётся)",
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес). Первое число — множитель штрафа, обязательно отрицательное. Второе число — сколько раз в месяц этот уровень бесплатный, дальше срыв эскалирует к следующему уровню; пусто = без ограничений.",
 achTiersTitle:"Уровни успеха (необязательно)",achTierAdd:"уровень",achTiersHint:"По умолчанию любая галочка = +1×вес. Добавь уровни, если хочешь награждать разные варианты выполнения по-разному (напр. «холодный душ» +1×вес, «холодная ванна» +2×вес) — засчитывается только ОДИН уровень в день, по твоему выбору, даже если сделал несколько. Число — множитель награды, обязательно положительное.",
 sinDeclareHint:"Объявить осознанный пропуск на этот день",sinDeclareQuotaHint:"Осознанный пропуск через месячную квоту (день не отмечен в календаре)",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",achTierLogHint:"Нажми, чтобы переключить уровень успеха для этой галочки",
@@ -1148,6 +1165,7 @@ monthTargetsLabel:"Metas por mes (vacío = predeterminado)",
 weightLabel:"Peso (1-10)",
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Marca fechas específicas en el calendario de abajo — un salto declarado con antelación en una de ellas siempre cuesta −1×peso (o la tarifa consciente del nivel, si configuras niveles de recaída), sin límite. Para CUALQUIER otro día, usa el campo de cuota mensual: permite declarar un número limitado de saltos conscientes al mes a la misma tarifa. Con niveles configurados, cada uno tiene su propia cuota y el campo de abajo deja de usarse.",
 sinQuotaLabel:"Salto consciente en cualquier otro día, veces/mes",
+habitFreezeTitle:"Congelación por hábito",habitFreezeHintText:"Un número limitado de días al mes que puedes congelar solo para ESTE hábito — un cero real, no suma ni resta, no afecta las rachas. Funciona tanto para días pasados como futuros.",habitFreezeQuotaLabel:"Congelaciones gratis por mes",habitFreezeHint:"Congelar este día para este hábito (cero, la racha no se rompe)",
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave. Primer número = multiplicador de penalización, debe ser negativo. Segundo número = usos gratis por mes antes de escalar al siguiente nivel; déjalo en blanco para ilimitado.",
 achTiersTitle:"Niveles de éxito (opcional)",achTierAdd:"nivel",achTiersHint:"Por defecto cualquier marca es +1×peso. Añade niveles para premiar distintas formas de cumplir (p. ej. «ducha fría» +1×peso, «baño frío» +2×peso) — solo cuenta UN nivel por día, a tu elección, aunque hayas hecho varios. El número = multiplicador de recompensa, debe ser positivo.",
 sinDeclareHint:"Declarar un salto consciente para este día",sinDeclareQuotaHint:"Salto consciente vía la cuota mensual (fecha no marcada en el calendario)",tierLogHint:"Toca para registrar el nivel de este fallo",achTierLogHint:"Toca para cambiar el nivel de éxito de esta marca",
@@ -1262,6 +1280,7 @@ monthTargetsLabel:"每月目标（空=默认）",
 weightLabel:"权重 (1-10)",
 sinDaysTitle:"自觉跳过日",sinDaysHint:"在下面的日历中标记具体日期——提前在标记日声明的跳过始终只扣 −1×权重(如果设置了违规等级,则按该等级的自觉费率),没有次数限制。对于其他任何一天,使用月度配额字段:允许每月按相同费率声明有限次数的自觉跳过。一旦设置了等级,每个等级会有自己的配额,下面的通用字段将不再使用。",
 sinQuotaLabel:"其他任何一天的自觉跳过,次/月",
+habitFreezeTitle:"单习惯冻结",habitFreezeHintText:"每月可为这一个习惯冻结的天数上限——真正的零,不加分不扣分,不影响连续记录。过去和未来的日期都适用。",habitFreezeQuotaLabel:"每月免费冻结次数",habitFreezeHint:"为此习惯冻结这一天(零,连续记录不中断)",
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。第一个数字 = 惩罚倍数,必须为负数。第二个数字 = 每月免费次数,超过后升级到下一等级;留空表示不限。",
 achTiersTitle:"成功等级(可选)",achTierAdd:"等级",achTiersHint:"默认任何打卡都是 +1×权重。添加等级可以对不同完成方式给予不同奖励(例如「冷水淋浴」+1×权重,「冷水浴」+2×权重)——每天只算一个等级,由你选择,即使实际完成了多种。数字 = 奖励倍数,必须为正数。",
 sinDeclareHint:"为这一天声明自觉跳过",sinDeclareQuotaHint:"通过月度配额的自觉跳过(该日期未在日历中标记)",tierLogHint:"点击记录此次违规的等级",achTierLogHint:"点击切换此次打卡的成功等级",
@@ -1376,6 +1395,7 @@ monthTargetsLabel:"Objectifs par mois (vide = défaut)",
 weightLabel:"Poids (1-10)",
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Marque des dates précises dans le calendrier ci-dessous — un écart déclaré à l'avance sur l'une d'elles coûte toujours −1×poids (ou le tarif conscient du niveau, si tu configures des niveaux d'écart), sans limite. Pour N'IMPORTE QUEL autre jour, utilise le champ de quota mensuel : il permet de déclarer un nombre limité d'écarts conscients par mois au même tarif. Une fois des niveaux configurés, chacun a son propre quota et le champ ci-dessous n'est plus utilisé.",
 sinQuotaLabel:"Écart conscient un autre jour, fois/mois",
+habitFreezeTitle:"Gel par habitude",habitFreezeHintText:"Un nombre limité de jours par mois que tu peux geler seulement pour CETTE habitude — un vrai zéro, ni positif ni négatif, la série n'est pas affectée. Fonctionne pour les jours passés comme futurs.",habitFreezeQuotaLabel:"Gels gratuits par mois",habitFreezeHint:"Geler ce jour pour cette habitude (zéro, la série n'est pas rompue)",
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur. Premier nombre = multiplicateur de pénalité, doit être négatif. Second nombre = utilisations gratuites par mois avant d'escalader au niveau suivant ; laisse vide pour illimité.",
 achTiersTitle:"Niveaux de réussite (optionnel)",achTierAdd:"niveau",achTiersHint:"Par défaut toute coche vaut +1×poids. Ajoute des niveaux pour récompenser différemment plusieurs façons de réussir (ex. « douche froide » +1×poids, « bain froid » +2×poids) — un SEUL niveau compte par jour, à ton choix, même si tu en as fait plusieurs. Le nombre = multiplicateur de récompense, doit être positif.",
 sinDeclareHint:"Déclarer un écart conscient pour ce jour",sinDeclareQuotaHint:"Écart conscient via le quota mensuel (date non marquée dans le calendrier)",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",achTierLogHint:"Touchez pour changer le niveau de réussite de cette coche",
@@ -1484,6 +1504,7 @@ function applyLang(){
     lTargetDays:T.targetDays,lMonthTargets:T.monthTargetsLabel,
     lWeightLabel:T.weightLabel,
     lSinDaysTitle:T.sinDaysTitle,lSinDaysHint:T.sinDaysHint,lSinQuotaLabel:T.sinQuotaLabel,
+    lHabitFreezeTitle:T.habitFreezeTitle,lHabitFreezeHintText:T.habitFreezeHintText,lHabitFreezeQuotaLabel:T.habitFreezeQuotaLabel,
     lTiersTitle:T.tiersTitle,lTierAdd:T.tierAdd,lTiersHint:T.tiersHint,
     lAchTiersTitle:T.achTiersTitle,lAchTierAdd:T.achTierAdd,lAchTiersHint:T.achTiersHint,
     lTrackingStartTitle:T.trackingStartTitle,lTrackingStartDesc:T.trackingStartDesc,lTrackingStartLabel:T.trackingStartLabel,
@@ -1624,11 +1645,11 @@ function defaultBigRewards(){
 let state=null,memFallback=false;
 // Per-year data lives in state.years[YYYY]; shared data (habits/tags/bigRewards/theme...) at top level.
 function freshYearData(){
-  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{}};
+  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{},habitFreezes:{}};
 }
 // xp intentionally NOT per-year (see below) — it's a lifetime field like points, sitting alongside
 // state.years rather than inside it.
-const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs"];
+const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs","habitFreezes"];
 function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
 function addDaysISO(iso,days){
   const d=new Date(iso+"T00:00:00");
@@ -1704,7 +1725,7 @@ function freshState(){
     // in the UI) so the end-of-month tier-ambiguity warning fires exactly once per month per habit.
     notifications:[],tierWarningKeys:[],
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
-    checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},
+    checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},habitFreezes:{},
     _t:Date.now()
   };
   s.years[startYear]=freshYearData();
@@ -1835,6 +1856,9 @@ function migrate(){
     delete h.sinDays;
     if(!Array.isArray(h.sinCalendarDays))h.sinCalendarDays=[];
     if(h.sinMonthlyQuota===undefined)h.sinMonthlyQuota=null;
+    // Per-habit freeze — a true zero (not sin's -1×weight discount) for a limited number of days a
+    // month, for just this habit. Independent of both sin and the global whole-day freeze pool.
+    if(h.freezeMonthlyQuota===undefined)h.freezeMonthlyQuota=null;
     if(!Array.isArray(h.violationTiers))h.violationTiers=[];
     // Per-tier conscious ("sin") pricing — additive fields on each tier, independent of its
     // existing unplanned deltaMult/freeLimit. Default sinDeltaMult=-1 mirrors the old flat
@@ -2065,6 +2089,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
   const achBucket=(yd.achievementLogs&&yd.achievementLogs[mk]&&yd.achievementLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const habitFrozenBucket=(yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{};
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
   const sinUse=sinUseOut||{};
@@ -2086,6 +2111,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     }
     if(frozen.includes(d))continue;
     if(isArchivedOn(h,year,m,d))continue;
+    if(habitFrozenBucket[d])continue; // per-habit freeze: a true zero, same as the global freeze above
     const isPast=isCurMonth?d<rt.d:true;
     if(!isPast)continue;
     const hasTiers=h.violationTiers&&h.violationTiers.length>0;
@@ -2247,24 +2273,71 @@ function sinDateIsCalendarFree(h,dateISO){
   }
   return (h.sinCalendarDays||[]).includes(dateISO);
 }
+// Replays the exact same sin-resolution walk dailyHabitPointsForMonth's real scoring pass uses,
+// but across the WHOLE month unconditionally — not gated to already-elapsed days like the real
+// scoring pass has to be (it can't score a day that hasn't happened yet). This is ONLY for quota
+// AVAILABILITY: a day pre-declared for next week must count against the same monthly cap as one
+// declared for last week, or the cap is trivially unlimited for anything declared in advance.
+function allMonthSinUse(h,m){
+  const mk="m"+m,year=activeYear();
+  const sinBucket=(state.declaredSins&&state.declaredSins[mk]&&state.declaredSins[mk][h.id])||{};
+  const checksBucket=(state.checks&&state.checks[mk]&&state.checks[mk][h.id])||{};
+  const tierBucket=(state.violationLogs&&state.violationLogs[mk]&&state.violationLogs[mk][h.id])||{};
+  const frozen=(state.freezesUsed&&state.freezesUsed[mk])||[];
+  const hasTiers=h.violationTiers&&h.violationTiers.length>0;
+  const totalDays=daysInMonthY(year,m);
+  const sinUse={};
+  for(let d=1;d<=totalDays;d++){
+    if(checksBucket[d]||frozen.includes(d)||isArchivedOn(h,year,m,d)||!sinBucket[d])continue;
+    const dateISO=ymdStr(year,m,d);
+    if(hasTiers){
+      const loggedTier=tierBucket[d];
+      if(loggedTier!==undefined&&h.violationTiers[loggedTier]){
+        if(!(h.violationTiers[loggedTier].sinCalendarDays||[]).includes(dateISO)){
+          let idx=loggedTier;
+          sinUse[idx]=(sinUse[idx]||0)+1;
+          while(h.violationTiers[idx].sinLimit!=null&&sinUse[idx]>h.violationTiers[idx].sinLimit&&idx<h.violationTiers.length-1){
+            idx++;sinUse[idx]=(sinUse[idx]||0)+1;
+          }
+        }
+      }else{
+        resolveSinTierMiss(h,sinUse,dateISO);
+      }
+    }else if(!(h.sinCalendarDays||[]).includes(dateISO)){
+      sinUse._habit=(sinUse._habit||0)+1;
+    }
+  }
+  return sinUse;
+}
 // Whether the sin-declare (🙏) icon should be offered on this day at all: with violation tiers
 // configured, sinTierAvailableIdxs already accounts for each tier's OWN calendar internally, so a
 // non-empty result covers both "some tier's calendar exempts this date" and "some tier's sinLimit
 // still has room". With no tiers, it's the habit-level calendar OR the habit-level monthly quota.
+// An already-declared day always stays available, so it can still be toggled back off even once
+// the quota has since filled up from other declarations.
 function sinMarkAvailable(h,m,d){
   const dateISO=ymdStr(activeYear(),m,d);
+  const mk="m"+m;
+  if(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d])return true;
   if(h.violationTiers&&h.violationTiers.length){
-    const sinUse={};
-    habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
-    return sinTierAvailableIdxs(h,sinUse,dateISO).length>0;
+    return sinTierAvailableIdxs(h,allMonthSinUse(h,m),dateISO).length>0;
   }
   if((h.sinCalendarDays||[]).includes(dateISO))return true;
   if(h.sinMonthlyQuota){
-    const sinUse={};
-    habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
-    return(sinUse._habit||0)<h.sinMonthlyQuota;
+    return(allMonthSinUse(h,m)._habit||0)<h.sinMonthlyQuota;
   }
   return false;
+}
+// Availability check for the per-habit freeze icon — a plain count of already-used freeze days
+// this month (past and future both count the same, unlike sin there is no "planned vs hindsight"
+// distinction to enforce here). An already-frozen day stays available so it can be un-toggled.
+function habitFreezeAvailable(h,m,d){
+  if(!h.freezeMonthlyQuota)return false;
+  const mk="m"+m;
+  const bucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
+  if(bucket[d])return true;
+  const used=Object.keys(bucket).filter(k=>bucket[k]).length;
+  return used<h.freezeMonthlyQuota;
 }
 function eventPaceStatus(h,m,d){
   const totalDays=daysInMonth(m);
@@ -2402,7 +2475,16 @@ function rewardPrice(r){return Math.max(0,Math.round(rewardDays(r)*dailyUnit()))
 function getEffectiveRatePct(m){
   let rate=+(state.penaltyRate||15);
   const inc=+(state.rateIncrement||1);
+  const year=activeYear();
   for(let prev=0;prev<m;prev++){
+    // A month entirely before trackingStart was never actually judged — habitMonthBalance() nets
+    // to a flat 0 for every habit in that case (every day in it gets skipped by the points engine),
+    // which would otherwise satisfy "<=0" and count as a universal failure purely from the month
+    // not having existed yet. Skip it, same as every other place in the app that respects
+    // trackingStart. A month trackingStart falls WITHIN is left as-is — its tracked days still
+    // produce a real, meaningful balance.
+    const lastDayISO=ymdStr(year,prev,daysInMonthY(year,prev));
+    if(state.trackingStart&&lastDayISO<state.trackingStart)continue;
     const failed=activeHabits().filter(h=>habitMonthBalance(h,prev)<=0).length;
     if(failed>5)rate+=inc;
   }
@@ -3042,10 +3124,12 @@ function renderGrid(){
             body+=`<td class="cell ${td?'today-col':''} frozen-cell"><div class="freeze-icon">&#10052;</div></td>`;
           }else{
             const on=!!c[d];
-            const isFutureOrToday=(ay>rt.y)||(ay===rt.y&&m>rt.m)||(ay===rt.y&&m===rt.m&&d>=rt.d);
             const isPastDay=(ay<rt.y)||(ay===rt.y&&m<rt.m)||(ay===rt.y&&m===rt.m&&d<rt.d);
             let mark="";
-            if(!on&&h.type==="daily"&&isFutureOrToday&&sinMarkAvailable(h,m,d)){
+            // Sin and tier marks can now coexist on the same past day (sin no longer requires
+            // planning ahead — see allMonthSinUse()/sinMarkAvailable()'s comment for why the quota
+            // math already supports this) — both are independent ifs, not else-if, so both render.
+            if(!on&&h.type==="daily"&&sinMarkAvailable(h,m,d)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
               // Differentiate the tooltip: a date marked on the relevant calendar (the habit's own,
               // or — once tiers exist — any tier's own) is unlimited; any OTHER day only shows this
@@ -3054,17 +3138,23 @@ function renderGrid(){
               // explanation anywhere in the UI otherwise.
               const isCalendarDay=sinDateIsCalendarFree(h,ymdStr(ay,m,d));
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
-              mark=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
-            }else if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
+              mark+=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
+            }
+            if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
-              mark=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
-            }else if(on&&(h.achievementTiers||[]).length>0){
+              mark+=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
+            }
+            if(!on&&h.type==="daily"&&habitFreezeAvailable(h,m,d)){
+              const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
+              mark+=`<span class="cell-mark hf-mark ${hfOn?'hf-on':''}" data-hf-h="${h.id}" data-hf-d="${d}" title="${T.habitFreezeHint}">&#10052;</span>`;
+            }
+            if(on&&(h.achievementTiers||[]).length>0){
               const loggedAch=(state.achievementLogs["m"+m]&&state.achievementLogs["m"+m][h.id])?state.achievementLogs["m"+m][h.id][d]:undefined;
               const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
-              mark=`<span class="cell-mark ach-mark" data-ach-h="${h.id}" data-ach-d="${d}" title="${T.achTierLogHint}">${idx+1}</span>`;
+              mark+=`<span class="cell-mark ach-mark" data-ach-h="${h.id}" data-ach-d="${d}" title="${T.achTierLogHint}">${idx+1}</span>`;
             }
-            body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${on?'&#10003;':''}${mark}</div></td>`;
+            body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${on?'&#10003;':''}${mark?`<div class="cell-marks">${mark}</div>`:''}</div></td>`;
           }
         }
         body+="</tr>";
@@ -3105,6 +3195,17 @@ function renderGrid(){
       if(!state.declaredSins[mk])state.declaredSins[mk]={};
       if(!state.declaredSins[mk][hid])state.declaredSins[mk][hid]={};
       const bucket=state.declaredSins[mk][hid];
+      if(bucket[d])delete bucket[d];else bucket[d]=true;
+      recalcPoints();save();renderGrid();renderHero();renderXP();
+    };
+  });
+  document.querySelectorAll(".hf-mark").forEach(el=>{
+    el.onclick=e=>{
+      e.stopPropagation();
+      const hid=el.dataset.hfH,d=+el.dataset.hfD,mk="m"+m;
+      if(!state.habitFreezes[mk])state.habitFreezes[mk]={};
+      if(!state.habitFreezes[mk][hid])state.habitFreezes[mk][hid]={};
+      const bucket=state.habitFreezes[mk][hid];
       if(bucket[d])delete bucket[d];else bucket[d]=true;
       recalcPoints();save();renderGrid();renderHero();renderXP();
     };
@@ -3640,6 +3741,7 @@ function clearForm(){
   renderMonthTargetsGrid();
   editSinCalDays=[];resetSinCalNav();renderSinCal();collapseSinCal();
   document.getElementById("fSinQuota").value="";
+  document.getElementById("fHabitFreezeQuota").value="";
   editTiers=[];renderTiersList();
   editAchTiers=[];renderAchTiersList();
   updateTypeSectionVisibility();
@@ -3663,6 +3765,7 @@ function startEdit(id){
   if(h.monthTargets){for(let i=0;i<12;i++){const inp=document.getElementById("mt_"+i);if(inp&&h.monthTargets["m"+i]!==undefined)inp.value=h.monthTargets["m"+i]}}
   editSinCalDays=[...(h.sinCalendarDays||[])];resetSinCalNav();renderSinCal();collapseSinCal();
   document.getElementById("fSinQuota").value=h.sinMonthlyQuota!=null?h.sinMonthlyQuota:"";
+  document.getElementById("fHabitFreezeQuota").value=h.freezeMonthlyQuota!=null?h.freezeMonthlyQuota:"";
   editTiers=(h.violationTiers||[]).map(t=>({...t}));renderTiersList();
   editAchTiers=(h.achievementTiers||[]).map(t=>({...t}));renderAchTiersList();
   updateTypeSectionVisibility();
@@ -3680,6 +3783,8 @@ function saveHabit(){
   const sinCalendarDays=[...editSinCalDays];
   const sinQuotaRaw=document.getElementById("fSinQuota").value;
   const sinMonthlyQuota=sinQuotaRaw===""?null:Math.max(0,+sinQuotaRaw);
+  const freezeQuotaRaw=document.getElementById("fHabitFreezeQuota").value;
+  const freezeMonthlyQuota=freezeQuotaRaw===""?null:Math.max(0,+freezeQuotaRaw);
   const violationTiers=readTiersFromForm();
   const achievementTiers=readAchTiersFromForm();
   const monthTargets={};
@@ -3694,10 +3799,10 @@ function saveHabit(){
   const type=fEveryday?"daily":"event";
   if(editId){
     const h=state.habits.find(x=>x.id===editId);
-    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,violationTiers,achievementTiers,monthTargets});
+    Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,monthTargets});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,violationTiers,achievementTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length});
+    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length});
     toast(T.habitAdded);
   }
   recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
