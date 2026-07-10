@@ -734,6 +734,7 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
       <p class="sub" style="margin:4px 0 10px">Локальные уведомления, пока приложение открыто или установлено на телефон. Работают в фоне на Android; на iOS — после добавления на экран «Домой».</p>
       <div id="notifPermRow"></div>
+      <div id="pushDiagRow" style="margin-bottom:10px"></div>
       <div id="remindersList"></div>
       <button class="btn ghost" id="btnAddReminder" style="width:100%;margin-top:8px">+ Добавить напоминание</button>
       <div id="reminderEditor"></div>
@@ -5295,8 +5296,14 @@ function pushRemindersProjection(){
   return(state.reminders||[]).filter(r=>r.enabled&&r.type!=="untilDone"&&!(r.type==="smart"&&r.habitId))
     .map(r=>({id:r.id,type:r.type,time:r.time,days:r.days||[],count:r.count,from:r.from,to:r.to}));
 }
+// Diagnostic status for the subscribe/publish flow below — every guard and failure point in that flow
+// used to fail silently (best-effort background enhancement), which made "why don't I get push on my
+// phone" impossible to debug remotely. This just records WHERE it stopped and WHY, surfaced in the
+// Reminders card by renderRemindersUI() — never affects control flow itself.
+let pushDiag={status:"unknown",detail:"",at:0};
+function setPushDiag(status,detail){pushDiag={status,detail:detail||"",at:Date.now()};}
 function pushPublishMeta(sub){
-  if(!sync.on||!sync.url||!sync.code)return Promise.resolve();
+  if(!sync.on||!sync.url||!sync.code)return Promise.resolve(false);
   // PATCH, not PUT: a full-node PUT would silently wipe the server's own lastFired bookkeeping
   // (stored as a sibling key under the same device record) every time this republishes.
   const body=JSON.stringify({
@@ -5306,22 +5313,25 @@ function pushPublishMeta(sub){
     tzOffsetMin:-new Date().getTimezoneOffset(),
     _t:Date.now(),
   });
-  return fetch(pushBasePath()+".json",{method:"PATCH",headers:{"Content-Type":"application/json"},body}).catch(()=>{});
+  return fetch(pushBasePath()+".json",{method:"PATCH",headers:{"Content-Type":"application/json"},body})
+    .then(res=>res.ok).catch(()=>false);
 }
 async function subscribeForPush(){
-  if(!sync.on||!sync.url||!sync.code)return; // nowhere to publish the subscription without cloud sync configured
-  if(notifPerm()!=="granted")return;
-  if(!("serviceWorker"in navigator)||!("PushManager"in window))return;
+  if(!sync.on||!sync.url||!sync.code){setPushDiag("no-sync");return;} // nowhere to publish the subscription without cloud sync configured
+  if(notifPerm()!=="granted"){setPushDiag("no-perm");return;}
+  if(!("serviceWorker"in navigator)||!("PushManager"in window)){setPushDiag("unsupported");return;}
   // iOS Safari only supports Web Push for an installed (Add to Home Screen) PWA — subscribing from a
   // plain browser tab fails silently there, so skip rather than surface a confusing error.
   const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
-  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!standalone)return;
+  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!standalone){setPushDiag("ios-tab");return;}
   try{
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
-    await pushPublishMeta(sub);
-  }catch(e){/* best-effort background enhancement — never blocks the app */}
+    const published=await pushPublishMeta(sub);
+    if(!published){setPushDiag("publish-error");return;}
+    setPushDiag(pushRemindersProjection().length?"ok":"no-reminders");
+  }catch(e){setPushDiag("subscribe-error",String((e&&e.message)||e));}
 }
 // Re-publish just the schedule (not a fresh subscribe) whenever reminders change or cloud sync
 // (re)connects — cheap no-op if no subscription exists yet.
@@ -5427,6 +5437,31 @@ function renderRemindersUI(){
       const b=document.getElementById("btnNotifPerm");
       if(b)b.onclick=async()=>{const p=await requestNotifPerm();renderRemindersUI();if(p==="granted"){startReminderLoop();subscribeForPush();toast(ru?"Уведомления включены":"Notifications on");}else if(p==="denied")toast(ru?"Заблокировано в браузере":"Blocked in browser");};
     }else permRow.innerHTML="";
+  }
+  // Push-subscription diagnostic — see setPushDiag()/subscribeForPush() for how this gets populated.
+  // Shows exactly where the closed-app push pipeline stands, since every step of it fails silently by
+  // design (best-effort background enhancement that must never block or alarm the user on its own).
+  const diagRow=document.getElementById("pushDiagRow");
+  if(diagRow){
+    const MSG={
+      "unknown":[ru?"Push: проверка…":"Push: checking…","var(--dim)"],
+      "no-sync":[ru?"Push: нужна настроенная Cloud Sync":"Push: needs Cloud Sync configured","var(--dim)"],
+      "no-perm":[ru?"Push: нет разрешения на уведомления":"Push: notifications not permitted","var(--dim)"],
+      "unsupported":[ru?"Push: не поддерживается этим браузером":"Push: not supported by this browser","var(--red)"],
+      "ios-tab":[ru?"Push: на iPhone откройте приложение с иконки на главном экране, не через Safari":"Push: on iPhone, open from the Home Screen icon, not a Safari tab","var(--accent2)"],
+      "subscribe-error":[(ru?"Push: ошибка подписки — ":"Push: subscribe failed — ")+escapeHtml(pushDiag.detail||""),"var(--red)"],
+      "publish-error":[ru?"Push: подписка создана, но не отправилась на сервер (проверьте интернет)":"Push: subscribed, but failed to reach the server (check connection)","var(--red)"],
+      "no-reminders":[ru?"Push: подписка активна ✅, но нет включённых напоминаний для отправки":"Push: subscribed ✅, but no enabled reminders to send","var(--accent2)"],
+      "ok":[ru?"Push: активен ✅":"Push: active ✅","var(--green)"],
+    };
+    const[label,color]=MSG[pushDiag.status]||MSG.unknown;
+    const at=pushDiag.at?new Date(pushDiag.at).toLocaleTimeString(ru?"ru":"en",{hour:"2-digit",minute:"2-digit"}):"";
+    diagRow.innerHTML=`<div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;font-size:12px">
+      <span style="color:${color}">${label}${at?` · ${at}`:""}</span>
+      <button class="btn ghost" id="btnPushRecheck" style="padding:4px 10px;font-size:12px">${ru?"🔄 Проверить снова":"🔄 Re-check"}</button>
+    </div>`;
+    const rb=document.getElementById("btnPushRecheck");
+    if(rb)rb.onclick=async()=>{rb.disabled=true;await subscribeForPush();renderRemindersUI();};
   }
   // list
   const list=document.getElementById("remindersList");
