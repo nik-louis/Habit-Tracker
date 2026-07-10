@@ -452,6 +452,7 @@ textarea.inp{resize:vertical;min-height:60px}
 .br-inp-name{flex:1!important}
 .br-inp-cost{width:68px!important;text-align:center}
 .br-list{display:flex;flex-direction:column;gap:8px}
+.reward-tag-group{display:flex;flex-direction:column;gap:8px}
 .br-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .br-item:last-child{border-bottom:none}
 .br-emo{font-size:24px;flex:0 0 36px;text-align:center}
@@ -1719,7 +1720,7 @@ function freshState(){
     currentYear:startYear,years:{},
     // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger,
     // and XP/level progression — both derived fresh by recalcPoints()/recalcXP(), never patched)
-    points:0,purchases:[],xp:0,
+    points:0,purchases:[],xp:0,debtForgiven:0,
     // Cosmetics: purely a record of fact (owned/equipped), never derived — mirrors purchases'
     // shape (a cost ledger recalcPoints() subtracts) but kept in its own array since these are a
     // different catalog (COSMETIC_CATALOG, not state.bigRewards) and behave differently (owned
@@ -1996,12 +1997,13 @@ function countArchivedDaysInMonth(h,year,m){
 function effTargetForYear(h,year,m,yd){
   const mk="m"+m;
   const frozen=((yd.freezesUsed&&yd.freezesUsed[mk])||[]).length;
+  const habitFrozen=Object.keys((yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{}).length;
   const archivedDays=countArchivedDaysInMonth(h,year,m);
   const mt=h.monthTargets&&h.monthTargets[mk];
   let base;
   if(mt!==undefined&&mt!==null&&mt!==""){base=Math.min(+mt,daysInMonthY(year,m));}
   else{base=h.type==="daily"?daysInMonthY(year,m):Math.min(h.target||0,daysInMonthY(year,m));}
-  return Math.max(0,base-frozen-archivedDays);
+  return Math.max(0,base-frozen-habitFrozen-archivedDays);
 }
 // Daily habit: check=+weight; an elapsed miss=-3×weight, or -1×weight if pre-declared as a sin
 // on one of the habit's configured sin-days, or the habit's own tier ladder if the miss was
@@ -2202,6 +2204,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
   const achBucket=(yd.achievementLogs&&yd.achievementLogs[mk]&&yd.achievementLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const habitFrozenBucket=(yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{};
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
   const hasAchTiers=h.achievementTiers&&h.achievementTiers.length>0;
@@ -2211,6 +2214,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(frozen.includes(d))continue;
+    if(habitFrozenBucket[d])continue;
     if(isArchivedOn(h,year,m,d))continue;
     if(checksBucket[d]){
       curSuccessStreak++;curMissStreak=0;
@@ -2446,8 +2450,27 @@ function recalcPoints(){
     if(!dep.collected)pts-=dep.principal;
     else pts+=Math.round(dep.principal*dep.bonusPct/100);
   });
+  // Real-money debt settlement: a fixed historical offset, exactly like purchases/savings above —
+  // never a mutable "current debt" field that could drift. forgiveCurrentDebt() sets this to exactly
+  // enough to zero out whatever the raw negative sum was at the moment it was clicked; it never
+  // retroactively erases penalties, it just permanently offsets them going forward.
+  pts+=(state.debtForgiven||0);
   state.points=pts;
   checkCosmeticAchievementUnlocks();
+}
+// ₽ this month's owed, if points is negative — same exchange rate the reward shop already uses
+// (dailyUnit() INLI = one "day" = rublePerDay() ₽), so a negative balance reads as a real number
+// instead of an abstract one.
+function debtRub(){
+  const pts=state.points||0;
+  if(pts>=0)return 0;
+  return Math.round(Math.abs(pts)/dailyUnit()*rublePerDay());
+}
+function debtBlocksPurchases(){return(state.points||0)<0;}
+function forgiveCurrentDebt(){
+  if((state.points||0)>=0)return;
+  state.debtForgiven=(state.debtForgiven||0)+Math.abs(state.points);
+  recalcPoints();save();
 }
 /* ===== MONEY POOL (weighted, no cliff — replaces per-habit zone-rate escalation) =====
    pool = income × ratePct; each failed habit owes pool × (weight / Σ weight of active habits).
@@ -2993,7 +3016,7 @@ function renderToday(){
           const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"?";
           marks.push(`<span class="ti-mark ti-tier-mark ${logged!==undefined?'tier-set':''}" data-h="${h.id}" title="${T.tierLogHint}">${lbl}</span>`);
         }
-        if(h.type==="daily"&&habitFreezeAvailable(h,m,d)){
+        if(habitFreezeAvailable(h,m,d)){
           const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
           marks.push(`<span class="ti-mark ti-hf-mark ${hfOn?'hf-on':''}" data-h="${h.id}" title="${T.habitFreezeHint}">&#10052;</span>`);
         }
@@ -3232,7 +3255,7 @@ function renderGrid(){
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark+=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
             }
-            if(!on&&h.type==="daily"&&habitFreezeAvailable(h,m,d)){
+            if(!on&&habitFreezeAvailable(h,m,d)){
               const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
               mark+=`<span class="cell-mark hf-mark ${hfOn?'hf-on':''}" data-hf-h="${h.id}" data-hf-d="${d}" title="${T.habitFreezeHint}">&#10052;</span>`;
             }
@@ -3576,6 +3599,7 @@ function tierRowHTML(t,idx){
       <input class="inp tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
       <button type="button" class="mini tier-del" data-tierdel="${idx}">✕</button>
     </div>
+    <input class="inp tier-desc" value="${escapeHtml(t.description||'')}" placeholder="${ru?'Что означает этот уровень (необязательно) — свои правила, примеры, что можно/нельзя':'What this tier means (optional) — your own rules, examples, what does/doesn\'t count'}">
     <div style="display:flex;gap:6px;align-items:center">
       <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'обычно':'usual'}</span>
       <input class="inp tier-delta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'Множитель штрафа ×вес для НЕосознанного пропуска — обязательно отрицательное число':'Penalty multiplier ×weight for an unplanned miss — must be negative'}">
@@ -3740,6 +3764,7 @@ function readTiersFromForm(){
     const i=+row.dataset.idx;
     if(!editTiers[i])return;
     editTiers[i].label=row.querySelector(".tier-label").value.trim();
+    editTiers[i].description=row.querySelector(".tier-desc").value.trim();
     // Only an EMPTY field defaults to -1 (matches its placeholder) — an explicit "0" must be kept
     // as literally 0, not silently coerced, so it stays visibly invalid until the user fixes it
     // instead of quietly becoming a valid -1 behind their back on the next re-render.
@@ -3767,10 +3792,13 @@ function achTiersHeaderHTML(){
 }
 function achTierRowHTML(t,idx){
   const ru=state.lang!=="en";
-  return`<div class="br-edit-row tier-row" data-idx="${idx}">
-    <input class="inp ach-tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
-    <input class="inp ach-tier-plus" type="number" step="0.5" style="width:64px;text-align:center" value="${t.plusMult!==undefined?t.plusMult:''}" placeholder="1" title="${ru?'Множитель награды ×вес — обязательно положительное число':'Reward multiplier ×weight — must be positive'}">
-    <button type="button" class="mini tier-del" data-achtierdel="${idx}">✕</button>
+  return`<div class="br-edit-row tier-row" data-idx="${idx}" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <input class="inp ach-tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
+      <input class="inp ach-tier-plus" type="number" step="0.5" style="width:64px;text-align:center" value="${t.plusMult!==undefined?t.plusMult:''}" placeholder="1" title="${ru?'Множитель награды ×вес — обязательно положительное число':'Reward multiplier ×weight — must be positive'}">
+      <button type="button" class="mini tier-del" data-achtierdel="${idx}">✕</button>
+    </div>
+    <input class="inp ach-tier-desc" value="${escapeHtml(t.description||'')}" placeholder="${ru?'Что означает этот уровень (необязательно)':'What this tier means (optional)'}">
   </div>`;
 }
 let editAchTiers=[];
@@ -3807,6 +3835,7 @@ function readAchTiersFromForm(){
     const i=+row.dataset.idx;
     if(!editAchTiers[i])return;
     editAchTiers[i].label=row.querySelector(".ach-tier-label").value.trim();
+    editAchTiers[i].description=row.querySelector(".ach-tier-desc").value.trim();
     const raw=row.querySelector(".ach-tier-plus").value;
     editAchTiers[i].plusMult=raw===""?1:+raw;
   });
@@ -4460,6 +4489,7 @@ function cosmeticOwned(item){
 function buyCosmetic(id){
   const item=cosmeticById(id);if(!item||item.achKey||cosmeticOwned(item))return;
   const ru=state.lang!=="en";
+  if(debtBlocksPurchases()){toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);return}
   if(!confirm(ru?`Купить «${item.name}» за ${item.cost} ${CURRENCY_TICKER}?`:`Buy "${item.nameEn}" for ${item.cost} ${CURRENCY_TICKER}?`))return;
   if(!state.cosmeticPurchases)state.cosmeticPurchases=[];
   state.cosmeticPurchases.push({id:uid(),itemId:id,cost:item.cost,date:Date.now()});
@@ -4568,7 +4598,15 @@ function renderRewards(){
 
   const normalR=bigR.filter(r=>rewardDays(r)<REWARD_FAR_GOAL_DAYS);
   const farR=bigR.filter(r=>rewardDays(r)>=REWARD_FAR_GOAL_DAYS);
-  const shopRows=normalR.map(rewardRowHTML).join('');
+  // Grouped by tag (same pattern as Today/Track's habit grouping) so the shop doesn't read as one
+  // undifferentiated wall of rewards — untagged rewards fall into their own "no tag" group via the
+  // same tagOrderList()/"none" convention used everywhere else tags are grouped.
+  const normalGrouped={};
+  normalR.forEach(r=>{const tid=r.tagId||"none";if(!normalGrouped[tid])normalGrouped[tid]=[];normalGrouped[tid].push(r);});
+  const shopRows=tagOrderList().filter(tid=>normalGrouped[tid]).map((tid,i)=>{
+    const tag=getTag(tid);
+    return`<div class="reward-tag-group"><div class="today-tag-name" style="margin:${i===0?'0':'12px'} 0 6px"><span class="tgdot" style="background:${tag.color}"></span>${escapeHtml(tag.name)}</div>${normalGrouped[tid].map(rewardRowHTML).join('')}</div>`;
+  }).join('');
   const farRows=farR.map(rewardRowHTML).join('');
 
   const addSection=bigRewardEditId==='new'
@@ -4579,7 +4617,15 @@ function renderRewards(){
     `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${CURRENCY_TICKER}</div></div>`
   ).join('');
 
+  const debt=debtRub();
   body.innerHTML=rewardsSubtabsHTML(ru)+`
+    ${debt>0?`<div class="card" style="margin-bottom:12px;border-color:var(--red)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><b style="color:var(--red)">${ru?'Вы должны себе':'You owe yourself'} ≈${debt} ₽</b>
+          <div class="hint" style="margin-top:2px">${ru?'Новые покупки заблокированы, пока долг не закрыт':'New purchases are blocked until this is settled'}</div></div>
+        <button class="btn ghost" id="btnDebtPaid">${ru?'✓ Я оплатил(а) реальными деньгами':'✓ I paid this with real money'}</button>
+      </div>
+    </div>`:''}
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h3 style="margin:0">🏆 ${ru?'Магазин':'Shop'}</h3>
@@ -4671,6 +4717,14 @@ function renderRewards(){
   });
   const addBtn=document.getElementById('brAddBtn');
   if(addBtn)addBtn.onclick=()=>{bigRewardEditId='new';renderRewards()};
+  const debtBtn=document.getElementById('btnDebtPaid');
+  if(debtBtn)debtBtn.onclick=()=>{
+    const owed=debtRub();
+    if(!confirm(ru?`Подтвердите: вы реально перевели ${owed} ₽?`:`Confirm: did you really transfer ${owed}₽?`))return;
+    forgiveCurrentDebt();
+    renderRewards();renderXP();
+    toast(ru?'Долг закрыт':'Debt settled');
+  };
   body.querySelectorAll('[data-brbuy]').forEach(b=>{
     b.onclick=()=>{
       const r=state.bigRewards.find(x=>x.id===b.dataset.brbuy);
@@ -4682,6 +4736,7 @@ function renderRewards(){
 }
 function buyRewardFlat(r){
   const ru=state.lang!=="en";
+  if(debtBlocksPurchases()){toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);return}
   const cost=rewardPrice(r);
   if(!confirm(ru?`Купить «${r.name}» за ${cost} ${CURRENCY_TICKER}?`:`Buy "${r.name}" for ${cost} ${CURRENCY_TICKER}?`))return;
   if(!state.purchases)state.purchases=[];
