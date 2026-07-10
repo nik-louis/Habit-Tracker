@@ -101,10 +101,17 @@ td.cell{border-left:1px solid var(--line)}
   font-size:14px;color:#000;transition:transform .08s;position:relative}
 .chk:active{transform:scale(.86)}
 .chk.on{border-color:var(--chkcolor,var(--accent))}
-.cell-marks{position:absolute;top:-5px;right:-5px;display:flex;gap:2px;z-index:1}
-.cell-mark{width:15px;height:15px;border-radius:50%;
+/* One mark type per corner (not a crowded single-corner row) — sin/tier/freeze can appear together
+   (all three only ever show on an UNchecked day), ach only ever shows alone (checked day only), so at
+   most 3 of these 4 are ever visible on the same cell at once, always in 3 distinct corners. */
+.cell-marks{position:absolute;inset:0;pointer-events:none;z-index:1}
+.cell-mark{position:absolute;width:15px;height:15px;border-radius:50%;pointer-events:auto;
   background:var(--panel);border:1.5px solid var(--line);font-size:9px;line-height:12px;
   text-align:center;color:var(--dim);cursor:pointer}
+.cell-mark.sin-mark{top:-5px;left:-5px}
+.cell-mark.tier-mark{bottom:-5px;left:-5px}
+.cell-mark.hf-mark{bottom:-5px;right:-5px}
+.cell-mark.ach-mark{top:-5px;right:-5px}
 .cell-mark.sin-on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a}
 .cell-mark.tier-set{background:var(--red);border-color:var(--red);color:#fff}
 .cell-mark.ach-mark{background:var(--green);border-color:var(--green);color:#062}
@@ -147,6 +154,11 @@ td.frozen-cell{position:relative}
 .today-item .ti-check.done{border-color:var(--chkcolor,var(--accent));color:#000}
 .today-item .ti-xp{font-size:11px;font-weight:700;color:var(--accent);margin-left:4px}
 .ti-ach-row{display:flex;flex-wrap:wrap;gap:5px;margin-top:6px}
+.ti-mark{width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  background:var(--panel2);border:1.5px solid var(--line);font-size:11px;color:var(--dim);cursor:pointer}
+.ti-mark.sin-on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a}
+.ti-mark.tier-set{background:var(--red);border-color:var(--red);color:#fff}
+.ti-mark.hf-on{background:#4A90D9;border-color:#4A90D9;color:#fff}
 .ach-chip{font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;border:1.5px solid var(--line);
   background:var(--panel2);color:var(--dim);cursor:pointer}
 .ach-chip.sel{background:var(--green);border-color:var(--green);color:#062}
@@ -2329,16 +2341,24 @@ function sinMarkAvailable(h,m,d){
   }
   return false;
 }
-// Availability check for the per-habit freeze icon — a plain count of already-used freeze days
-// this month (past and future both count the same, unlike sin there is no "planned vs hindsight"
-// distinction to enforce here). An already-frozen day stays available so it can be un-toggled.
+// Availability check for the per-habit freeze icon — counts BOTH this habit's own personal freeze
+// days AND any globally-frozen day toward the SAME h.freezeMonthlyQuota ceiling, since a whole-day
+// freeze (MAX_FREEZES/state.freezesUsed) zeroes this habit too as a side effect. Without merging
+// these, the two pools simply stacked (e.g. 3 global + 3 personal = 6 free days for one habit).
+// A global day-freeze is NEVER blocked by this — toggleFreeze() doesn't consult per-habit quotas at
+// all, a whole-day freeze always zeroes every active habit unconditionally; this only governs
+// whether MORE personal top-up freezes remain available once global usage already spent the
+// habit's shared budget (it can go over quota this way — see habitFreezeHintText). Days the habit
+// was archived on don't count against the budget — they were already neutral regardless of freezes.
 function habitFreezeAvailable(h,m,d){
   if(!h.freezeMonthlyQuota)return false;
   const mk="m"+m;
   const bucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
   if(bucket[d])return true;
-  const used=Object.keys(bucket).filter(k=>bucket[k]).length;
-  return used<h.freezeMonthlyQuota;
+  const personalUsed=Object.keys(bucket).filter(k=>bucket[k]).length;
+  const year=activeYear();
+  const globalUsed=(getFreezes(m)||[]).filter(gd=>!isArchivedOn(h,year,m,gd)).length;
+  return(personalUsed+globalUsed)<h.freezeMonthlyQuota;
 }
 function eventPaceStatus(h,m,d){
   const totalDays=daysInMonth(m);
@@ -2952,11 +2972,38 @@ function renderToday(){
           `<span class="ach-chip ${curAchIdx===i?'sel':''}" data-ach-h="${h.id}" data-ach-tier="${i}">${escapeHtml(t.label||('#'+(i+1)))}</span>`
         ).join('')}</div>`;
       }
+      // Same actions the Track grid's cell offers (sin/tier/freeze marks) — same availability checks,
+      // just laid out as bigger, normally-flowed tappable badges instead of tiny absolutely-positioned
+      // ones, since a Today card has room a grid cell doesn't. Distinct ti-*-mark classes (not the
+      // grid's bare sin-mark/hf-mark/tier-mark) so this view's click-handler wiring below can never
+      // cross-match elements sitting in the grid's own (possibly still-in-DOM-but-hidden) markup.
+      let actionRow="";
+      if(!done&&!frozen){
+        const marks=[];
+        if(h.type==="daily"&&sinMarkAvailable(h,m,d)){
+          const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
+          const isCalendarDay=sinDateIsCalendarFree(h,ymdStr(activeYear(),m,d));
+          const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
+          marks.push(`<span class="ti-mark ti-sin-mark ${declared?'sin-on':''}" data-h="${h.id}" title="${sinTitle}">🙏</span>`);
+        }
+        const rt=realTodayParts();
+        const isPastDay=(activeYear()<rt.y)||(activeYear()===rt.y&&m<rt.m)||(activeYear()===rt.y&&m===rt.m&&d<rt.d);
+        if(isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
+          const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
+          const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"?";
+          marks.push(`<span class="ti-mark ti-tier-mark ${logged!==undefined?'tier-set':''}" data-h="${h.id}" title="${T.tierLogHint}">${lbl}</span>`);
+        }
+        if(h.type==="daily"&&habitFreezeAvailable(h,m,d)){
+          const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
+          marks.push(`<span class="ti-mark ti-hf-mark ${hfOn?'hf-on':''}" data-h="${h.id}" title="${T.habitFreezeHint}">&#10052;</span>`);
+        }
+        if(marks.length)actionRow=`<div class="ti-ach-row">${marks.join('')}</div>`;
+      }
       html+=`<div class="today-item" draggable="true" data-h="${h.id}">
         <span class="ti-drag">&#10495;</span>
         <div class="move-col"><button class="move-btn" data-mvup="${h.id}">&#9650;</button><button class="move-btn" data-mvdn="${h.id}">&#9660;</button></div>
         <div style="flex:1"><div class="ti-name">${escapeHtml(h.name)}</div>
-        <div class="ti-streak">${metaLine}</div>${achRow}</div>
+        <div class="ti-streak">${metaLine}</div>${achRow}${actionRow}</div>
         <div class="ti-check ${done?'done':''}" style="--chkcolor:${tag.color};${done?'background:'+tag.color:''}">
           ${done?'&#10003;':''}</div>
       </div>`;
@@ -2977,7 +3024,7 @@ function renderToday(){
       offerCheckUndo(m,hid,d,()=>{renderToday();renderXP()});
     };
     item.onclick=e=>{
-      if(e.target.classList.contains("ti-drag")||e.target.classList.contains("ach-chip"))return;
+      if(e.target.classList.contains("ti-drag")||e.target.classList.contains("ach-chip")||e.target.classList.contains("ti-mark"))return;
       if(frozen)return;
       const hid=item.dataset.h;
       toggleCheck(m,hid,d);
@@ -2994,6 +3041,45 @@ function renderToday(){
       if(!state.achievementLogs[mk][hid])state.achievementLogs[mk][hid]={};
       const bucket=state.achievementLogs[mk][hid];
       if(idx===0)delete bucket[d];else bucket[d]=idx;
+      recalcPoints();save();renderToday();renderXP();
+    };
+  });
+
+  el.querySelectorAll(".ti-sin-mark").forEach(mk=>{
+    mk.onclick=e=>{
+      e.stopPropagation();
+      const hid=mk.dataset.h,mkey="m"+m;
+      if(!state.declaredSins[mkey])state.declaredSins[mkey]={};
+      if(!state.declaredSins[mkey][hid])state.declaredSins[mkey][hid]={};
+      const bucket=state.declaredSins[mkey][hid];
+      if(bucket[d])delete bucket[d];else bucket[d]=true;
+      recalcPoints();save();renderToday();renderXP();
+    };
+  });
+  el.querySelectorAll(".ti-hf-mark").forEach(mk=>{
+    mk.onclick=e=>{
+      e.stopPropagation();
+      const hid=mk.dataset.h,mkey="m"+m;
+      if(!state.habitFreezes[mkey])state.habitFreezes[mkey]={};
+      if(!state.habitFreezes[mkey][hid])state.habitFreezes[mkey][hid]={};
+      const bucket=state.habitFreezes[mkey][hid];
+      if(bucket[d])delete bucket[d];else bucket[d]=true;
+      recalcPoints();save();renderToday();renderXP();
+    };
+  });
+  el.querySelectorAll(".ti-tier-mark").forEach(mk=>{
+    mk.onclick=e=>{
+      e.stopPropagation();
+      const hid=mk.dataset.h,mkey="m"+m;
+      const h=state.habits.find(x=>x.id===hid);if(!h||!h.violationTiers||!h.violationTiers.length)return;
+      const avail=availableTiersOnDay(h,m,d);
+      if(!avail.length)return;
+      if(!state.violationLogs[mkey])state.violationLogs[mkey]={};
+      if(!state.violationLogs[mkey][hid])state.violationLogs[mkey][hid]={};
+      const bucket=state.violationLogs[mkey][hid];
+      const curPos=bucket[d]===undefined?-1:avail.indexOf(bucket[d]);
+      if(curPos+1<avail.length)bucket[d]=avail[curPos+1];
+      else delete bucket[d];
       recalcPoints();save();renderToday();renderXP();
     };
   });
