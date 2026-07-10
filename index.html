@@ -5301,7 +5301,15 @@ function pushRemindersProjection(){
 // phone" impossible to debug remotely. This just records WHERE it stopped and WHY, surfaced in the
 // Reminders card by renderRemindersUI() — never affects control flow itself.
 let pushDiag={status:"unknown",detail:"",at:0};
-function setPushDiag(status,detail){pushDiag={status,detail:detail||"",at:Date.now()};}
+// Bumped on every subscribeForPush() call; setPushDiag() drops any result tagged with an older
+// generation. Needed because a hung browser call (see PUSH_TIMEOUT_MS below) can still resolve long
+// after the user gave up and tapped "re-check" again — without this, that stale result could clobber
+// the newer check's outcome on screen.
+let pushCheckGen=0;
+function setPushDiag(status,detail,gen){
+  if(gen!==undefined&&gen!==pushCheckGen)return;
+  pushDiag={status,detail:detail||"",at:Date.now()};
+}
 function pushPublishMeta(sub){
   if(!sync.on||!sync.url||!sync.code)return Promise.resolve(false);
   // PATCH, not PUT: a full-node PUT would silently wipe the server's own lastFired bookkeeping
@@ -5316,22 +5324,37 @@ function pushPublishMeta(sub){
   return fetch(pushBasePath()+".json",{method:"PATCH",headers:{"Content-Type":"application/json"},body})
     .then(res=>res.ok).catch(()=>false);
 }
+// Some iOS/Safari builds have been observed to hang indefinitely inside serviceWorker.ready or
+// pushManager.subscribe() — never resolving, never rejecting — which used to leave the diagnostic
+// stuck on "checking" forever with zero signal that anything had even been attempted. This bounds
+// that wait so a real answer always appears; a late resolution past the bound still updates the
+// status afterwards (see the attempt.then(...) below), since a slow recovery is more honest than a
+// permanently frozen "timed out".
+const PUSH_TIMEOUT_MS=15000;
 async function subscribeForPush(){
-  if(!sync.on||!sync.url||!sync.code){setPushDiag("no-sync");return;} // nowhere to publish the subscription without cloud sync configured
-  if(notifPerm()!=="granted"){setPushDiag("no-perm");return;}
-  if(!("serviceWorker"in navigator)||!("PushManager"in window)){setPushDiag("unsupported");return;}
+  const gen=++pushCheckGen;
+  if(!sync.on||!sync.url||!sync.code){setPushDiag("no-sync",null,gen);return;} // nowhere to publish the subscription without cloud sync configured
+  if(notifPerm()!=="granted"){setPushDiag("no-perm",null,gen);return;}
+  if(!("serviceWorker"in navigator)||!("PushManager"in window)){setPushDiag("unsupported",null,gen);return;}
   // iOS Safari only supports Web Push for an installed (Add to Home Screen) PWA — subscribing from a
   // plain browser tab fails silently there, so skip rather than surface a confusing error.
   const standalone=window.matchMedia("(display-mode: standalone)").matches||navigator.standalone===true;
-  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!standalone){setPushDiag("ios-tab");return;}
-  try{
+  if(/iP(hone|ad|od)/.test(navigator.userAgent)&&!standalone){setPushDiag("ios-tab",null,gen);return;}
+  setPushDiag("checking",null,gen); // immediate feedback that the tap/boot-time call actually fired
+  const attempt=(async()=>{
     const reg=await navigator.serviceWorker.ready;
     let sub=await reg.pushManager.getSubscription();
     if(!sub)sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:urlBase64ToUint8Array(VAPID_PUBLIC_KEY)});
     const published=await pushPublishMeta(sub);
-    if(!published){setPushDiag("publish-error");return;}
-    setPushDiag(pushRemindersProjection().length?"ok":"no-reminders");
-  }catch(e){setPushDiag("subscribe-error",String((e&&e.message)||e));}
+    if(!published)throw Object.assign(new Error("publish failed"),{isPublishError:true});
+  })();
+  attempt.then(
+    ()=>setPushDiag(pushRemindersProjection().length?"ok":"no-reminders",null,gen),
+    e=>{if(!(e&&e.isTimeoutRace))setPushDiag(e&&e.isPublishError?"publish-error":"subscribe-error",e&&e.isPublishError?null:String((e&&e.message)||e),gen);},
+  );
+  try{
+    await Promise.race([attempt,new Promise((_,rej)=>setTimeout(()=>rej(Object.assign(new Error("timeout"),{isTimeoutRace:true})),PUSH_TIMEOUT_MS))]);
+  }catch(e){if(e&&e.isTimeoutRace)setPushDiag("timeout",null,gen);}
 }
 // Re-publish just the schedule (not a fresh subscribe) whenever reminders change or cloud sync
 // (re)connects — cheap no-op if no subscription exists yet.
@@ -5444,7 +5467,9 @@ function renderRemindersUI(){
   const diagRow=document.getElementById("pushDiagRow");
   if(diagRow){
     const MSG={
-      "unknown":[ru?"Push: проверка…":"Push: checking…","var(--dim)"],
+      "unknown":[ru?"Push: ещё не проверялось":"Push: not checked yet","var(--dim)"],
+      "checking":[ru?"Push: проверяю… (до 15 сек)":"Push: checking… (up to 15s)","var(--dim)"],
+      "timeout":[ru?"Push: браузер не ответил за 15 сек — похоже на зависание в самом iOS/Safari, не в приложении":"Push: browser didn't respond within 15s — looks like a hang in iOS/Safari itself, not the app","var(--red)"],
       "no-sync":[ru?"Push: нужна настроенная Cloud Sync":"Push: needs Cloud Sync configured","var(--dim)"],
       "no-perm":[ru?"Push: нет разрешения на уведомления":"Push: notifications not permitted","var(--dim)"],
       "unsupported":[ru?"Push: не поддерживается этим браузером":"Push: not supported by this browser","var(--red)"],
@@ -5461,7 +5486,10 @@ function renderRemindersUI(){
       <button class="btn ghost" id="btnPushRecheck" style="padding:4px 10px;font-size:12px">${ru?"🔄 Проверить снова":"🔄 Re-check"}</button>
     </div>`;
     const rb=document.getElementById("btnPushRecheck");
-    if(rb)rb.onclick=async()=>{rb.disabled=true;await subscribeForPush();renderRemindersUI();};
+    // Not awaited: subscribeForPush() sets "checking" synchronously (before its own first await), so
+    // this second render call already shows that immediately — real, instant tap feedback — while the
+    // .then() re-render further below reflects however it eventually resolves (success/error/timeout).
+    if(rb)rb.onclick=()=>{subscribeForPush().then(renderRemindersUI);renderRemindersUI();};
   }
   // list
   const list=document.getElementById("remindersList");
