@@ -2262,8 +2262,60 @@ function habitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,
 function habitMonthBalance(h,m){return habitPointsForMonth(h,activeYear(),m,state)}
 // UI-facing pace-line status for an event habit on a specific day (mirrors eventHabitPointsForMonth's
 // running count exactly, but exposed as data instead of a point delta, for the Today-view badge).
-// Which tier indices are still available as of just BEFORE day d, for the currently active/bound
-// year — lets the grid's tier-mark cycle skip exhausted options. Branches on whether THIS day was
+// Whole-month, unconditional tier-usage replay (past AND today/future) — mirrors the real scoring
+// pass's tier resolution exactly, but without its isPast gate, so that availability for a tier
+// logged in advance correctly accounts for every OTHER day logged this month, wherever it falls
+// (the old day-scoped walk only ever saw already-ELAPSED days, so two future tier logs in the same
+// month were blind to each other — same class of bug allMonthSinUse already fixed for sin quotas).
+// A genuinely undecided today/future day (no sin declared, no explicit tier log yet) contributes
+// nothing; only an already-elapsed silent miss auto-resolves into the unconscious pool, exactly as
+// the real scoring pass would. excludeDay lets a day's OWN current log be left out of its own
+// availability check (needed for cycling — see availableTiersOnDay below).
+function allMonthTierUse(h,m,excludeDay){
+  if(!h.violationTiers||!h.violationTiers.length)return{tierUse:{},sinUse:{}};
+  const mk="m"+m,year=activeYear();
+  const rt=realTodayParts();
+  const isCurMonth=(year===rt.y&&m===rt.m);
+  const checksBucket=(state.checks&&state.checks[mk]&&state.checks[mk][h.id])||{};
+  const sinBucket=(state.declaredSins&&state.declaredSins[mk]&&state.declaredSins[mk][h.id])||{};
+  const tierBucket=(state.violationLogs&&state.violationLogs[mk]&&state.violationLogs[mk][h.id])||{};
+  const frozen=(state.freezesUsed&&state.freezesUsed[mk])||[];
+  const habitFrozenBucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
+  const totalDays=daysInMonthY(year,m);
+  const tierUse={},sinUse={};
+  for(let d=1;d<=totalDays;d++){
+    if(d===excludeDay)continue;
+    if(checksBucket[d]||frozen.includes(d)||habitFrozenBucket[d]||isArchivedOn(h,year,m,d))continue;
+    const isPast=isCurMonth?d<rt.d:(year<rt.y||(year===rt.y&&m<rt.m));
+    const isSin=!!sinBucket[d];
+    const dateISO=ymdStr(year,m,d);
+    const loggedTier=tierBucket[d];
+    if(loggedTier!==undefined&&h.violationTiers[loggedTier]){
+      let idx=loggedTier;
+      if(isSin){
+        const tierCalExempt=(h.violationTiers[idx].sinCalendarDays||[]).includes(dateISO);
+        if(!tierCalExempt){
+          sinUse[idx]=(sinUse[idx]||0)+1;
+          while(h.violationTiers[idx].sinLimit!=null&&sinUse[idx]>h.violationTiers[idx].sinLimit&&idx<h.violationTiers.length-1){
+            idx++;sinUse[idx]=(sinUse[idx]||0)+1;
+          }
+        }
+      }else{
+        tierUse[idx]=(tierUse[idx]||0)+1;
+        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        }
+      }
+    }else if(isSin){
+      resolveSinTierMiss(h,sinUse,dateISO);
+    }else if(isPast){
+      resolveUnloggedTierMiss(h,tierUse);
+    }
+  }
+  return{tierUse,sinUse};
+}
+// Which tier indices are still available for day d, for the currently active/bound year — lets the
+// grid's/Today's tier-mark cycle skip exhausted options. Branches on whether THIS day was
 // pre-declared conscious: a sin day cycles through sin-availability (gated by each tier's own
 // sinLimit, or unlimited on a configured recurring sin-weekday); any other day cycles through the
 // normal unplanned availability (gated by freeLimit), exactly as before.
@@ -2271,14 +2323,11 @@ function availableTiersOnDay(h,m,d){
   if(!h.violationTiers||!h.violationTiers.length)return[];
   const mk="m"+m;
   const isSin=!!(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d]);
+  const{tierUse,sinUse}=allMonthTierUse(h,m,d);
   if(isSin){
     const dateISO=ymdStr(activeYear(),m,d);
-    const sinUse={};
-    habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
     return sinTierAvailableIdxs(h,sinUse,dateISO);
   }
-  const tierUse={};
-  habitPointsForMonth(h,activeYear(),m,state,null,tierUse,d);
   return tierAvailableIdxs(h,tierUse);
 }
 // Whether dateISO is unconditionally free (no quota consumed) for THIS habit right now — checks
@@ -3009,9 +3058,7 @@ function renderToday(){
           const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
           marks.push(`<span class="ti-mark ti-sin-mark ${declared?'sin-on':''}" data-h="${h.id}" title="${sinTitle}">🙏</span>`);
         }
-        const rt=realTodayParts();
-        const isPastDay=(activeYear()<rt.y)||(activeYear()===rt.y&&m<rt.m)||(activeYear()===rt.y&&m===rt.m&&d<rt.d);
-        if(isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
+        if((h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
           const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
           const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"?";
           marks.push(`<span class="ti-mark ti-tier-mark ${logged!==undefined?'tier-set':''}" data-h="${h.id}" title="${T.tierLogHint}">${lbl}</span>`);
@@ -3217,7 +3264,7 @@ function renderGrid(){
       <span class="arrow">&#9660;</span></div></td></tr>`;
 
     if(!collapsed){
-      const rt=realTodayParts(),ay=activeYear();
+      const ay=activeYear();
       grouped[tid].forEach(h=>{
         const c=getChecks(m,h.id),cnt=Object.keys(c).length,t=effTarget(h,m);
         const bal=habitMonthBalance(h,m);
@@ -3234,7 +3281,6 @@ function renderGrid(){
             body+=`<td class="cell ${td?'today-col':''} frozen-cell"><div class="freeze-icon">&#10052;</div></td>`;
           }else{
             const on=!!c[d];
-            const isPastDay=(ay<rt.y)||(ay===rt.y&&m<rt.m)||(ay===rt.y&&m===rt.m&&d<rt.d);
             let mark="";
             // Sin and tier marks can now coexist on the same past day (sin no longer requires
             // planning ahead — see allMonthSinUse()/sinMarkAvailable()'s comment for why the quota
@@ -3250,7 +3296,7 @@ function renderGrid(){
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
               mark+=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
             }
-            if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
+            if(!on&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark+=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
