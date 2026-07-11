@@ -452,6 +452,7 @@ textarea.inp{resize:vertical;min-height:60px}
 .br-inp-name{flex:1!important}
 .br-inp-cost{width:68px!important;text-align:center}
 .br-list{display:flex;flex-direction:column;gap:8px}
+.reward-tag-group{display:flex;flex-direction:column;gap:8px}
 .br-item{display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
 .br-item:last-child{border-bottom:none}
 .br-emo{font-size:24px;flex:0 0 36px;text-align:center}
@@ -1719,7 +1720,7 @@ function freshState(){
     currentYear:startYear,years:{},
     // lifetime fields — NOT per-year, carry across year switches (points currency + its spend ledger,
     // and XP/level progression — both derived fresh by recalcPoints()/recalcXP(), never patched)
-    points:0,purchases:[],xp:0,
+    points:0,purchases:[],xp:0,debtForgiven:0,
     // Cosmetics: purely a record of fact (owned/equipped), never derived — mirrors purchases'
     // shape (a cost ledger recalcPoints() subtracts) but kept in its own array since these are a
     // different catalog (COSMETIC_CATALOG, not state.bigRewards) and behave differently (owned
@@ -1996,12 +1997,13 @@ function countArchivedDaysInMonth(h,year,m){
 function effTargetForYear(h,year,m,yd){
   const mk="m"+m;
   const frozen=((yd.freezesUsed&&yd.freezesUsed[mk])||[]).length;
+  const habitFrozen=Object.keys((yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{}).length;
   const archivedDays=countArchivedDaysInMonth(h,year,m);
   const mt=h.monthTargets&&h.monthTargets[mk];
   let base;
   if(mt!==undefined&&mt!==null&&mt!==""){base=Math.min(+mt,daysInMonthY(year,m));}
   else{base=h.type==="daily"?daysInMonthY(year,m):Math.min(h.target||0,daysInMonthY(year,m));}
-  return Math.max(0,base-frozen-archivedDays);
+  return Math.max(0,base-frozen-habitFrozen-archivedDays);
 }
 // Daily habit: check=+weight; an elapsed miss=-3×weight, or -1×weight if pre-declared as a sin
 // on one of the habit's configured sin-days, or the habit's own tier ladder if the miss was
@@ -2202,6 +2204,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   const tierBucket=(yd.violationLogs&&yd.violationLogs[mk]&&yd.violationLogs[mk][h.id])||{};
   const achBucket=(yd.achievementLogs&&yd.achievementLogs[mk]&&yd.achievementLogs[mk][h.id])||{};
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const habitFrozenBucket=(yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{};
   const upper=isCurMonth?rt.d:totalDays;
   const tierUse=tierUseOut||{};
   const hasAchTiers=h.achievementTiers&&h.achievementTiers.length>0;
@@ -2211,6 +2214,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d))continue;
     if(frozen.includes(d))continue;
+    if(habitFrozenBucket[d])continue;
     if(isArchivedOn(h,year,m,d))continue;
     if(checksBucket[d]){
       curSuccessStreak++;curMissStreak=0;
@@ -2258,8 +2262,60 @@ function habitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,
 function habitMonthBalance(h,m){return habitPointsForMonth(h,activeYear(),m,state)}
 // UI-facing pace-line status for an event habit on a specific day (mirrors eventHabitPointsForMonth's
 // running count exactly, but exposed as data instead of a point delta, for the Today-view badge).
-// Which tier indices are still available as of just BEFORE day d, for the currently active/bound
-// year — lets the grid's tier-mark cycle skip exhausted options. Branches on whether THIS day was
+// Whole-month, unconditional tier-usage replay (past AND today/future) — mirrors the real scoring
+// pass's tier resolution exactly, but without its isPast gate, so that availability for a tier
+// logged in advance correctly accounts for every OTHER day logged this month, wherever it falls
+// (the old day-scoped walk only ever saw already-ELAPSED days, so two future tier logs in the same
+// month were blind to each other — same class of bug allMonthSinUse already fixed for sin quotas).
+// A genuinely undecided today/future day (no sin declared, no explicit tier log yet) contributes
+// nothing; only an already-elapsed silent miss auto-resolves into the unconscious pool, exactly as
+// the real scoring pass would. excludeDay lets a day's OWN current log be left out of its own
+// availability check (needed for cycling — see availableTiersOnDay below).
+function allMonthTierUse(h,m,excludeDay){
+  if(!h.violationTiers||!h.violationTiers.length)return{tierUse:{},sinUse:{}};
+  const mk="m"+m,year=activeYear();
+  const rt=realTodayParts();
+  const isCurMonth=(year===rt.y&&m===rt.m);
+  const checksBucket=(state.checks&&state.checks[mk]&&state.checks[mk][h.id])||{};
+  const sinBucket=(state.declaredSins&&state.declaredSins[mk]&&state.declaredSins[mk][h.id])||{};
+  const tierBucket=(state.violationLogs&&state.violationLogs[mk]&&state.violationLogs[mk][h.id])||{};
+  const frozen=(state.freezesUsed&&state.freezesUsed[mk])||[];
+  const habitFrozenBucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
+  const totalDays=daysInMonthY(year,m);
+  const tierUse={},sinUse={};
+  for(let d=1;d<=totalDays;d++){
+    if(d===excludeDay)continue;
+    if(checksBucket[d]||frozen.includes(d)||habitFrozenBucket[d]||isArchivedOn(h,year,m,d))continue;
+    const isPast=isCurMonth?d<rt.d:(year<rt.y||(year===rt.y&&m<rt.m));
+    const isSin=!!sinBucket[d];
+    const dateISO=ymdStr(year,m,d);
+    const loggedTier=tierBucket[d];
+    if(loggedTier!==undefined&&h.violationTiers[loggedTier]){
+      let idx=loggedTier;
+      if(isSin){
+        const tierCalExempt=(h.violationTiers[idx].sinCalendarDays||[]).includes(dateISO);
+        if(!tierCalExempt){
+          sinUse[idx]=(sinUse[idx]||0)+1;
+          while(h.violationTiers[idx].sinLimit!=null&&sinUse[idx]>h.violationTiers[idx].sinLimit&&idx<h.violationTiers.length-1){
+            idx++;sinUse[idx]=(sinUse[idx]||0)+1;
+          }
+        }
+      }else{
+        tierUse[idx]=(tierUse[idx]||0)+1;
+        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        }
+      }
+    }else if(isSin){
+      resolveSinTierMiss(h,sinUse,dateISO);
+    }else if(isPast){
+      resolveUnloggedTierMiss(h,tierUse);
+    }
+  }
+  return{tierUse,sinUse};
+}
+// Which tier indices are still available for day d, for the currently active/bound year — lets the
+// grid's/Today's tier-mark cycle skip exhausted options. Branches on whether THIS day was
 // pre-declared conscious: a sin day cycles through sin-availability (gated by each tier's own
 // sinLimit, or unlimited on a configured recurring sin-weekday); any other day cycles through the
 // normal unplanned availability (gated by freeLimit), exactly as before.
@@ -2267,14 +2323,11 @@ function availableTiersOnDay(h,m,d){
   if(!h.violationTiers||!h.violationTiers.length)return[];
   const mk="m"+m;
   const isSin=!!(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d]);
+  const{tierUse,sinUse}=allMonthTierUse(h,m,d);
   if(isSin){
     const dateISO=ymdStr(activeYear(),m,d);
-    const sinUse={};
-    habitPointsForMonth(h,activeYear(),m,state,null,null,d,sinUse);
     return sinTierAvailableIdxs(h,sinUse,dateISO);
   }
-  const tierUse={};
-  habitPointsForMonth(h,activeYear(),m,state,null,tierUse,d);
   return tierAvailableIdxs(h,tierUse);
 }
 // Whether dateISO is unconditionally free (no quota consumed) for THIS habit right now — checks
@@ -2446,8 +2499,27 @@ function recalcPoints(){
     if(!dep.collected)pts-=dep.principal;
     else pts+=Math.round(dep.principal*dep.bonusPct/100);
   });
+  // Real-money debt settlement: a fixed historical offset, exactly like purchases/savings above —
+  // never a mutable "current debt" field that could drift. forgiveCurrentDebt() sets this to exactly
+  // enough to zero out whatever the raw negative sum was at the moment it was clicked; it never
+  // retroactively erases penalties, it just permanently offsets them going forward.
+  pts+=(state.debtForgiven||0);
   state.points=pts;
   checkCosmeticAchievementUnlocks();
+}
+// ₽ this month's owed, if points is negative — same exchange rate the reward shop already uses
+// (dailyUnit() INLI = one "day" = rublePerDay() ₽), so a negative balance reads as a real number
+// instead of an abstract one.
+function debtRub(){
+  const pts=state.points||0;
+  if(pts>=0)return 0;
+  return Math.round(Math.abs(pts)/dailyUnit()*rublePerDay());
+}
+function debtBlocksPurchases(){return(state.points||0)<0;}
+function forgiveCurrentDebt(){
+  if((state.points||0)>=0)return;
+  state.debtForgiven=(state.debtForgiven||0)+Math.abs(state.points);
+  recalcPoints();save();
 }
 /* ===== MONEY POOL (weighted, no cliff — replaces per-habit zone-rate escalation) =====
    pool = income × ratePct; each failed habit owes pool × (weight / Σ weight of active habits).
@@ -2986,14 +3058,12 @@ function renderToday(){
           const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
           marks.push(`<span class="ti-mark ti-sin-mark ${declared?'sin-on':''}" data-h="${h.id}" title="${sinTitle}">🙏</span>`);
         }
-        const rt=realTodayParts();
-        const isPastDay=(activeYear()<rt.y)||(activeYear()===rt.y&&m<rt.m)||(activeYear()===rt.y&&m===rt.m&&d<rt.d);
-        if(isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
+        if((h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
           const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
           const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"?";
           marks.push(`<span class="ti-mark ti-tier-mark ${logged!==undefined?'tier-set':''}" data-h="${h.id}" title="${T.tierLogHint}">${lbl}</span>`);
         }
-        if(h.type==="daily"&&habitFreezeAvailable(h,m,d)){
+        if(habitFreezeAvailable(h,m,d)){
           const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
           marks.push(`<span class="ti-mark ti-hf-mark ${hfOn?'hf-on':''}" data-h="${h.id}" title="${T.habitFreezeHint}">&#10052;</span>`);
         }
@@ -3194,7 +3264,7 @@ function renderGrid(){
       <span class="arrow">&#9660;</span></div></td></tr>`;
 
     if(!collapsed){
-      const rt=realTodayParts(),ay=activeYear();
+      const ay=activeYear();
       grouped[tid].forEach(h=>{
         const c=getChecks(m,h.id),cnt=Object.keys(c).length,t=effTarget(h,m);
         const bal=habitMonthBalance(h,m);
@@ -3211,7 +3281,6 @@ function renderGrid(){
             body+=`<td class="cell ${td?'today-col':''} frozen-cell"><div class="freeze-icon">&#10052;</div></td>`;
           }else{
             const on=!!c[d];
-            const isPastDay=(ay<rt.y)||(ay===rt.y&&m<rt.m)||(ay===rt.y&&m===rt.m&&d<rt.d);
             let mark="";
             // Sin and tier marks can now coexist on the same past day (sin no longer requires
             // planning ahead — see allMonthSinUse()/sinMarkAvailable()'s comment for why the quota
@@ -3227,12 +3296,12 @@ function renderGrid(){
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
               mark+=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
             }
-            if(!on&&isPastDay&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
+            if(!on&&(h.violationTiers||[]).length>0&&(h.type==="daily"||eventPaceStatus(h,m,d).obligatory)){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark+=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
             }
-            if(!on&&h.type==="daily"&&habitFreezeAvailable(h,m,d)){
+            if(!on&&habitFreezeAvailable(h,m,d)){
               const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
               mark+=`<span class="cell-mark hf-mark ${hfOn?'hf-on':''}" data-hf-h="${h.id}" data-hf-d="${d}" title="${T.habitFreezeHint}">&#10052;</span>`;
             }
@@ -3576,6 +3645,7 @@ function tierRowHTML(t,idx){
       <input class="inp tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
       <button type="button" class="mini tier-del" data-tierdel="${idx}">✕</button>
     </div>
+    <input class="inp tier-desc" value="${escapeHtml(t.description||'')}" placeholder="${ru?'Что означает этот уровень (необязательно) — свои правила, примеры, что можно/нельзя':'What this tier means (optional) — your own rules, examples, what does/doesn\'t count'}">
     <div style="display:flex;gap:6px;align-items:center">
       <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'обычно':'usual'}</span>
       <input class="inp tier-delta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'Множитель штрафа ×вес для НЕосознанного пропуска — обязательно отрицательное число':'Penalty multiplier ×weight for an unplanned miss — must be negative'}">
@@ -3740,6 +3810,7 @@ function readTiersFromForm(){
     const i=+row.dataset.idx;
     if(!editTiers[i])return;
     editTiers[i].label=row.querySelector(".tier-label").value.trim();
+    editTiers[i].description=row.querySelector(".tier-desc").value.trim();
     // Only an EMPTY field defaults to -1 (matches its placeholder) — an explicit "0" must be kept
     // as literally 0, not silently coerced, so it stays visibly invalid until the user fixes it
     // instead of quietly becoming a valid -1 behind their back on the next re-render.
@@ -3767,10 +3838,13 @@ function achTiersHeaderHTML(){
 }
 function achTierRowHTML(t,idx){
   const ru=state.lang!=="en";
-  return`<div class="br-edit-row tier-row" data-idx="${idx}">
-    <input class="inp ach-tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
-    <input class="inp ach-tier-plus" type="number" step="0.5" style="width:64px;text-align:center" value="${t.plusMult!==undefined?t.plusMult:''}" placeholder="1" title="${ru?'Множитель награды ×вес — обязательно положительное число':'Reward multiplier ×weight — must be positive'}">
-    <button type="button" class="mini tier-del" data-achtierdel="${idx}">✕</button>
+  return`<div class="br-edit-row tier-row" data-idx="${idx}" style="flex-direction:column;align-items:stretch;gap:6px">
+    <div style="display:flex;gap:6px;align-items:center">
+      <input class="inp ach-tier-label" style="flex:1" value="${escapeHtml(t.label||'')}" placeholder="${ru?'Название уровня':'Tier label'}">
+      <input class="inp ach-tier-plus" type="number" step="0.5" style="width:64px;text-align:center" value="${t.plusMult!==undefined?t.plusMult:''}" placeholder="1" title="${ru?'Множитель награды ×вес — обязательно положительное число':'Reward multiplier ×weight — must be positive'}">
+      <button type="button" class="mini tier-del" data-achtierdel="${idx}">✕</button>
+    </div>
+    <input class="inp ach-tier-desc" value="${escapeHtml(t.description||'')}" placeholder="${ru?'Что означает этот уровень (необязательно)':'What this tier means (optional)'}">
   </div>`;
 }
 let editAchTiers=[];
@@ -3807,6 +3881,7 @@ function readAchTiersFromForm(){
     const i=+row.dataset.idx;
     if(!editAchTiers[i])return;
     editAchTiers[i].label=row.querySelector(".ach-tier-label").value.trim();
+    editAchTiers[i].description=row.querySelector(".ach-tier-desc").value.trim();
     const raw=row.querySelector(".ach-tier-plus").value;
     editAchTiers[i].plusMult=raw===""?1:+raw;
   });
@@ -4460,6 +4535,7 @@ function cosmeticOwned(item){
 function buyCosmetic(id){
   const item=cosmeticById(id);if(!item||item.achKey||cosmeticOwned(item))return;
   const ru=state.lang!=="en";
+  if(debtBlocksPurchases()){toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);return}
   if(!confirm(ru?`Купить «${item.name}» за ${item.cost} ${CURRENCY_TICKER}?`:`Buy "${item.nameEn}" for ${item.cost} ${CURRENCY_TICKER}?`))return;
   if(!state.cosmeticPurchases)state.cosmeticPurchases=[];
   state.cosmeticPurchases.push({id:uid(),itemId:id,cost:item.cost,date:Date.now()});
@@ -4568,7 +4644,15 @@ function renderRewards(){
 
   const normalR=bigR.filter(r=>rewardDays(r)<REWARD_FAR_GOAL_DAYS);
   const farR=bigR.filter(r=>rewardDays(r)>=REWARD_FAR_GOAL_DAYS);
-  const shopRows=normalR.map(rewardRowHTML).join('');
+  // Grouped by tag (same pattern as Today/Track's habit grouping) so the shop doesn't read as one
+  // undifferentiated wall of rewards — untagged rewards fall into their own "no tag" group via the
+  // same tagOrderList()/"none" convention used everywhere else tags are grouped.
+  const normalGrouped={};
+  normalR.forEach(r=>{const tid=r.tagId||"none";if(!normalGrouped[tid])normalGrouped[tid]=[];normalGrouped[tid].push(r);});
+  const shopRows=tagOrderList().filter(tid=>normalGrouped[tid]).map((tid,i)=>{
+    const tag=getTag(tid);
+    return`<div class="reward-tag-group"><div class="today-tag-name" style="margin:${i===0?'0':'12px'} 0 6px"><span class="tgdot" style="background:${tag.color}"></span>${escapeHtml(tag.name)}</div>${normalGrouped[tid].map(rewardRowHTML).join('')}</div>`;
+  }).join('');
   const farRows=farR.map(rewardRowHTML).join('');
 
   const addSection=bigRewardEditId==='new'
@@ -4579,7 +4663,15 @@ function renderRewards(){
     `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${CURRENCY_TICKER}</div></div>`
   ).join('');
 
+  const debt=debtRub();
   body.innerHTML=rewardsSubtabsHTML(ru)+`
+    ${debt>0?`<div class="card" style="margin-bottom:12px;border-color:var(--red)">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div><b style="color:var(--red)">${ru?'Вы должны себе':'You owe yourself'} ≈${debt} ₽</b>
+          <div class="hint" style="margin-top:2px">${ru?'Новые покупки заблокированы, пока долг не закрыт':'New purchases are blocked until this is settled'}</div></div>
+        <button class="btn ghost" id="btnDebtPaid">${ru?'✓ Я оплатил(а) реальными деньгами':'✓ I paid this with real money'}</button>
+      </div>
+    </div>`:''}
     <div class="card" style="margin-bottom:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
         <h3 style="margin:0">🏆 ${ru?'Магазин':'Shop'}</h3>
@@ -4671,6 +4763,14 @@ function renderRewards(){
   });
   const addBtn=document.getElementById('brAddBtn');
   if(addBtn)addBtn.onclick=()=>{bigRewardEditId='new';renderRewards()};
+  const debtBtn=document.getElementById('btnDebtPaid');
+  if(debtBtn)debtBtn.onclick=()=>{
+    const owed=debtRub();
+    if(!confirm(ru?`Подтвердите: вы реально перевели ${owed} ₽?`:`Confirm: did you really transfer ${owed}₽?`))return;
+    forgiveCurrentDebt();
+    renderRewards();renderXP();
+    toast(ru?'Долг закрыт':'Debt settled');
+  };
   body.querySelectorAll('[data-brbuy]').forEach(b=>{
     b.onclick=()=>{
       const r=state.bigRewards.find(x=>x.id===b.dataset.brbuy);
@@ -4682,6 +4782,7 @@ function renderRewards(){
 }
 function buyRewardFlat(r){
   const ru=state.lang!=="en";
+  if(debtBlocksPurchases()){toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);return}
   const cost=rewardPrice(r);
   if(!confirm(ru?`Купить «${r.name}» за ${cost} ${CURRENCY_TICKER}?`:`Buy "${r.name}" for ${cost} ${CURRENCY_TICKER}?`))return;
   if(!state.purchases)state.purchases=[];
