@@ -447,7 +447,7 @@ textarea.inp{resize:vertical;min-height:60px}
 .sin-cal-cell.blank{visibility:hidden;cursor:default}
 .sin-cal-cell.on{background:var(--accent2);border-color:var(--accent2);color:#0a0a0a;font-weight:700}
 .sin-cal-cell:active{transform:scale(.92)}
-.tier-cal{margin-top:2px}
+.tier-freecal,.tier-sincal{margin-top:2px}
 .zone-lbl{font-size:11px;color:var(--dim);font-weight:600;margin-bottom:4px}
 /* big rewards */
 .br-edit-row{display:flex;align-items:center;gap:6px;padding:8px 0;border-bottom:1px solid var(--line)}
@@ -1889,6 +1889,9 @@ function migrate(){
       // Per-tier calendar (specific always-free dates, scoped to just this tier) — mirrors the
       // habit-level sinCalendarDays above, defaults to empty (no behavior change until configured).
       if(!Array.isArray(t.sinCalendarDays))t.sinCalendarDays=[];
+      // Same idea for the UNPLANNED side (freeLimit's own calendar, independent of sinCalendarDays
+      // above) — a date marked here is free for an unplanned miss regardless of freeLimit's count.
+      if(!Array.isArray(t.calendarDays))t.calendarDays=[];
     });
     // Positive mirror of violationTiers — defaults to [] (no behavior change: a plain check keeps
     // giving the flat +weight it always has, until the user opts in).
@@ -2020,13 +2023,15 @@ function beforeTrackingStart(year,m,d){
   const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
   return ds<state.trackingStart;
 }
-// A tier is "available" for the NEXT unplanned use if it has no free-use cap, or hasn't hit its
-// cap yet.
-function tierAvailableIdxs(h,tierUse){
+// A tier is "available" for the NEXT unplanned use if dateISO is marked on its OWN calendar
+// (t.calendarDays — unconditional, never consumes freeLimit, mirrors sinCalendarDays below), or it
+// has no free-use cap, or hasn't hit its cap yet.
+function tierAvailableIdxs(h,tierUse,dateISO){
   const out=[];
   for(let ti=0;ti<h.violationTiers.length;ti++){
     const t=h.violationTiers[ti],used=tierUse[ti]||0;
-    if(t.freeLimit==null||used<t.freeLimit)out.push(ti);
+    const calExempt=dateISO!=null&&(t.calendarDays||[]).includes(dateISO);
+    if(calExempt||t.freeLimit==null||used<t.freeLimit)out.push(ti);
   }
   return out;
 }
@@ -2035,12 +2040,13 @@ function tierAvailableIdxs(h,tierUse){
 //  - exactly one tier still available -> auto-applied (charged + marked used), no ambiguity
 //  - 2+ tiers still available -> unresolved: contributes 0, caller should flag the day for review
 //  - 0 tiers still available (all capped, incl. the last) -> fall back to the harshest tier anyway
-function resolveUnloggedTierMiss(h,tierUse){
+function resolveUnloggedTierMiss(h,tierUse,dateISO){
   if(!h.violationTiers||!h.violationTiers.length)return null;
-  const avail=tierAvailableIdxs(h,tierUse);
+  const avail=tierAvailableIdxs(h,tierUse,dateISO);
   const idx=avail.length===1?avail[0]:avail.length===0?h.violationTiers.length-1:null;
   if(idx===null)return{delta:0,unresolved:true};
-  tierUse[idx]=(tierUse[idx]||0)+1;
+  const calExempt=dateISO!=null&&(h.violationTiers[idx].calendarDays||[]).includes(dateISO);
+  if(!calExempt)tierUse[idx]=(tierUse[idx]||0)+1;
   return{delta:h.violationTiers[idx].deltaMult*h.weight,unresolved:false};
 }
 // Conscious ("sin") counterpart of tierAvailableIdxs — gated by each tier's OWN sinLimit, a pool
@@ -2152,9 +2158,14 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
         }
         pts+=h.violationTiers[idx].sinDeltaMult*h.weight;
       }else{
-        tierUse[idx]=(tierUse[idx]||0)+1;
-        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
-          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        // Mirrors the sin branch above, but for the "usual"/unplanned pool: t.calendarDays marks
+        // this tier unconditionally free on this date, no freeLimit consumed.
+        const tierCalExempt=(h.violationTiers[idx].calendarDays||[]).includes(dateISO);
+        if(!tierCalExempt){
+          tierUse[idx]=(tierUse[idx]||0)+1;
+          while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+            idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+          }
         }
         pts+=h.violationTiers[idx].deltaMult*h.weight;
       }
@@ -2180,7 +2191,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
         pts+=-missPenaltyMult(curMissStreak)*h.weight;
       }
     }else{
-      const r=resolveUnloggedTierMiss(h,tierUse);
+      const r=resolveUnloggedTierMiss(h,tierUse,dateISO);
       if(r===null){
         curMissStreak++;curSuccessStreak=0;
         pts+=-missPenaltyMult(curMissStreak)*h.weight;
@@ -2240,18 +2251,22 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     // Above the pace line, skipping is a free/neutral day (nothing owed yet) — streaks untouched,
     // same "not yet obligatory" treatment the perfect-day bonus already gives this exact case.
     if(doneSoFar<minRequired){
+      const dateISO=ymdStr(year,m,d);
       const loggedTier=tierBucket[d];
       if(loggedTier!==undefined&&hasTiers&&h.violationTiers[loggedTier]){
         curMissStreak++;curSuccessStreak=0;
         let idx=loggedTier;
-        tierUse[idx]=(tierUse[idx]||0)+1;
-        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
-          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        const tierCalExempt=(h.violationTiers[idx].calendarDays||[]).includes(dateISO);
+        if(!tierCalExempt){
+          tierUse[idx]=(tierUse[idx]||0)+1;
+          while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+            idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+          }
         }
         pts+=h.violationTiers[idx].deltaMult*h.weight;
       }else{
         curMissStreak++;curSuccessStreak=0;
-        const r=resolveUnloggedTierMiss(h,tierUse);
+        const r=resolveUnloggedTierMiss(h,tierUse,dateISO);
         if(r===null)pts+=-missPenaltyMult(curMissStreak)*h.weight;
         else{pts+=r.delta;if(r.unresolved&&unresolvedOut)unresolvedOut.push(d);}
       }
@@ -2305,41 +2320,62 @@ function allMonthTierUse(h,m,excludeDay){
           }
         }
       }else{
-        tierUse[idx]=(tierUse[idx]||0)+1;
-        while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
-          idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+        // Mirrors the sin branch above for the "usual"/unplanned pool: t.calendarDays marks this
+        // tier unconditionally free on this date, no freeLimit consumed.
+        const tierCalExempt=(h.violationTiers[idx].calendarDays||[]).includes(dateISO);
+        if(!tierCalExempt){
+          tierUse[idx]=(tierUse[idx]||0)+1;
+          while(h.violationTiers[idx].freeLimit!=null&&tierUse[idx]>h.violationTiers[idx].freeLimit&&idx<h.violationTiers.length-1){
+            idx++;tierUse[idx]=(tierUse[idx]||0)+1;
+          }
         }
       }
     }else if(isSin){
       resolveSinTierMiss(h,sinUse,dateISO);
     }else if(isPast){
-      resolveUnloggedTierMiss(h,tierUse);
+      resolveUnloggedTierMiss(h,tierUse,dateISO);
     }
   }
   return{tierUse,sinUse};
 }
-// Which tier indices are still available for day d, for the currently active/bound year — lets the
-// grid's/Today's tier-mark cycle skip exhausted options. Branches on whether THIS day was
-// pre-declared conscious: a sin day cycles through sin-availability (gated by each tier's own
-// sinLimit, or unlimited on a configured recurring sin-weekday); any other day cycles through the
-// normal unplanned availability (gated by freeLimit), exactly as before.
+// Which tier indices are pickable (chip enabled / cycle-eligible) for day d, for the currently
+// active/bound year — a tier is pickable if EITHER of its two independent pools still has room:
+// the unplanned one (freeLimit/calendarDays) OR the conscious one (sinLimit/sinCalendarDays).
+// Deliberately NOT gated by whether the day is already declared conscious — picking a tier is the
+// FIRST step (before or regardless of declaring conscious), so a tier whose unplanned quota is
+// already spent but whose conscious quota still has room must stay pickable (otherwise there'd be
+// no way to reach it in order to then mark it conscious). What the pick actually costs is decided
+// later, at scoring time, by whether the day ends up marked conscious or not — same as always.
 function availableTiersOnDay(h,m,d){
   if(!h.violationTiers||!h.violationTiers.length)return[];
-  const mk="m"+m;
-  const isSin=!!(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d]);
+  const dateISO=ymdStr(activeYear(),m,d);
   const{tierUse,sinUse}=allMonthTierUse(h,m,d);
-  if(isSin){
-    const dateISO=ymdStr(activeYear(),m,d);
-    return sinTierAvailableIdxs(h,sinUse,dateISO);
+  const freeAvail=tierAvailableIdxs(h,tierUse,dateISO);
+  const sinAvail=sinTierAvailableIdxs(h,sinUse,dateISO);
+  const out=[];
+  for(let ti=0;ti<h.violationTiers.length;ti++){
+    if(freeAvail.includes(ti)||sinAvail.includes(ti))out.push(ti);
   }
-  return tierAvailableIdxs(h,tierUse);
+  return out;
 }
-// Whether dateISO is unconditionally free (no quota consumed) for THIS habit right now — checks
-// each tier's own calendar once tiers exist (full-replacement), else the habit-level calendar.
-// Shared by the grid tooltip and anywhere else that needs to say "always free" vs "uses a quota".
-function sinDateIsCalendarFree(h,dateISO){
+// Which tier's own settings currently govern day d's sin icon — a single-tier habit orients
+// directly to that one tier; a multi-tier habit needs a tier already explicitly picked for this
+// day (see sinMarkAvailable below for why); null if there's nothing to govern by yet.
+function sinGoverningTierIdx(h,m,d){
+  if(!h.violationTiers||!h.violationTiers.length)return null;
+  if(h.violationTiers.length===1)return 0;
+  const mk="m"+m;
+  const logged=state.violationLogs[mk]&&state.violationLogs[mk][h.id]?state.violationLogs[mk][h.id][d]:undefined;
+  return(logged!==undefined&&h.violationTiers[logged])?logged:null;
+}
+// Whether day d is unconditionally free (no quota consumed) for THIS habit's currently-governing
+// tier — checks that ONE tier's own calendar once tiers exist (see sinGoverningTierIdx), else the
+// habit-level calendar. Shared by the grid/Today tooltip to say "always free" vs "uses a quota".
+function sinDateIsCalendarFree(h,m,d){
+  const dateISO=ymdStr(activeYear(),m,d);
   if(h.violationTiers&&h.violationTiers.length){
-    return h.violationTiers.some(t=>(t.sinCalendarDays||[]).includes(dateISO));
+    const tierIdx=sinGoverningTierIdx(h,m,d);
+    return tierIdx!==null&&(h.violationTiers[tierIdx].sinCalendarDays||[]).includes(dateISO);
   }
   return (h.sinCalendarDays||[]).includes(dateISO);
 }
@@ -2379,10 +2415,15 @@ function allMonthSinUse(h,m){
   }
   return sinUse;
 }
-// Whether the sin-declare (🙏) icon should be offered on this day at all: with violation tiers
-// configured, sinTierAvailableIdxs already accounts for each tier's OWN calendar internally, so a
-// non-empty result covers both "some tier's calendar exempts this date" and "some tier's sinLimit
-// still has room". With no tiers, it's the habit-level calendar OR the habit-level monthly quota.
+// Whether the sin-declare (🙏) icon should be offered on this day at all. With violation tiers
+// configured, the icon is scoped to exactly ONE tier — never "does ANY tier have room" — because a
+// habit's tiers can be configured completely differently from each other (one calendar-restricted,
+// one wide open), and offering the icon just because SOME tier somewhere still has room would let a
+// wide-open tier silently override a deliberately narrow one. A single-tier habit has nothing to
+// pick, so it orients directly to that one tier. A multi-tier habit needs the tier explicitly
+// chosen first (the red digit/chip) — until then the icon stays hidden, since there's no way to
+// know which tier's calendar/quota should govern it.
+// With no tiers, it's the habit-level calendar OR the habit-level monthly quota (unchanged).
 // An already-declared day always stays available, so it can still be toggled back off even once
 // the quota has since filled up from other declarations.
 function sinMarkAvailable(h,m,d){
@@ -2390,7 +2431,9 @@ function sinMarkAvailable(h,m,d){
   const mk="m"+m;
   if(state.declaredSins[mk]&&state.declaredSins[mk][h.id]&&state.declaredSins[mk][h.id][d])return true;
   if(h.violationTiers&&h.violationTiers.length){
-    return sinTierAvailableIdxs(h,allMonthSinUse(h,m),dateISO).length>0;
+    const tierIdx=sinGoverningTierIdx(h,m,d);
+    if(tierIdx===null)return false;
+    return sinTierAvailableIdxs(h,allMonthSinUse(h,m),dateISO).includes(tierIdx);
   }
   if((h.sinCalendarDays||[]).includes(dateISO))return true;
   if(h.sinMonthlyQuota){
@@ -3074,7 +3117,7 @@ function renderToday(){
         const marks=[];
         if(h.type==="daily"&&sinMarkAvailable(h,m,d)){
           const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
-          const isCalendarDay=sinDateIsCalendarFree(h,ymdStr(activeYear(),m,d));
+          const isCalendarDay=sinDateIsCalendarFree(h,m,d);
           const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
           marks.push(`<span class="ti-mark ti-sin-mark ${declared?'sin-on':''}" data-h="${h.id}" title="${sinTitle}">🙏</span>`);
         }
@@ -3275,7 +3318,6 @@ function renderGrid(){
       <span class="arrow">&#9660;</span></div></td></tr>`;
 
     if(!collapsed){
-      const ay=activeYear();
       grouped[tid].forEach(h=>{
         const c=getChecks(m,h.id),cnt=Object.keys(c).length,t=effTarget(h,m);
         const bal=habitMonthBalance(h,m);
@@ -3299,11 +3341,11 @@ function renderGrid(){
             if(!on&&h.type==="daily"&&sinMarkAvailable(h,m,d)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
               // Differentiate the tooltip: a date marked on the relevant calendar (the habit's own,
-              // or — once tiers exist — any tier's own) is unlimited; any OTHER day only shows this
-              // icon at all because some quota (tier sinLimit or the habit-level monthly quota)
-              // still has room — say so explicitly, since that "any day" mode has no other visible
-              // explanation anywhere in the UI otherwise.
-              const isCalendarDay=sinDateIsCalendarFree(h,ymdStr(ay,m,d));
+              // or — once tiers exist — the currently-governing tier's own) is unlimited; any OTHER
+              // day only shows this icon at all because some quota (that tier's sinLimit or the
+              // habit-level monthly quota) still has room — say so explicitly, since that "any day"
+              // mode has no other visible explanation anywhere in the UI otherwise.
+              const isCalendarDay=sinDateIsCalendarFree(h,m,d);
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
               mark+=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
             }
@@ -3587,9 +3629,9 @@ function calWeekdayHeaderHTML(){
   const order=[1,2,3,4,5,6,0];
   return order.map(i=>`<span>${T.daysShort[i]}</span>`).join("");
 }
-function sinCalToggleLabel(count){
+function sinCalToggleLabel(count,prefix){
   const ru=state.lang!=="en";
-  return `&#128197; ${count?(ru?count+" дат":count+" dates"):(ru?"даты не отмечены":"no dates marked")} <span class="sin-cal-arrow">&#9662;</span>`;
+  return `&#128197; ${prefix||""}${count?(ru?count+" дат":count+" dates"):(ru?"даты не отмечены":"no dates marked")} <span class="sin-cal-arrow">&#9662;</span>`;
 }
 // Sin-calendar widget: marks SPECIFIC dates (not recurring weekdays) as always-free conscious
 // days. editSinCalDays holds the working list ("YYYY-MM-DD" strings) across month navigation;
@@ -3660,25 +3702,39 @@ function tierRowHTML(t,idx){
     <div style="display:flex;gap:6px;align-items:center">
       <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'обычно':'usual'}</span>
       <input class="inp tier-delta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.deltaMult!==undefined?t.deltaMult:''}" placeholder="-1" title="${ru?'Множитель штрафа ×вес для НЕосознанного пропуска — обязательно отрицательное число':'Penalty multiplier ×weight for an unplanned miss — must be negative'}">
-      <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц этот уровень бесплатный при неосознанном пропуске (пусто = без ограничений)':'Free uses per month for an unplanned miss on this tier (blank = unlimited)'}">
+      <input class="inp tier-free" type="number" min="0" style="width:56px;text-align:center" value="${t.freeLimit!=null?t.freeLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц этот уровень бесплатный при неосознанном пропуске сверх дат в календаре ниже (пусто = без ограничений)':'How many times per month this tier is free for an unplanned miss, on top of the calendar dates below (blank = unlimited)'}">
+    </div>
+    <div class="sin-cal tier-freecal" style="margin-left:70px">
+      <div class="sin-cal-toggle tier-freecal-toggle">
+        <span class="tier-freecal-toggle-label" style="font-size:10px"></span>
+      </div>
+      <div class="sin-cal-body tier-freecal-body" style="display:none">
+        <div class="sin-cal-nav">
+          <button type="button" class="mini tier-freecal-prev">&#8249;</button>
+          <span class="tier-freecal-label"></span>
+          <button type="button" class="mini tier-freecal-next">&#8250;</button>
+        </div>
+        <div class="sin-cal-weekdays tier-freecal-weekdays"></div>
+        <div class="sin-cal-grid tier-freecal-grid"></div>
+      </div>
     </div>
     <div style="display:flex;gap:6px;align-items:center">
       <span style="width:64px;font-size:10px;color:var(--dim)">${ru?'осознанно':'conscious'}</span>
       <input class="inp tier-sindelta" type="number" step="0.5" style="width:64px;text-align:center" value="${t.sinDeltaMult!==undefined?t.sinDeltaMult:''}" placeholder="-1" title="${ru?'Множитель ×вес для заранее объявленного (осознанного) пропуска — обязательно отрицательное число':'Multiplier ×weight for a pre-declared (conscious) miss — must be negative'}">
       <input class="inp tier-sinfree" type="number" min="0" style="width:56px;text-align:center" value="${t.sinLimit!=null?t.sinLimit:''}" placeholder="∞" title="${ru?'Сколько раз в месяц можно заранее объявить этот уровень осознанным сверх дат в календаре ниже (пусто = без ограничений)':'How many times per month this tier can be pre-declared conscious, on top of the calendar dates below (blank = unlimited)'}">
     </div>
-    <div class="sin-cal tier-cal">
-      <div class="sin-cal-toggle tier-cal-toggle">
-        <span class="tier-cal-toggle-label">&#128197; &#9662;</span>
+    <div class="sin-cal tier-sincal" style="margin-left:70px">
+      <div class="sin-cal-toggle tier-sincal-toggle">
+        <span class="tier-sincal-toggle-label" style="font-size:10px"></span>
       </div>
-      <div class="sin-cal-body tier-cal-body" style="display:none">
+      <div class="sin-cal-body tier-sincal-body" style="display:none">
         <div class="sin-cal-nav">
-          <button type="button" class="mini tier-cal-prev">&#8249;</button>
-          <span class="tier-cal-label"></span>
-          <button type="button" class="mini tier-cal-next">&#8250;</button>
+          <button type="button" class="mini tier-sincal-prev">&#8249;</button>
+          <span class="tier-sincal-label"></span>
+          <button type="button" class="mini tier-sincal-next">&#8250;</button>
         </div>
-        <div class="sin-cal-weekdays tier-cal-weekdays"></div>
-        <div class="sin-cal-grid tier-cal-grid"></div>
+        <div class="sin-cal-weekdays tier-sincal-weekdays"></div>
+        <div class="sin-cal-grid tier-sincal-grid"></div>
       </div>
     </div>
   </div>`;
@@ -3705,30 +3761,33 @@ function renderTiersList(){
   box.querySelectorAll(".tier-label, .tier-sinfree").forEach(inp=>{
     inp.oninput=renderSinDaysTierSummary;
   });
-  // Each tier gets its OWN mini calendar (mirrors the general habit-level one, but scoped to just
-  // this tier's own sinCalendarDays) — collapsed by default, closure-scoped nav cursor per row so
-  // no extra module-level state array is needed; day-clicks mutate the tier object directly and
-  // repaint just this one grid, matching the general calendar's no-full-rerender approach.
-  box.querySelectorAll(".tier-row").forEach(row=>{
-    const idx=+row.dataset.idx;
-    const t=editTiers[idx];if(!t)return;
-    if(!Array.isArray(t.sinCalendarDays))t.sinCalendarDays=[];
-    const toggle=row.querySelector(".tier-cal-toggle");
-    const toggleLabel=row.querySelector(".tier-cal-toggle-label");
-    const body=row.querySelector(".tier-cal-body");
-    const grid=row.querySelector(".tier-cal-grid");
-    const wdRow=row.querySelector(".tier-cal-weekdays");
-    const label=row.querySelector(".tier-cal-label");
+  // Each tier gets TWO independent mini calendars — one for the "usual"/unplanned field
+  // (t.calendarDays) and one for the "conscious" field (t.sinCalendarDays), each positioned right
+  // under its own field with its own label, so which governs which is never ambiguous. Collapsed
+  // by default, closure-scoped nav cursor per widget so no extra module-level state array is
+  // needed; day-clicks mutate the tier object directly and repaint just this one grid, matching
+  // the general calendar's no-full-rerender approach. wireTierCal factors the identical wiring
+  // logic shared by both widgets — only the field name and CSS class prefix differ.
+  function wireTierCal(row,t,fieldName,classPrefix,prefixRu,prefixEn){
+    if(!Array.isArray(t[fieldName]))t[fieldName]=[];
+    const toggle=row.querySelector("."+classPrefix+"-toggle");
+    const toggleLabel=row.querySelector("."+classPrefix+"-toggle-label");
+    const body=row.querySelector("."+classPrefix+"-body");
+    const grid=row.querySelector("."+classPrefix+"-grid");
+    const wdRow=row.querySelector("."+classPrefix+"-weekdays");
+    const label=row.querySelector("."+classPrefix+"-label");
+    const ru=state.lang!=="en";
+    const prefix=(ru?prefixRu:prefixEn)+": ";
     const rt=realTodayParts();
     let navY=rt.y,navM=rt.m;
     function paintTierCal(){
       label.textContent=T.months[navM]+" "+navY;
       wdRow.innerHTML=calWeekdayHeaderHTML();
-      toggleLabel.innerHTML=sinCalToggleLabel(t.sinCalendarDays.length);
+      toggleLabel.innerHTML=sinCalToggleLabel(t[fieldName].length,prefix);
       const totalDays=daysInMonthY(navY,navM);
       const firstWd=new Date(navY,navM,1).getDay();
       const lead=(firstWd+6)%7;
-      const sel=new Set(t.sinCalendarDays);
+      const sel=new Set(t[fieldName]);
       let html="";
       for(let i=0;i<lead;i++)html+=`<span class="sin-cal-cell blank"></span>`;
       for(let d=1;d<=totalDays;d++){
@@ -3739,23 +3798,29 @@ function renderTiersList(){
       grid.querySelectorAll(".sin-cal-cell[data-date]").forEach(c=>{
         c.onclick=()=>{
           const ds=c.dataset.date;
-          const di=t.sinCalendarDays.indexOf(ds);
-          if(di>=0)t.sinCalendarDays.splice(di,1);else t.sinCalendarDays.push(ds);
+          const di=t[fieldName].indexOf(ds);
+          if(di>=0)t[fieldName].splice(di,1);else t[fieldName].push(ds);
           c.classList.toggle("on");
-          toggleLabel.innerHTML=sinCalToggleLabel(t.sinCalendarDays.length);
+          toggleLabel.innerHTML=sinCalToggleLabel(t[fieldName].length,prefix);
           renderSinDaysTierSummary();
         };
       });
     }
-    toggleLabel.innerHTML=sinCalToggleLabel(t.sinCalendarDays.length);
+    toggleLabel.innerHTML=sinCalToggleLabel(t[fieldName].length,prefix);
     toggle.onclick=()=>{
       const open=body.style.display==="none";
       body.style.display=open?"":"none";
       toggle.classList.toggle("open",open);
       if(open)paintTierCal();
     };
-    row.querySelector(".tier-cal-prev").onclick=()=>{navM--;if(navM<0){navM=11;navY--;}paintTierCal();};
-    row.querySelector(".tier-cal-next").onclick=()=>{navM++;if(navM>11){navM=0;navY++;}paintTierCal();};
+    row.querySelector("."+classPrefix+"-prev").onclick=()=>{navM--;if(navM<0){navM=11;navY--;}paintTierCal();};
+    row.querySelector("."+classPrefix+"-next").onclick=()=>{navM++;if(navM>11){navM=0;navY++;}paintTierCal();};
+  }
+  box.querySelectorAll(".tier-row").forEach(row=>{
+    const idx=+row.dataset.idx;
+    const t=editTiers[idx];if(!t)return;
+    wireTierCal(row,t,"calendarDays","tier-freecal","обычно","usual");
+    wireTierCal(row,t,"sinCalendarDays","tier-sincal","осознанно","conscious");
   });
   renderSinDaysTierSummary();
 }
@@ -5920,7 +5985,7 @@ function init(){
   };
   document.getElementById("fTierAdd").onclick=()=>{
     readTiersFromForm(); // capture any in-progress edits before appending a new blank row
-    editTiers.push({label:"",deltaMult:-1,freeLimit:null,sinDeltaMult:-1,sinLimit:null,sinCalendarDays:[]});
+    editTiers.push({label:"",deltaMult:-1,freeLimit:null,calendarDays:[],sinDeltaMult:-1,sinLimit:null,sinCalendarDays:[]});
     renderTiersList();
   };
   document.getElementById("fAchTierAdd").onclick=()=>{
