@@ -2839,7 +2839,15 @@ function toggleCheck(m,hid,day){
   const c=getChecks(m,hid);
   const h=state.habits.find(x=>x.id===hid);
   const prevSucceeded=h?metTarget(h,m):null;
-  if(c[day]){delete c[day];}else{c[day]=true;}
+  if(c[day]){delete c[day];}else{
+    c[day]=true;
+    // A checked day is explicitly done — clear any stale personal-freeze flag left over from
+    // before it was checked. Without this, the flag sits invisible (the freeze mark only shows on
+    // an unchecked day, so there's no way to toggle it off) yet still silently consumes the
+    // habit's freeze quota forever, and reappears as "already frozen" if the day is later unchecked.
+    const mk="m"+m;
+    if(state.habitFreezes[mk]&&state.habitFreezes[mk][hid])delete state.habitFreezes[mk][hid][day];
+  }
   recalcXP();recalcPoints(); // full re-derive: a single check can shift many other elapsed days for event habits
   if(h){
     const nowSucceeded=metTarget(h,m);
