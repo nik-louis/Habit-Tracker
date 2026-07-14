@@ -3531,7 +3531,7 @@ function renderHabitFilter(){
   el.innerHTML=["active","archived","deleted"].map(f=>
     `<button class="fbtn ${habitFilterMode===f?'active':''}" data-f="${f}">${T[f]} (${counts[f]})</button>`
   ).join("");
-  el.querySelectorAll(".fbtn").forEach(b=>b.onclick=()=>{habitFilterMode=b.dataset.f;renderHabitList()});
+  el.querySelectorAll(".fbtn").forEach(b=>b.onclick=()=>{habitFilterMode=b.dataset.f;renderHabitFilter();renderHabitList()});
 }
 
 function renderHabitList(){
