@@ -863,6 +863,7 @@ textarea.inp{resize:vertical;min-height:60px}
     <h3><span id="lNotePrefix">Note:</span> <span id="noteDate"></span></h3>
     <textarea class="inp" id="noteText" rows="4" placeholder="What happened this day..."></textarea>
     <button class="btn primary" style="margin-top:10px" id="btnSaveNote"><span id="lBtnSaveNote">Save</span></button>
+    <div class="freeze-btn" id="btnFreezeNoteDay" style="margin-top:10px;margin-bottom:0"></div>
     <button class="btn ghost" style="margin-top:6px" id="btnCloseNote"><span id="lBtnCloseNote">Close</span></button>
   </div>
 </div>
@@ -934,7 +935,7 @@ weeklyPattern:"Weekly Pattern",tagPerformance:"Tag Performance",streaksBoard:"St
 topStreaks:"Top streaks across all months",avgByDay:"Average completion by day of week",perfByTag:"Performance by tag category",
 heatmapDesc:"Daily completion intensity across the year",daysLabel:"days",
 done:"done",todayDone:"Done",remaining:"Remaining",freezesLeft:"Freezes left",bonusFreezes:"Bonus freezes",
-freezeToday:"Freeze today",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
+freezeToday:"Freeze today",freezeThisDay:"Freeze this day",left:"left",dayFrozen:"Day is frozen — tap to unfreeze",
 perfectDayToday:"Perfect day! The bonus applies once today has fully elapsed.",
 undoBtn:"Undo",undoCheckedMsg:"Checked: {0}",undoUncheckedMsg:"Unchecked: {0}",
 backupReminderTitle:"💾 Time for a backup",
@@ -1049,7 +1050,7 @@ weeklyPattern:"Недельный паттерн",tagPerformance:"Эффекти
 topStreaks:"Лучшие серии за все месяцы",avgByDay:"Средний % выполнения по дням недели",perfByTag:"Результативность по категориям тегов",
 heatmapDesc:"Интенсивность выполнения по дням года",daysLabel:"дн.",
 done:"выполнено",todayDone:"Сделано",remaining:"Осталось",freezesLeft:"Заморозок осталось",bonusFreezes:"Бонусных заморозок",
-freezeToday:"Заморозить день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
+freezeToday:"Заморозить день",freezeThisDay:"Заморозить этот день",left:"ост.",dayFrozen:"День заморожен — нажмите для отмены",
 perfectDayToday:"Идеальный день! Бонус применится, когда день полностью завершится.",
 undoBtn:"Отменить",undoCheckedMsg:"Отмечено: «{0}»",undoUncheckedMsg:"Снята отметка: «{0}»",
 backupReminderTitle:"💾 Пора сделать бэкап",
@@ -1164,7 +1165,7 @@ weeklyPattern:"Patrón semanal",tagPerformance:"Rendimiento por etiqueta",streak
 topStreaks:"Mejores rachas de todos los meses",avgByDay:"Promedio de cumplimiento por día de semana",perfByTag:"Rendimiento por categoría",
 heatmapDesc:"Intensidad de cumplimiento diario durante el año",daysLabel:"días",
 done:"hecho",todayDone:"Hecho",remaining:"Restante",freezesLeft:"Congelaciones rest.",bonusFreezes:"Congelaciones bonus",
-freezeToday:"Congelar hoy",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
+freezeToday:"Congelar hoy",freezeThisDay:"Congelar este día",left:"rest.",dayFrozen:"Día congelado — toca para descongelar",
 perfectDayToday:"¡Día perfecto! La bonificación se aplicará cuando termine el día.",
 undoBtn:"Deshacer",undoCheckedMsg:"Marcado: {0}",undoUncheckedMsg:"Desmarcado: {0}",
 backupReminderTitle:"💾 Hora de hacer una copia de seguridad",
@@ -1279,7 +1280,7 @@ weeklyPattern:"每周模式",tagPerformance:"标签表现",streaksBoard:"连续�
 topStreaks:"所有月份最佳连续记录",avgByDay:"按星期几的平均完成率",perfByTag:"按标签类别的表现",
 heatmapDesc:"全年每日完成强度",daysLabel:"天",
 done:"完成",todayDone:"已完成",remaining:"剩余",freezesLeft:"剩余冻结",bonusFreezes:"奖励冻结",
-freezeToday:"冻结今天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
+freezeToday:"冻结今天",freezeThisDay:"冻结这一天",left:"剩余",dayFrozen:"已冻结 — 点击解冻",
 perfectDayToday:"完美的一天！奖励将在今天结束后生效。",
 undoBtn:"撤销",undoCheckedMsg:"已完成：{0}",undoUncheckedMsg:"已取消：{0}",
 backupReminderTitle:"💾 该备份了",
@@ -1394,7 +1395,7 @@ weeklyPattern:"Modèle hebdomadaire",tagPerformance:"Performance par étiquette"
 topStreaks:"Meilleures séries de tous les mois",avgByDay:"Moyenne d'achèvement par jour de semaine",perfByTag:"Performance par catégorie",
 heatmapDesc:"Intensité d'achèvement quotidien sur l'année",daysLabel:"jours",
 done:"fait",todayDone:"Fait",remaining:"Restant",freezesLeft:"Gels restants",bonusFreezes:"Gels bonus",
-freezeToday:"Geler aujourd'hui",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
+freezeToday:"Geler aujourd'hui",freezeThisDay:"Geler ce jour",left:"rest.",dayFrozen:"Jour gelé — appuyez pour dégeler",
 perfectDayToday:"Journée parfaite ! Le bonus s'appliquera une fois la journée terminée.",
 undoBtn:"Annuler",undoCheckedMsg:"Coché : {0}",undoUncheckedMsg:"Décoché : {0}",
 backupReminderTitle:"💾 Il est temps de sauvegarder",
@@ -2913,9 +2914,30 @@ function openNote(m,d){
   noteMonth=m;noteDay=d;
   document.getElementById("noteDate").textContent=d+" "+T.months[m];
   document.getElementById("noteText").value=getNote(m,d);
+  renderNoteFreezeBtn();
   document.getElementById("noteModal").classList.add("open");
 }
 function closeNote(){document.getElementById("noteModal").classList.remove("open")}
+// Whole-day freeze toggle for THIS specific day (any day — past, today, or future), reusing the
+// same toggleFreeze()/MAX_FREEZES+bonus quota the Today tab's freeze button already enforces. Lives
+// in the day-note modal rather than a new icon in the grid's already-tight day header — the header
+// is a single click already used to open this modal, so this reuses that existing, discoverable
+// entry point instead of adding a second competing click target.
+function renderNoteFreezeBtn(){
+  const btn=document.getElementById("btnFreezeNoteDay");if(!btn)return;
+  const frozen=isFrozen(noteMonth,noteDay);
+  const freezesLeft=Math.max(0,MAX_FREEZES-getFreezes(noteMonth).length);
+  const totalFreezesLeft=freezesLeft+bonusFreezesAvailable();
+  btn.classList.toggle("used",!frozen&&totalFreezesLeft<=0);
+  btn.textContent=frozen?("❄ "+T.dayFrozen):("❄ "+T.freezeThisDay+" ("+totalFreezesLeft+" "+T.left+")");
+  btn.onclick=()=>{
+    toggleFreeze(noteMonth,noteDay);
+    renderNoteFreezeBtn();
+    if(typeof renderGrid==="function"&&currentView==="track")renderGrid();
+    if(typeof renderToday==="function"&&currentView==="today")renderToday();
+    if(typeof renderHero==="function")renderHero();
+  };
+}
 
 /* ===== VERSION HISTORY ===== */
 let versions=[];
