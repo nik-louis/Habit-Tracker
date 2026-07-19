@@ -1664,11 +1664,11 @@ function defaultBigRewards(){
 let state=null,memFallback=false;
 // Per-year data lives in state.years[YYYY]; shared data (habits/tags/bigRewards/theme...) at top level.
 function freshYearData(){
-  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{},habitFreezes:{}};
+  return{checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,bigPurchases:[],declaredSins:{},violationLogs:{},achievementLogs:{},habitFreezes:{},habitFreezeEverDays:{}};
 }
 // xp intentionally NOT per-year (see below) — it's a lifetime field like points, sitting alongside
 // state.years rather than inside it.
-const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs","habitFreezes"];
+const YEAR_FIELDS=["checks","notes","freezesUsed","incomeHistory","income","penaltyRate","rateIncrement","bigPurchases","declaredSins","violationLogs","achievementLogs","habitFreezes","habitFreezeEverDays"];
 function todayISO(){const n=new Date();return n.getFullYear()+"-"+String(n.getMonth()+1).padStart(2,"0")+"-"+String(n.getDate()).padStart(2,"0")}
 function addDaysISO(iso,days){
   const d=new Date(iso+"T00:00:00");
@@ -1744,7 +1744,7 @@ function freshState(){
     // in the UI) so the end-of-month tier-ambiguity warning fires exactly once per month per habit.
     notifications:[],tierWarningKeys:[],
     // live per-year fields (bound to years[currentYear]); kept at top level so all existing code works unchanged
-    checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},habitFreezes:{},
+    checks:{},notes:{},freezesUsed:{},incomeHistory:{},income:0,penaltyRate:15,rateIncrement:1,declaredSins:{},violationLogs:{},achievementLogs:{},habitFreezes:{},habitFreezeEverDays:{},
     _t:Date.now()
   };
   s.years[startYear]=freshYearData();
@@ -2456,10 +2456,45 @@ function habitFreezeAvailable(h,m,d){
   const mk="m"+m;
   const bucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
   if(bucket[d])return true;
+  // A day that has ALREADY legitimately spent one of this habit's slots this month stays
+  // restorable even if unrelated global freezes elsewhere have since made the merged quota look
+  // exhausted — see toggleHabitFreeze() for how this stays capped at the real quota (never lets
+  // the effective total exceed h.freezeMonthlyQuota, unlike a plain "any day ever used" memory would).
+  const everArr=(state.habitFreezeEverDays&&state.habitFreezeEverDays[mk]&&state.habitFreezeEverDays[mk][h.id])||[];
+  if(everArr.includes(d))return true;
   const personalUsed=Object.keys(bucket).filter(k=>bucket[k]).length;
   const year=activeYear();
   const globalUsed=(getFreezes(m)||[]).filter(gd=>!isArchivedOn(h,year,m,gd)).length;
   return(personalUsed+globalUsed)<h.freezeMonthlyQuota;
+}
+// Toggles the personal per-habit freeze on day d, shared by the grid and Today click handlers.
+// Also maintains habitFreezeEverDays — a small memory of days that have legitimately spent one of
+// this habit's slots this month, capped at h.freezeMonthlyQuota entries. A brand-new day only gets
+// remembered by evicting an already-INACTIVE remembered day first (never grows unbounded), and a
+// fresh day only ever reaches this function because it already passed the normal quota check in
+// habitFreezeAvailable — the UI never renders/wires this control for a day that shouldn't be pickable.
+function toggleHabitFreeze(m,hid,d){
+  const h=state.habits.find(x=>x.id===hid);if(!h)return;
+  const mk="m"+m;
+  if(!state.habitFreezes[mk])state.habitFreezes[mk]={};
+  if(!state.habitFreezes[mk][hid])state.habitFreezes[mk][hid]={};
+  const bucket=state.habitFreezes[mk][hid];
+  if(bucket[d]){
+    delete bucket[d];
+  }else{
+    bucket[d]=true;
+    if(!state.habitFreezeEverDays[mk])state.habitFreezeEverDays[mk]={};
+    const everArr=state.habitFreezeEverDays[mk][hid]=state.habitFreezeEverDays[mk][hid]||[];
+    if(!everArr.includes(d)){
+      const quota=h.freezeMonthlyQuota||0;
+      while(everArr.length>=quota){
+        const staleIdx=everArr.findIndex(x=>!bucket[x]);
+        if(staleIdx<0)break; // shouldn't happen if availability was gated correctly upstream
+        everArr.splice(staleIdx,1);
+      }
+      everArr.push(d);
+    }
+  }
 }
 function eventPaceStatus(h,m,d){
   const totalDays=daysInMonth(m);
@@ -2863,8 +2898,14 @@ function toggleCheck(m,hid,day){
   save();
 }
 function checkedCount(m,hid){return Object.keys(getChecks(m,hid)).length}
+// habitFrozen mirrors effTargetForYear's exact same adjustment for event habits — a personally
+// frozen day is just as neutral/excused as a globally frozen one (dailyHabitPointsForMonth already
+// scores both as a flat 0), so it must shrink the achievable norm the same way, or hitting 100%
+// becomes impossible the moment a personal freeze is used.
 function effTarget(h,m){
   const frozen=getFreezes(m).length;
+  const mk="m"+m;
+  const habitFrozen=Object.keys((state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{}).length;
   const archivedDays=countArchivedDaysInMonth(h,activeYear(),m);
   const mt=h.monthTargets&&h.monthTargets["m"+m];
   let base;
@@ -2873,18 +2914,21 @@ function effTarget(h,m){
   }else{
     base=h.everyday?daysInMonth(m):Math.min(h.target||0,daysInMonth(m));
   }
-  return Math.max(0,base-frozen-archivedDays);
+  return Math.max(0,base-frozen-habitFrozen-archivedDays);
 }
 function metTarget(h,m){return habitMonthBalance(h,m)>0}
-// A day counts toward the streak if it was checked, OR it was neutrally excused (frozen or
-// archived) — an archived day isn't a real miss any more than a frozen one is, so it shouldn't
-// break the streak either; this mirrors how the scoring engine (isArchivedOn) already treats it.
+// A day counts toward the streak if it was checked, OR it was neutrally excused (frozen, personally
+// frozen, or archived) — a personally-frozen day is no more a real miss than a globally-frozen one,
+// so it shouldn't break the streak either; this mirrors how the scoring engine (isArchivedOn) already
+// treats archived days.
 function longestStreak(m,hid){
   const h=state.habits.find(x=>x.id===hid);
   const c=getChecks(m,hid),N=daysInMonth(m),frozen=getFreezes(m),ay=activeYear();
+  const mk="m"+m;
+  const habitFrozenBucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][hid])||{};
   let best=0,cur=0;
   for(let d=1;d<=N;d++){
-    if(c[d]||frozen.includes(d)||(h&&isArchivedOn(h,ay,m,d))){cur++;best=Math.max(best,cur)}
+    if(c[d]||frozen.includes(d)||habitFrozenBucket[d]||(h&&isArchivedOn(h,ay,m,d))){cur++;best=Math.max(best,cur)}
     else cur=0;
   }
   return best;
@@ -3217,11 +3261,7 @@ function renderToday(){
   el.querySelectorAll(".ti-hf-mark").forEach(mk=>{
     mk.onclick=e=>{
       e.stopPropagation();
-      const hid=mk.dataset.h,mkey="m"+m;
-      if(!state.habitFreezes[mkey])state.habitFreezes[mkey]={};
-      if(!state.habitFreezes[mkey][hid])state.habitFreezes[mkey][hid]={};
-      const bucket=state.habitFreezes[mkey][hid];
-      if(bucket[d])delete bucket[d];else bucket[d]=true;
+      toggleHabitFreeze(m,mk.dataset.h,d);
       recalcPoints();save();renderToday();renderXP();
     };
   });
@@ -3441,11 +3481,7 @@ function renderGrid(){
   document.querySelectorAll(".hf-mark").forEach(el=>{
     el.onclick=e=>{
       e.stopPropagation();
-      const hid=el.dataset.hfH,d=+el.dataset.hfD,mk="m"+m;
-      if(!state.habitFreezes[mk])state.habitFreezes[mk]={};
-      if(!state.habitFreezes[mk][hid])state.habitFreezes[mk][hid]={};
-      const bucket=state.habitFreezes[mk][hid];
-      if(bucket[d])delete bucket[d];else bucket[d]=true;
+      toggleHabitFreeze(m,el.dataset.hfH,+el.dataset.hfD);
       recalcPoints();save();renderGrid();renderHero();renderXP();
     };
   });
@@ -4478,7 +4514,7 @@ function achievementsForMonth(m){
     {key:"ach80",emo:"&#127919;",title:T.ach80,desc:T.ach80D,on:sc>=80},
     {key:"achZeroPenalty",emo:"&#128176;",title:T.achZeroPenalty,desc:T.achZeroPenaltyD,on:monthMoneyOwed(m)===0&&hs.length>0},
     {key:"achMonthPositive",emo:"&#128176;",title:T.achMonthPositive,desc:T.achMonthPositiveD,on:hs.length>0&&monthPointsNet(m)>0},
-    {key:"achNoFreeze",emo:"&#10052;",title:T.achNoFreeze,desc:T.achNoFreezeD,on:hs.length>0&&getFreezes(m).length===0},
+    {key:"achNoFreeze",emo:"&#10052;",title:T.achNoFreeze,desc:T.achNoFreezeD,on:hs.length>0&&getFreezes(m).length===0&&!hs.some(h=>Object.keys((state.habitFreezes&&state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id])||{}).length>0)},
   ];
 }
 function achievementsForYear(){
