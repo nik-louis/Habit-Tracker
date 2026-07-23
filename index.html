@@ -1820,6 +1820,7 @@ function migrate(){
     if(r.special===undefined)r.special=false;
     if(r.monthlyLimit===undefined)r.monthlyLimit=null;
     if(r.unlockedAt===undefined)r.unlockedAt=null;
+    if(!Array.isArray(r.includes))r.includes=[];
   });
   if(!Array.isArray(state.reminders))state.reminders=[];
   // ensure bigPurchases array in every year + migrate legacy r.claimed counters into purchase records
@@ -4763,6 +4764,7 @@ function renderRewards(){
     const rubEst=r&&r.rubEstimate?r.rubEstimate:'';
     const tagOpts=`<option value="">${ru?'Без тега':'No tag'}</option>`+state.tags.map(t=>`<option value="${t.id}" ${r&&r.tagId===t.id?'selected':''}>${escapeHtml(t.name)}</option>`).join('');
     const habitOpts=`<option value="">${ru?'Не привязано':'Not linked'}</option>`+activeHabits().map(h=>`<option value="${h.id}" ${r&&r.linkedHabitId===h.id?'selected':''}>${escapeHtml(h.name)}</option>`).join('');
+    const includeOpts=(state.bigRewards||[]).filter(x=>!r||x.id!==r.id).map(x=>`<option value="${x.id}" ${r&&r.includes&&r.includes.includes(x.id)?'selected':''}>${escapeHtml(x.emo||'🎁')} ${escapeHtml(x.name)}</option>`).join('');
     const tierBtn=(val,label)=>`<button type="button" class="usebtn" style="opacity:.85;font-size:11px;padding:6px 8px" data-brtier="${val}">${label} · ${val}${ru?'д':'d'}</button>`;
     const smallBtns=Object.entries(REWARD_TIER_DAYS_SMALL).map(([k,v])=>tierBtn(v,k.toUpperCase())).join('');
     const bigBtns=Object.entries(REWARD_TIER_DAYS_BIG).map(([k,v])=>tierBtn(v,k.toUpperCase())).join('');
@@ -4793,6 +4795,10 @@ function renderRewards(){
         <div class="hint" style="margin:0 0 6px">${ru?'Лимит покупок в месяц (пусто = без лимита)':'Purchases per month limit (blank = unlimited)'}</div>
         <input class="inp" type="number" id="brfMonthlyLimit_${id}" value="${r&&r.monthlyLimit?r.monthlyLimit:''}" min="1" placeholder="${ru?'например 2':'e.g. 2'}">
       </div>
+      <div style="flex:1 1 100%;margin-top:8px;padding-top:8px;border-top:1px solid var(--line)">
+        <div class="hint" style="margin:0 0 6px">${ru?'Включает другие пряники (справочно — ничего не списывает и не тратит их лимиты; зажми Ctrl/Cmd для выбора нескольких)':'Includes other rewards (informational only — does not spend their price or limits; hold Ctrl/Cmd to multi-select)'}</div>
+        <select class="inp" id="brfIncludes_${id}" multiple size="4" style="height:auto">${includeOpts}</select>
+      </div>
     </div>`;
   }
 
@@ -4814,6 +4820,14 @@ function renderRewards(){
     const capReached=!!r.monthlyLimit&&monthCount>=r.monthlyLimit;
     const monthlyInfo=r.monthlyLimit?` · ${monthCount}/${r.monthlyLimit} ${ru?'в этом месяце':'this month'}`:'';
     const specialTag=isSpecial?` <span class="hint" style="color:var(--accent)">&#11088; ${isUnlocked?(ru?'разблокировано':'unlocked'):(ru?'особая':'special')}</span>`:'';
+    // Purely informational: names of other rewards this one is conceptually bundled with (e.g. a
+    // "Trip" reward listing "walk, taxi, food"). Never affects their price, monthlyLimit count, or
+    // special-unlock state — see the design discussion this was built from.
+    const includedNames=(r.includes||[]).map(iid=>{
+      const ir=(state.bigRewards||[]).find(x=>x.id===iid);
+      return ir?`${ir.emo||'🎁'} ${escapeHtml(ir.name)}`:null;
+    }).filter(Boolean);
+    const includesInfo=includedNames.length?`<div class="hint" style="margin-top:2px">${ru?'включает: ':'includes: '}${includedNames.join(', ')}</div>`:'';
     let buyBtn;
     if(isSpecial&&!isUnlocked)buyBtn=`<button class="usebtn used" data-brunlock="${r.id}">&#128274; ${ru?'отметить событие':'mark event'}</button>`;
     else if(capReached)buyBtn=`<button class="usebtn used" disabled>${ru?'лимит месяца':'month limit'}</button>`;
@@ -4823,6 +4837,7 @@ function renderRewards(){
       <div class="br-info"><div class="br-name">${tag?`<span class="dot" style="background:${tag.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px"></span>`:''}${escapeHtml(r.name)}${specialTag}</div>
         <div class="br-cost">${cost} ${CURRENCY_TICKER}${owned?' · '+(ru?'куплено ':'bought ')+owned+'×':''}${linkedHabit?' · &#128279; '+(ru?'для: ':'for: ')+escapeHtml(linkedHabit.name):''}${monthlyInfo}</div>
         <div class="br-progress"><div class="br-progress-fill" style="width:${pct}%;background:${pct>=100?'var(--green)':'var(--accent)'}"></div></div>
+        ${includesInfo}
       </div>
       <div class="br-btns">
         ${buyBtn}
@@ -4852,7 +4867,7 @@ function renderRewards(){
     :`<button class="btn ghost" id="brAddBtn" style="margin-top:10px;width:100%">+ ${ru?'Добавить награду':'Add reward'}</button>`;
 
   const historyRows=purchases.slice(0,20).map(p=>
-    `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${CURRENCY_TICKER}</div></div>`
+    `<div class="reward-item"><span class="br-emo" style="font-size:18px">${p.emo||'🎁'}</span><div class="ri-name">${escapeHtml(p.name)}</div><div class="ri-reward">&minus;${p.cost} ${CURRENCY_TICKER}</div><button class="move-btn" data-prcancel="${p.id}" title="${ru?'Отменить и вернуть деньги':'Cancel and refund'}">↩</button></div>`
   ).join('');
 
   const debt=debtRub();
@@ -4887,6 +4902,7 @@ function renderRewards(){
     const habitEl=document.getElementById('brfHabit_'+id);
     const specialEl=document.getElementById('brfSpecial_'+id);
     const monthlyLimitEl=document.getElementById('brfMonthlyLimit_'+id);
+    const includesEl=document.getElementById('brfIncludes_'+id);
     if(!nmEl||!nmEl.value.trim()){toast(ru?'Введите название':'Enter a name');return}
     const rubEstimate=rubEl&&+rubEl.value>0?+rubEl.value:null;
     const priceMode=rubEstimate?"wishlist":"tier";
@@ -4900,15 +4916,16 @@ function renderRewards(){
     const linkedHabitId=habitEl&&habitEl.value?habitEl.value:null;
     const special=!!(specialEl&&specialEl.classList.contains('on'));
     const monthlyLimit=monthlyLimitEl&&+monthlyLimitEl.value>0?Math.round(+monthlyLimitEl.value):null;
+    const includes=includesEl?Array.from(includesEl.selectedOptions).map(o=>o.value):[];
     if(id==='new'){
       if(!state.bigRewards)state.bigRewards=[];
-      state.bigRewards.push({id:uid(),name,days,priceMode,rubEstimate,emo,tagId,linkedHabitId,special,monthlyLimit,unlockedAt:null});
+      state.bigRewards.push({id:uid(),name,days,priceMode,rubEstimate,emo,tagId,linkedHabitId,special,monthlyLimit,unlockedAt:null,includes});
       toast(ru?'Награда добавлена':'Reward added');
     }else{
       const r=state.bigRewards.find(x=>x.id===id);
       // Turning "special" off retires any pending unlock along with it — there's no meaningful
       // "unlocked" state left to keep once the reward stops requiring one at all.
-      if(r)Object.assign(r,{name,days,priceMode,rubEstimate,emo,tagId,linkedHabitId,special,monthlyLimit,unlockedAt:special?r.unlockedAt:null});
+      if(r)Object.assign(r,{name,days,priceMode,rubEstimate,emo,tagId,linkedHabitId,special,monthlyLimit,unlockedAt:special?r.unlockedAt:null,includes});
       toast(ru?'Обновлено':'Updated');
     }
     bigRewardEditId=null;save();renderRewards();
@@ -4982,7 +4999,25 @@ function renderRewards(){
   body.querySelectorAll('[data-brunlock]').forEach(b=>{
     b.onclick=()=>unlockSpecialReward(b.dataset.brunlock);
   });
+  body.querySelectorAll('[data-prcancel]').forEach(b=>{
+    b.onclick=()=>cancelPurchase(b.dataset.prcancel);
+  });
   wireRewardsSubtabs(body);
+}
+// Undoes a purchase entirely: removes the receipt (recalcPoints() then naturally refunds the cost,
+// since the balance is always derived, never a patched counter) and, if it was a special reward's
+// one-time purchase, restores the unlock it consumed — a genuine cancel, not just a refund.
+function cancelPurchase(purchaseId){
+  const idx=(state.purchases||[]).findIndex(p=>p.id===purchaseId);
+  if(idx<0)return;
+  const p=state.purchases[idx];
+  const ru=state.lang!=="en";
+  if(!confirm(ru?`Отменить покупку «${p.name}»? Деньги (${p.cost} ${CURRENCY_TICKER}) вернутся на баланс.`:`Cancel purchase "${p.name}"? ${p.cost} ${CURRENCY_TICKER} will be refunded.`))return;
+  state.purchases.splice(idx,1);
+  const r=(state.bigRewards||[]).find(x=>x.id===p.rewardId);
+  if(r&&r.special)r.unlockedAt=Date.now();
+  recalcPoints();save();renderRewards();renderXP();
+  toast(ru?'Покупка отменена, деньги возвращены':'Purchase cancelled, refunded');
 }
 function buyRewardFlat(r){
   const ru=state.lang!=="en";
