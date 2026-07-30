@@ -126,6 +126,8 @@ td.today-col,th.today-col{box-shadow:inset 0 0 0 2px var(--accent)}
 .tag-group-header.collapsed .arrow{transform:rotate(-90deg)}
 td.frozen-cell{position:relative}
 .freeze-icon{font-size:18px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;margin:6px auto;opacity:.6}
+td.archived-cell{position:relative}
+.archive-icon{font-size:16px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;margin:6px auto;opacity:.4}
 .note-dot{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
 .day-header{cursor:pointer}
 .day-header:hover{color:var(--accent)}
@@ -3430,6 +3432,11 @@ function renderGrid(){
           const td=d===today;
           if(fr){
             body+=`<td class="cell ${td?'today-col':''} frozen-cell"><div class="freeze-icon">&#10052;</div></td>`;
+          }else if(isArchivedOn(h,activeYear(),m,d)){
+            // Matches the frozen-cell treatment above: an archived day is just as excused from
+            // scoring (see dailyHabitPointsForMonth/eventHabitPointsForMonth), but without this it
+            // rendered as a plain empty checkbox — visually indistinguishable from a real miss.
+            body+=`<td class="cell ${td?'today-col':''} archived-cell"><div class="archive-icon">&#128230;</div></td>`;
           }else{
             const on=!!c[d];
             let mark="";
