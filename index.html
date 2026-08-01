@@ -576,7 +576,7 @@ textarea.inp{resize:vertical;min-height:60px}
       </div>
       <div class="row2" style="margin-top:8px">
         <div class="field" style="margin-bottom:0">
-          <label>Прирост ставки за провал (%)</label>
+          <label>Прирост ставки за минусовую привычку (%)</label>
           <input class="inp" type="number" inputmode="numeric" id="rateIncrementInp" placeholder="1" min="0" max="10" step="0.5">
         </div>
         <div class="field" style="margin-bottom:0">
@@ -2678,21 +2678,40 @@ function unlockSpecialReward(rewardId){
   save();renderRewards();
   toast(ru?'Отмечено — можно купить один раз':'Marked — purchasable once');
 }
+// Single source of truth for "how many active habits are in the black vs the red this month" —
+// shared by the hero widget, the month summary modal, and the rate escalation below, so all three
+// always agree instead of drifting apart via separately-hand-rolled copies of the same check. A
+// habit that had literally nothing asked of it this month (effTarget<=0 — fully archived and/or
+// frozen out for every day) counts toward NEITHER bucket: it didn't succeed or fail, there was
+// nothing to succeed or fail at. This is evaluated per-month from archivePeriods/freezes, not from
+// the habit's current-moment archived flag, so it's automatically correct for any month regardless
+// of whether the habit has since been restored or re-archived.
+function monthGoodBadCounts(m){
+  let good=0,bad=0;
+  activeHabits().forEach(h=>{
+    if(effTarget(h,m)<=0)return;
+    if(habitMonthBalance(h,m)>0)good++;else bad++;
+  });
+  return{good,bad};
+}
+// Cumulative and self-correcting, not a monotonic one-way ratchet: a month with ANY bad habits
+// adds bad×inc ON TOP of whatever rate was already in effect (so consecutive bad months keep
+// compounding), but a single fully clean month (0 bad habits) resets all the way back to base
+// immediately, discarding anything accumulated before — the rate always reflects recent momentum,
+// never a permanent scar from one bad stretch.
 function getEffectiveRatePct(m){
-  let rate=+(state.penaltyRate||15);
+  const base=+(state.penaltyRate||15);
   const inc=+(state.rateIncrement||1);
   const year=activeYear();
+  let rate=base;
   for(let prev=0;prev<m;prev++){
-    // A month entirely before trackingStart was never actually judged — habitMonthBalance() nets
-    // to a flat 0 for every habit in that case (every day in it gets skipped by the points engine),
-    // which would otherwise satisfy "<=0" and count as a universal failure purely from the month
-    // not having existed yet. Skip it, same as every other place in the app that respects
-    // trackingStart. A month trackingStart falls WITHIN is left as-is — its tracked days still
-    // produce a real, meaningful balance.
+    // A month entirely before trackingStart was never actually judged — skip it, same as every
+    // other place in the app that respects trackingStart. It neither escalates nor resets the
+    // rate. A month trackingStart falls WITHIN is left as-is — its tracked days still count.
     const lastDayISO=ymdStr(year,prev,daysInMonthY(year,prev));
     if(state.trackingStart&&lastDayISO<state.trackingStart)continue;
-    const failed=activeHabits().filter(h=>habitMonthBalance(h,prev)<=0).length;
-    if(failed>5)rate+=inc;
+    const{bad}=monthGoodBadCounts(prev);
+    rate=bad===0?base:rate+bad*inc;
   }
   return Math.min(rate,99);
 }
@@ -3357,8 +3376,7 @@ function renderHero(){
   const C=2*Math.PI*48,off=C*(1-sc/100);
   const rc=sc>=80?"var(--green)":sc>=50?"var(--accent2)":"var(--red)";
   const hs=activeHabits();
-  let goodCount=0,badCount=0;
-  hs.forEach(h=>{if(habitMonthBalance(h,m)>0)goodCount++;else badCount++;});
+  const{good:goodCount,bad:badCount}=monthGoodBadCounts(m);
   const effRate=getEffectiveRatePct(m);
   const baseRate=+(state.penaltyRate||15);
   const rateAdj=+(effRate-baseRate).toFixed(1);
@@ -5157,10 +5175,10 @@ function wireSavingsShop(body){
 /* ===== MONTHLY SUMMARY ===== */
 function showMonthSummary(m){
   const ru=state.lang!=="en";
-  const hs=state.habits.filter(h=>!h.deleted);
-  const pryanics=hs.filter(h=>metTarget(h,m)).length;
-  let goodCount=0,badCount=0;
-  hs.forEach(h=>{if(habitMonthBalance(h,m)>0)goodCount++;else badCount++;});
+  // pryanics (habits that met their target) and goodCount are the exact same predicate
+  // (metTarget===habitMonthBalance>0) over the same habit set, so one shared count covers both rows.
+  const{good:goodCount,bad:badCount}=monthGoodBadCounts(m);
+  const pryanics=goodCount;
   const pen=monthMoneyOwed(m),inc=getIncome(m),kept=Math.max(0,inc-pen);
   const effRate=getEffectiveRatePct(m),baseRate=+(state.penaltyRate||15);
   const rateAdj=+(effRate-baseRate).toFixed(1);
