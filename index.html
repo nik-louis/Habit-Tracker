@@ -2475,10 +2475,18 @@ function habitFreezeAvailable(h,m,d){
 }
 // Toggles the personal per-habit freeze on day d, shared by the grid and Today click handlers.
 // Also maintains habitFreezeEverDays — a small memory of days that have legitimately spent one of
-// this habit's slots this month, capped at h.freezeMonthlyQuota entries. A brand-new day only gets
-// remembered by evicting an already-INACTIVE remembered day first (never grows unbounded), and a
-// fresh day only ever reaches this function because it already passed the normal quota check in
-// habitFreezeAvailable — the UI never renders/wires this control for a day that shouldn't be pickable.
+// this habit's slots this month. Capped at (quota - CURRENT globalUsed), not the raw quota — a
+// habit's real personal-freeze room shrinks whenever unrelated global freezes eat into the shared
+// pool, so the memory must shrink with it too. Using the raw quota as the cap let it remember more
+// days than could ever be simultaneously restored: with quota=3 and 2 global freezes already
+// spent (1 real personal slot), it would still let up to 3 different days accumulate grandfather
+// status, and since removing a slot never evicts its memory, cycling through several different
+// days (freeze, remove, freeze a new one, remove, ...) let each one join the memory without ever
+// evicting the others — so every one of them stayed simultaneously "available", and reactivating
+// them one by one stacked more active personal freezes than the quota ever allowed. Only the
+// stalest (currently-inactive) remembered day is evicted, and only when a genuinely NEW day needs
+// its spot — a fresh day only ever reaches this function because it already passed the normal
+// quota check in habitFreezeAvailable; the UI never renders/wires this control otherwise.
 function toggleHabitFreeze(m,hid,d){
   const h=state.habits.find(x=>x.id===hid);if(!h)return;
   const mk="m"+m;
@@ -2488,12 +2496,18 @@ function toggleHabitFreeze(m,hid,d){
   if(bucket[d]){
     delete bucket[d];
   }else{
+    // Defense in depth, not just a hidden icon: the grid/Today views only render this control when
+    // habitFreezeAvailable() already says yes, but re-checking here means a day can never actually
+    // be activated past the real quota even if something ever calls this without that gate.
+    if(!habitFreezeAvailable(h,m,d))return;
     bucket[d]=true;
     if(!state.habitFreezeEverDays[mk])state.habitFreezeEverDays[mk]={};
     const everArr=state.habitFreezeEverDays[mk][hid]=state.habitFreezeEverDays[mk][hid]||[];
     if(!everArr.includes(d)){
-      const quota=h.freezeMonthlyQuota||0;
-      while(everArr.length>=quota){
+      const year=activeYear();
+      const globalUsed=(getFreezes(m)||[]).filter(gd=>!isArchivedOn(h,year,m,gd)).length;
+      const personalRoom=Math.max(0,(h.freezeMonthlyQuota||0)-globalUsed);
+      while(everArr.length>=personalRoom){
         const staleIdx=everArr.findIndex(x=>!bucket[x]);
         if(staleIdx<0)break; // shouldn't happen if availability was gated correctly upstream
         everArr.splice(staleIdx,1);
