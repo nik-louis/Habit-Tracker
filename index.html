@@ -1904,6 +1904,50 @@ function migrate(){
     // giving the flat +weight it always has, until the user opts in).
     if(!Array.isArray(h.achievementTiers))h.achievementTiers=[];
   });
+  // Self-heal personal-freeze data left over-quota by a since-fixed exploit in the grandfather
+  // memory (habitFreezeEverDays): its eviction used to cap at the habit's raw freezeMonthlyQuota
+  // instead of the ACTUAL currently-available personal room (quota minus whatever unrelated global
+  // freezes already consume from the shared pool), so it could remember — and let the user
+  // reactivate — more days than could ever be simultaneously valid. The code fix alone doesn't
+  // retroactively repair data already saved in that over-limit state, so every stored year/month is
+  // rechecked here and trimmed back down to the real quota, deterministically keeping the latest
+  // (highest-numbered) active days and the memory in sync with what's actually still active — the
+  // bucket itself never recorded true click order, so "most recent by day number" is the best
+  // available approximation.
+  Object.keys(state.years).forEach(y=>{
+    const yd=state.years[y],year=+y;
+    Object.keys(yd.habitFreezes||{}).forEach(mk=>{
+      const m=+mk.slice(1);
+      const monthBucket=yd.habitFreezes[mk];
+      Object.keys(monthBucket).forEach(hid=>{
+        const h=state.habits.find(x=>x.id===hid);
+        if(!h)return;
+        const bucket=monthBucket[hid];
+        const globalUsed=((yd.freezesUsed&&yd.freezesUsed[mk])||[]).filter(gd=>!isArchivedOn(h,year,m,gd)).length;
+        const personalRoom=Math.max(0,(h.freezeMonthlyQuota||0)-globalUsed);
+        const activeDays=Object.keys(bucket).filter(d=>bucket[d]).map(Number).sort((a,b)=>a-b);
+        if(activeDays.length>personalRoom){
+          activeDays.slice(0,activeDays.length-personalRoom).forEach(d=>{delete bucket[d];});
+        }
+      });
+    });
+    Object.keys(yd.habitFreezeEverDays||{}).forEach(mk=>{
+      const m=+mk.slice(1);
+      Object.keys(yd.habitFreezeEverDays[mk]).forEach(hid=>{
+        const h=state.habits.find(x=>x.id===hid);
+        if(!h)return;
+        const everArr=yd.habitFreezeEverDays[mk][hid];
+        const globalUsed=((yd.freezesUsed&&yd.freezesUsed[mk])||[]).filter(gd=>!isArchivedOn(h,year,m,gd)).length;
+        const personalRoom=Math.max(0,(h.freezeMonthlyQuota||0)-globalUsed);
+        const bucket=(yd.habitFreezes[mk]&&yd.habitFreezes[mk][hid])||{};
+        while(everArr.length>personalRoom){
+          const staleIdx=everArr.findIndex(x=>!bucket[x]);
+          if(staleIdx<0){everArr.pop();continue;}
+          everArr.splice(staleIdx,1);
+        }
+      });
+    });
+  });
   // Reward pricing: old flat-INLI `cost` → derived `days` (see REWARD AUTO-PRICING below), so the
   // price stays exactly what it was the moment this migration runs and only starts floating with
   // dailyUnit() from here on — same "no jump on upgrade" principle as every other migration here.
