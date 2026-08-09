@@ -1003,6 +1003,7 @@ achUnbreakable:"Unbreakable",achUnbreakableD:"21+ day streak",
 achRewardCollector:"Reward Collector",achRewardCollectorD:"50+ rewards earned in year",
 achYearPositive:"Year in the Black",achYearPositiveD:"Net INLI balance change this year is positive",
 achLevel25:"Quarter Way",achLevel25D:"Reached level 25",
+achLevel50:"Halfway There",achLevel50D:"Reached level 50",achLevel75:"Three-Quarter Way",achLevel75D:"Reached level 75",achLevel100:"The Summit",achLevel100D:"Reached the maximum, level 100",
 appearance:"Appearance",darkMode:"Dark Mode",accentColor:"Accent Color",language:"Language",
 tagsTitle:"Tags",tagsDesc:"Manage categories. Changing a tag updates all linked habits.",
 addTag:"+ Add Tag",newTag:"New Tag",editTagTitle:"Edit Tag",
@@ -1118,6 +1119,7 @@ achUnbreakable:"Несокрушимый",achUnbreakableD:"Серия 21+ ден
 achRewardCollector:"Коллекционер наград",achRewardCollectorD:"50+ наград за год",
 achYearPositive:"Год в плюсе",achYearPositiveD:"Баланс INLI за год положительный",
 achLevel25:"Четверть пути",achLevel25D:"Достигнут 25 уровень",
+achLevel50:"Половина пути",achLevel50D:"Достигнут 50 уровень",achLevel75:"Три четверти пути",achLevel75D:"Достигнут 75 уровень",achLevel100:"Вершина",achLevel100D:"Достигнут максимальный, 100 уровень",
 appearance:"Внешний вид",darkMode:"Тёмная тема",accentColor:"Цвет акцента",language:"Язык",
 tagsTitle:"Теги",tagsDesc:"Управление категориями. Изменение тега обновляет все связанные привычки.",
 addTag:"+ Добавить тег",newTag:"Новый тег",editTagTitle:"Редактировать тег",
@@ -1233,6 +1235,7 @@ achUnbreakable:"Inquebrantable",achUnbreakableD:"Racha 21+ días",
 achRewardCollector:"Coleccionista",achRewardCollectorD:"50+ recompensas en el año",
 achYearPositive:"Año en positivo",achYearPositiveD:"El cambio neto de saldo INLI este año es positivo",
 achLevel25:"Un cuarto del camino",achLevel25D:"Nivel 25 alcanzado",
+achLevel50:"Mitad del camino",achLevel50D:"Nivel 50 alcanzado",achLevel75:"Tres cuartos del camino",achLevel75D:"Nivel 75 alcanzado",achLevel100:"La Cumbre",achLevel100D:"Nivel máximo, 100, alcanzado",
 appearance:"Apariencia",darkMode:"Modo oscuro",accentColor:"Color de acento",language:"Idioma",
 tagsTitle:"Etiquetas",tagsDesc:"Gestionar categorías. Cambiar etiqueta actualiza hábitos vinculados.",
 addTag:"+ Agregar etiqueta",newTag:"Nueva etiqueta",editTagTitle:"Editar etiqueta",
@@ -1348,6 +1351,7 @@ achUnbreakable:"不可破",achUnbreakableD:"连续21天+",
 achRewardCollector:"奖励收集者",achRewardCollectorD:"年度50+奖励",
 achYearPositive:"本年盈余",achYearPositiveD:"本年INLI净变化为正",
 achLevel25:"四分之一路程",achLevel25D:"达到25级",
+achLevel50:"半程",achLevel50D:"达到50级",achLevel75:"四分之三路程",achLevel75D:"达到75级",achLevel100:"顶峰",achLevel100D:"达到最高等级100级",
 appearance:"外观",darkMode:"深色模式",accentColor:"强调色",language:"语言",
 tagsTitle:"标签",tagsDesc:"管理分类。更改标签会更新所有相关习惯。",
 addTag:"+ 添加标签",newTag:"新标签",editTagTitle:"编辑标签",
@@ -1463,6 +1467,7 @@ achUnbreakable:"Incassable",achUnbreakableD:"Série 21+ jours",
 achRewardCollector:"Collectionneur",achRewardCollectorD:"50+ récompenses dans l'année",
 achYearPositive:"Année positive",achYearPositiveD:"Le solde net INLI cette année est positif",
 achLevel25:"Un quart du chemin",achLevel25D:"Niveau 25 atteint",
+achLevel50:"Mi-chemin",achLevel50D:"Niveau 50 atteint",achLevel75:"Trois quarts du chemin",achLevel75D:"Niveau 75 atteint",achLevel100:"Le Sommet",achLevel100D:"Niveau maximum, 100, atteint",
 appearance:"Apparence",darkMode:"Mode sombre",accentColor:"Couleur d'accent",language:"Langue",
 tagsTitle:"Étiquettes",tagsDesc:"Gérer les catégories. Modifier une étiquette met à jour les habitudes liées.",
 addTag:"+ Ajouter étiquette",newTag:"Nouvelle étiquette",editTagTitle:"Modifier étiquette",
@@ -1687,11 +1692,23 @@ function addDaysISO(iso,days){
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 /* ===== SAVINGS ("вклад") — lock INLI for a continuous, duration-scaled bonus =====
-   Deliberately a smooth formula (0.5%/day, capped at 40%) rather than a handful of fixed-duration
-   tiers — the whole economy already avoids discrete cliffs everywhere else (the money pool, the
-   pace-line, tier escalation), so a "pick 7/30/90 days" preset ladder here would be the one place
-   that reintroduces exactly the dead-zone-adjacent effect this project keeps designing away from. */
-function savingsBonusPctForDays(days){return Math.min(40,Math.round(days*0.5*10)/10)}
+   Deliberately a smooth formula rather than a handful of fixed-duration tiers — the whole economy
+   already avoids discrete cliffs everywhere else (the money pool, the pace-line, tier escalation),
+   so a "pick 7/30/90 days" preset ladder here would be the one place that reintroduces exactly the
+   dead-zone-adjacent effect this project keeps designing away from.
+   The rate itself decelerates in steps instead of hitting a hard ceiling: 0.5%/day through day 90
+   (45%), 0.25%/day from day 91-120 (52.5%), then a slow 0.125%/day trickle forever after — a very
+   long lock keeps growing, just ever more slowly, rather than flatlining at a fixed cap. */
+const SAVINGS_TIERS=[{upTo:90,rate:0.5},{upTo:120,rate:0.25},{upTo:Infinity,rate:0.125}];
+function savingsBonusPctForDays(days){
+  let pct=0,prevBound=0;
+  for(const tier of SAVINGS_TIERS){
+    pct+=Math.max(0,Math.min(days,tier.upTo)-prevBound)*tier.rate;
+    if(days<=tier.upTo)break;
+    prevBound=tier.upTo;
+  }
+  return Math.round(pct*10)/10;
+}
 function createSavingsDeposit(amount,days){
   if(!(amount>0)||!(days>0))return null;
   const start=todayISO();
@@ -1746,6 +1763,14 @@ function freshState(){
     // Savings ("вклад"): lock INLI away for N days for a continuous (never a fixed-tier cliff)
     // bonus on collection — a lifetime ledger of fact, not derived, mirroring purchases' shape.
     savings:[],
+    // Achievement currency payouts — a frozen claim ledger (see checkAchievementRewardUnlocks),
+    // mirroring purchases'/savings' shape for the same reason: achievements are live-derived and
+    // could in theory flip, so what's actually been paid out must be an immutable record of fact.
+    achievementClaims:[],
+    // Personal challenges — unlike the ledgers above, purely derived from each entry's own
+    // checks/startDate/days (see challengeStatus/challengeReward), so this array itself never needs
+    // migration-time repair beyond simply existing.
+    challenges:[],
     // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
     // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
@@ -1994,6 +2019,8 @@ function migrate(){
   if(!state.cosmetics.unlockedViaAchievement)state.cosmetics.unlockedViaAchievement={};
   if(!Array.isArray(state.cosmeticPurchases))state.cosmeticPurchases=[];
   if(!Array.isArray(state.savings))state.savings=[];
+  if(!Array.isArray(state.achievementClaims))state.achievementClaims=[];
+  if(!Array.isArray(state.challenges))state.challenges=[];
   recalcXP();
   recalcPoints();
   scanTierWarnings();
@@ -2606,16 +2633,21 @@ function eventPaceStatus(h,m,d){
 // them are actual misses. year-explicit throughout (not eventPaceStatus, which only ever reads the
 // currently-bound year) so this works correctly across every year in state.years, not just the active one.
 const PERFECT_DAY_BONUS_RATE=0.15;
-function perfectDaysBonusForMonth(year,m,yd){
+// Shared by perfectDaysBonusForMonth and perfectWeekBonusForMonth so the "what counts as satisfied"
+// rule (checked, or neutrally excused via freeze/archive/pace-line/not-yet-created) lives in exactly
+// one place. Returns null when the month has no eligible days yet (mirrors the early-return 0s the
+// two callers used to have individually). satisfied[d] is true/false, or null for a day that's
+// entirely before global tracking started (excluded from the economy, not a miss).
+function satisfiedDaysForMonth(year,m,yd){
   const hs=(state.habits||[]).filter(h=>!h.deleted&&!h.archived);
-  if(!hs.length)return 0;
+  if(!hs.length)return null;
   const totalDays=daysInMonthY(year,m);
   const elapsed=elapsedDaysInMonthY(year,m);
   const rt=realTodayParts();
   const isCurMonth=(year===rt.y&&m===rt.m);
-  if(elapsed<=0&&!isCurMonth)return 0;
+  if(elapsed<=0&&!isCurMonth)return null;
   const upper=isCurMonth?rt.d-1:totalDays;
-  if(upper<1)return 0;
+  if(upper<1)return null;
   const mk="m"+m;
   const totalWeight=hs.reduce((s,h)=>s+(h.weight||1),0);
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
@@ -2630,10 +2662,10 @@ function perfectDaysBonusForMonth(year,m,yd){
     }
     eventDoneSoFar[h.id]=arr;
   });
-  let bonus=0;
+  const satisfied=[null];
   for(let d=1;d<=upper;d++){
-    if(beforeTrackingStart(year,m,d))continue;
-    const allSatisfied=hs.every(h=>{
+    if(beforeTrackingStart(year,m,d)){satisfied.push(null);continue}
+    satisfied.push(hs.every(h=>{
       const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
       if(checksBucket[d])return true;
       if(frozen.includes(d))return true;
@@ -2648,10 +2680,122 @@ function perfectDaysBonusForMonth(year,m,yd){
         if(eventDoneSoFar[h.id][d]>=minRequired)return true;
       }
       return false;
-    });
-    if(allSatisfied)bonus+=totalWeight*PERFECT_DAY_BONUS_RATE;
+    }));
+  }
+  return{satisfied,totalWeight,upper};
+}
+// Both bonus functions below accept an optional pre-computed satisfiedDaysForMonth() result so a
+// caller that needs both (recalcPoints) can walk the — fairly expensive, event-habit-tracking —
+// day computation exactly once per month instead of twice; standalone callers can still omit it
+// and each function will compute its own, same as before.
+function perfectDaysBonusForMonth(year,m,yd,precomputed){
+  const r=precomputed||satisfiedDaysForMonth(year,m,yd);
+  if(!r)return 0;
+  let bonus=0;
+  for(let d=1;d<=r.upper;d++)if(r.satisfied[d])bonus+=r.totalWeight*PERFECT_DAY_BONUS_RATE;
+  return Math.round(bonus);
+}
+// An intermediate bonus between the daily perfect-day payout and the monthly achPerfectMonth
+// achievement: every 7th CONSECUTIVE perfect day pays an extra chunk, on top of (not instead of)
+// each individual day's own PERFECT_DAY_BONUS_RATE payout. A day excluded from the economy entirely
+// (satisfied===null, before tracking start) is skipped without breaking the streak, same as it's
+// invisible to the daily bonus above. Resets at 0 on any real miss, and — like every other streak
+// in this app — never carries across a month boundary.
+const PERFECT_WEEK_BONUS_RATE=0.5;
+function perfectWeekBonusForMonth(year,m,yd,precomputed){
+  const r=precomputed||satisfiedDaysForMonth(year,m,yd);
+  if(!r)return 0;
+  let bonus=0,streak=0;
+  for(let d=1;d<=r.upper;d++){
+    if(r.satisfied[d]===null)continue;
+    if(r.satisfied[d]){
+      streak++;
+      if(streak%7===0)bonus+=r.totalWeight*PERFECT_WEEK_BONUS_RATE;
+    }else streak=0;
   }
   return Math.round(bonus);
+}
+/* ===== PERSONAL CHALLENGES =====
+   A user-declared commitment ("N days without X" / "N days of Y") — deliberately separate from the
+   habit grid, since a challenge is often about something not otherwise tracked as a habit at all.
+   Ground truth is still real day-by-day check-ins (never a pure honor-system "mark it done at the
+   end" flag — that would be the one place in this whole economy money could be gotten for free),
+   just scoped to the challenge's own day range (day 1 = its own startDate) instead of a calendar
+   month. Status and reward are both purely DERIVED from checks/startDate/days — exactly like
+   perfectDaysBonusForMonth above, never a stored/frozen flag — so editing a past day (fixing an
+   honest miss, same as the Track grid already allows everywhere else) immediately and safely
+   re-derives the right outcome instead of leaving a stale status behind. A challenge never locks
+   away any principal — it's pure upside, not a wager — so unlike savings there's nothing to
+   subtract while one is active, only a reward to add once one is won.
+   The reward itself is auto-priced from duration via CHALLENGE_TIERS rather than a hand-typed INLI
+   number — the same "derive it, don't hand-pick it" principle the reward shop's day-based
+   auto-pricing already uses (REWARD_TIER_DAYS_*) — expressed in dailyUnit()-days so it floats with
+   the user's own habit weights instead of sitting as a disconnected flat number. Both days AND the
+   per-day coefficient rise together with duration, so a longer, more ambitious challenge pays off
+   super-linearly rather than just proportionally more. */
+const CHALLENGE_TIERS=[{maxDays:3,coef:0.7},{maxDays:7,coef:0.9},{maxDays:14,coef:1.1},{maxDays:30,coef:1.3},{maxDays:Infinity,coef:1.5}];
+function challengeRewardDays(days){
+  const tier=CHALLENGE_TIERS.find(t=>days<=t.maxDays);
+  return Math.round(days*tier.coef*10)/10;
+}
+function challengeRewardAmount(days){return Math.round(challengeRewardDays(days)*dailyUnit())}
+function createChallenge(name,days){
+  name=(name||"").trim();
+  if(!name||!(days>0))return null;
+  if(!Array.isArray(state.challenges))state.challenges=[];
+  const ch={id:uid(),name,days:Math.round(days),startDate:todayISO(),checks:{},cancelled:false};
+  state.challenges.push(ch);
+  recalcPoints();save();
+  return ch;
+}
+// Day 1 is the challenge's own startDate, not a calendar-month day — so each challenge runs on its
+// own private day-index timeline, however many calendar days that turns out to span.
+function challengeDayIndexForToday(ch){
+  const start=new Date(ch.startDate+"T00:00:00"),today=new Date(todayISO()+"T00:00:00");
+  return Math.round((today-start)/86400000)+1;
+}
+// Purely derived, recomputed fresh every call — never a stored status that could drift out of sync
+// with the underlying checks. "failed" the moment any day strictly before today (i.e. fully elapsed,
+// no time left to still check it) turns up unchecked; "completed" only once the full duration has
+// actually elapsed AND every one of its days ended up checked; "active" while still inside the
+// window (unless explicitly cancelled, which always wins).
+function challengeStatus(ch){
+  if(ch.cancelled)return"cancelled";
+  const todayIdx=challengeDayIndexForToday(ch);
+  for(let d=1;d<Math.min(todayIdx,ch.days+1);d++)if(!ch.checks[d])return"failed";
+  return todayIdx<=ch.days?"active":"completed";
+}
+function challengeReward(ch){return challengeStatus(ch)==="completed"?challengeRewardAmount(ch.days):0}
+function toggleChallengeDay(id,dayIdx){
+  const ch=(state.challenges||[]).find(c=>c.id===id);
+  if(!ch||ch.cancelled||dayIdx<1||dayIdx>ch.days)return;
+  if(ch.checks[dayIdx])delete ch.checks[dayIdx];else ch.checks[dayIdx]=true;
+  recalcPoints();save();
+}
+function cancelChallenge(id){
+  const ch=(state.challenges||[]).find(c=>c.id===id);
+  if(!ch||ch.cancelled)return false;
+  ch.cancelled=true;
+  recalcPoints();save();
+  return true;
+}
+// A dedup flag purely for the notification popup (mirrors tierWarningKeys) — completely decoupled
+// from challengeReward's own live re-derivation above, so it never influences the actual payout,
+// it just stops the same "you won/lost" popup from firing again on every subsequent recalc.
+function checkChallengeNotifications(){
+  let notified=false;
+  (state.challenges||[]).forEach(ch=>{
+    const st=challengeStatus(ch);
+    const ru=state.lang!=="en";
+    if(st==="completed"&&!ch.completeNotified){
+      ch.completeNotified=true;notified=true;
+      addNotification("challenge",(ru?"🏆 Челлендж пройден: ":"🏆 Challenge complete: ")+ch.name,`+${challengeRewardAmount(ch.days)} ${CURRENCY_TICKER}`);
+    }else if(st==="failed"&&!ch.failNotified){
+      ch.failNotified=true;notified=true;
+      addNotification("challenge",(ru?"💔 Челлендж провален: ":"💔 Challenge failed: ")+ch.name,ru?"Пропущен день":"A day was missed");
+    }
+  });
+  if(notified)renderNotifBadge();
 }
 // Rebuilds the lifetime points balance from scratch: every habit × every month × every year the
 // user has ever touched, minus everything ever spent in the shop. Never patched incrementally.
@@ -2664,7 +2808,10 @@ function recalcPoints(){
       (state.habits||[]).forEach(h=>{
         for(let m=0;m<12;m++)pts+=habitPointsForMonth(h,yNum,m,yd);
       });
-      for(let m=0;m<12;m++)pts+=perfectDaysBonusForMonth(yNum,m,yd);
+      for(let m=0;m<12;m++){
+        const satDays=satisfiedDaysForMonth(yNum,m,yd);
+        pts+=perfectDaysBonusForMonth(yNum,m,yd,satDays)+perfectWeekBonusForMonth(yNum,m,yd,satDays);
+      }
     });
   }
   pts-=(state.purchases||[]).reduce((s,p)=>s+(p.cost||0),0);
@@ -2676,6 +2823,15 @@ function recalcPoints(){
     if(!dep.collected)pts-=dep.principal;
     else pts+=Math.round(dep.principal*dep.bonusPct/100);
   });
+  // Achievement rewards: detected lazily (see checkAchievementRewardUnlocks) but once a claim
+  // lands in the ledger it's a frozen receipt exactly like purchases/savings above, so this is a
+  // plain sum, never a mutable running total.
+  checkAchievementRewardUnlocks();
+  pts+=(state.achievementClaims||[]).reduce((s,c)=>s+c.amount,0);
+  // Personal challenges: purely derived (see challengeReward above), so this is a live sum, not a
+  // ledger — an active or cancelled challenge always contributes 0, same as a challenge that failed.
+  checkChallengeNotifications();
+  pts+=(state.challenges||[]).reduce((s,c)=>s+challengeReward(c),0);
   // Real-money debt settlement: a fixed historical offset, exactly like purchases/savings above —
   // never a mutable "current debt" field that could drift. forgiveCurrentDebt() sets this to exactly
   // enough to zero out whatever the raw negative sum was at the moment it was clicked; it never
@@ -4629,7 +4785,11 @@ function calculateCorrelations(m){
 }
 
 /* ===== ACHIEVEMENTS ===== */
-function achCard(a){return`<div class="ach ${a.on?'unlocked':''}"><div class="emo">${a.on?a.emo:'&#128274;'}</div><div class="at">${a.title}</div><div class="ad">${a.desc}</div></div>`}
+function achCard(a){
+  const days=ACHIEVEMENT_REWARD_DAYS[a.key];
+  const rewardHTML=days?`<div class="ar" style="color:var(--green);font-size:11px;font-weight:700;margin-top:3px">+${Math.round(days*dailyUnit())} ${CURRENCY_TICKER}</div>`:'';
+  return`<div class="ach ${a.on?'unlocked':''}"><div class="emo">${a.on?a.emo:'&#128274;'}</div><div class="at">${a.title}</div><div class="ad">${a.desc}</div>${rewardHTML}</div>`;
+}
 // Replaces the old abstinenceMet() (which matched English substrings "porn"/"reels"/"junk"
 // against habit names — meaningless for real, custom-named habits and never tied to any actual
 // habit data). This is data-driven instead: true only if the habit has 2+ violation tiers
@@ -4679,6 +4839,9 @@ function achievementsForYear(){
     {key:"achRewardCollector",emo:"&#127805;",title:T.achRewardCollector,desc:T.achRewardCollectorD,on:totalRew>=50},
     {key:"achYearPositive",emo:"&#128176;",title:T.achYearPositive,desc:T.achYearPositiveD,on:hs.length>0&&yearNet>0},
     {key:"achLevel25",emo:"&#11088;",title:T.achLevel25,desc:T.achLevel25D,on:level>=25},
+    {key:"achLevel50",emo:"&#127775;",title:T.achLevel50,desc:T.achLevel50D,on:level>=50},
+    {key:"achLevel75",emo:"&#128171;",title:T.achLevel75,desc:T.achLevel75D,on:level>=75},
+    {key:"achLevel100",emo:"&#128081;",title:T.achLevel100,desc:T.achLevel100D,on:level>=100},
   ];
 }
 
@@ -4796,6 +4959,74 @@ const COSMETIC_CATALOG=[
   {id:"title_yearlegend",cat:"title",name:"Легенда года",nameEn:"Year's Legend",cost:null,rarity:"legendary",achKey:"achYear"},
   {id:"title_level25",cat:"title",name:"Мастер уровня 25",nameEn:"Level 25 Master",cost:null,rarity:"epic",achKey:"achLevel25"},
 ];
+/* ===== ACHIEVEMENT REWARDS =====
+   Achievements are live-derived booleans (see achievementsForMonth/Year above), not one-time
+   events — editing old history could in theory flip one back off. Paying them out currency
+   therefore needs a frozen claim ledger, exactly like purchases/savings: once a (key,scope,year,
+   month) combo is claimed, its amount is locked in and only ever summed plainly, never reversed or
+   re-derived. Amounts are expressed in dailyUnit()-days, the same unit the reward shop prices in,
+   so a payout scales with the user's own habit weights instead of sitting as a disconnected flat
+   number — monthly/yearly keys pay out again every time a new qualifying month/year rolls around,
+   lifetime keys (the level milestones) pay out exactly once ever.
+   Detection is lazy — only the currently active year, and every month within it, gets checked on
+   each recalc — the same "current context" tradeoff checkCosmeticAchievementUnlocks below already
+   accepts, rather than rebinding every year in state.years on every keystroke. Nothing is lost by
+   not having a given year open when it first turns true (the underlying achievement stays true
+   until claimed), it just gets claimed the next time that year is actually viewed. */
+const ACHIEVEMENT_REWARD_DAYS={
+  achOnFire:0.5,achStreak14:1.5,achCleanMonth:1,ach80:1,achZeroPenalty:0.5,
+  achMonthPositive:0.5,achNoFreeze:2,achPerfectMonth:3,
+  achHalfYear:5,achYear:20,achPerfectionist:8,ach6Clean:6,achUnbreakable:4,
+  achRewardCollector:3,achYearPositive:2,
+  achLevel25:10,achLevel50:25,achLevel75:45,achLevel100:75,
+};
+const ACHIEVEMENT_LIFETIME_KEYS=["achLevel25","achLevel50","achLevel75","achLevel100"];
+function checkAchievementRewardUnlocks(){
+  if(!Array.isArray(state.achievementClaims))state.achievementClaims=[];
+  const ay=activeYear(),rt=realTodayParts();
+  let claimedNew=false;
+  const claim=(key,scope,year,month,title,emo)=>{
+    const days=ACHIEVEMENT_REWARD_DAYS[key];
+    if(!days)return;
+    if(state.achievementClaims.some(c=>c.key===key&&c.scope===scope&&c.year===year&&c.month===month))return;
+    const amount=Math.round(days*dailyUnit());
+    if(amount<=0)return;
+    state.achievementClaims.push({id:uid(),key,scope,year,month,amount,date:Date.now()});
+    claimedNew=true;
+    const ru=state.lang!=="en";
+    addNotification("achievement",(ru?"🏆 Достижение: ":"🏆 Achievement: ")+title,`${emo} +${amount} ${CURRENCY_TICKER}`);
+  };
+  // Monthly rewards only for months that have fully ended. Several monthly achievements are
+  // "avoided a bad thing" predicates (achZeroPenalty, achNoFreeze, achCleanMonth) that read as
+  // vacuously true on day 1 of a brand-new month — nothing bad has happened YET, simply because
+  // nothing has happened at all. Waiting for the month to actually finish before it can be claimed
+  // closes that off, at the cost of the payout landing next month instead of instantly mid-month.
+  const lastElapsedMonth=ay<rt.y?11:(ay===rt.y?rt.m-1:-1);
+  for(let m=0;m<=lastElapsedMonth;m++){
+    // A month that hadn't started tracking yet at all (entirely before state.trackingStart) has
+    // zero real activity, which makes "avoided a bad thing" predicates like achZeroPenalty/
+    // achNoFreeze read as vacuously true for it too — nothing bad happened only because nothing
+    // happened, period. Skip claiming for those months entirely rather than reward doing nothing.
+    if(beforeTrackingStart(ay,m,daysInMonthY(ay,m)))continue;
+    achievementsForMonth(m).forEach(a=>{if(a.on)claim(a.key,"month",ay,m,a.title,a.emo)});
+  }
+  // Same reasoning one level up for yearly keys: ach6Clean etc. aggregate a "fully avoided" predicate
+  // across all 12 months, which reads as vacuously satisfied for months later in the year that simply
+  // haven't happened yet — so those only get claimed once the year itself is fully in the past.
+  // Lifetime (level) milestones have no such concern — a level, once reached, never un-reaches — so
+  // those alone are still checked against the in-progress year too.
+  // (ach6Clean has the same pre-trackingStart vacuous-truth risk as achZeroPenalty/achNoFreeze
+  // above, one level up, if trackingStart falls mid-year — left unguarded here since fixing it
+  // properly means touching avoidedHarshestTier's own month-by-month walk, not just this claimer;
+  // the exposure is small and one-time per historical year, not an ongoing drain like the monthly
+  // case was.)
+  achievementsForYear().forEach(a=>{
+    if(!a.on)return;
+    if(ACHIEVEMENT_LIFETIME_KEYS.includes(a.key))claim(a.key,"lifetime",null,null,a.title,a.emo);
+    else if(ay<rt.y)claim(a.key,"year",ay,null,a.title,a.emo);
+  });
+  if(claimedNew)renderNotifBadge();
+}
 function cosmeticById(id){return COSMETIC_CATALOG.find(c=>c.id===id)}
 // Achievement-gated items unlock permanently the first time their underlying achievement is
 // detected true — checked here (called from the end of every recalcPoints()) against the CURRENT
@@ -4837,12 +5068,13 @@ function equipCosmetic(id){
 
 /* ===== REWARDS VIEW (unified points shop) ===== */
 let bigRewardEditId=null; // null=off, 'new'=adding, id=editing
-let rewardsSubTab="rewards"; // "rewards" | "cosmetics" | "savings"
+let rewardsSubTab="rewards"; // "rewards" | "cosmetics" | "savings" | "challenges"
 function rewardsSubtabsHTML(ru){
   return`<div class="rewards-subtabs">
     <div class="rewards-subtab ${rewardsSubTab==='rewards'?'active':''}" data-rst="rewards">${ru?'Награды':'Rewards'}</div>
     <div class="rewards-subtab ${rewardsSubTab==='cosmetics'?'active':''}" data-rst="cosmetics">&#10024; ${ru?'Эстетика':'Aesthetics'}</div>
     <div class="rewards-subtab ${rewardsSubTab==='savings'?'active':''}" data-rst="savings">&#128176; ${ru?'Вклад':'Savings'}</div>
+    <div class="rewards-subtab ${rewardsSubTab==='challenges'?'active':''}" data-rst="challenges">&#127919; ${ru?'Челленджи':'Challenges'}</div>
   </div>`;
 }
 function wireRewardsSubtabs(body){
@@ -4863,6 +5095,12 @@ function renderRewards(){
     body.innerHTML=rewardsSubtabsHTML(ru)+savingsShopHTML(avail,ru);
     wireRewardsSubtabs(body);
     wireSavingsShop(body);
+    return;
+  }
+  if(rewardsSubTab==="challenges"){
+    body.innerHTML=rewardsSubtabsHTML(ru)+challengesShopHTML(avail,ru);
+    wireRewardsSubtabs(body);
+    wireChallengesShop(body);
     return;
   }
 
@@ -5223,7 +5461,7 @@ function savingsShopHTML(avail,ru){
       <h3 style="margin:0">&#128176; ${ru?'Вклад':'Savings'}</h3>
       <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Баланс':'Balance'} ${CURRENCY_TICKER}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail}</div></div>
     </div>
-    <p class="hint" style="margin:0 0 10px">${ru?'Заморозь баллы на N дней — при снятии получишь их обратно плюс бонус. Чем дольше срок, тем выше процент (0.5%/день, максимум 40% при 80+ днях). Забрать раньше срока нельзя.':'Lock points away for N days — collect them back plus a bonus once matured. Longer locks earn a higher rate (0.5%/day, capped at 40% at 80+ days). Can\'t be collected early.'}</p>
+    <p class="hint" style="margin:0 0 10px">${ru?'Заморозь баллы на N дней — при снятии получишь их обратно плюс бонус. Чем дольше срок, тем выше процент: 0.5%/день до 90 дней (45%), затем 0.25%/день до 120 дней (52.5%), дальше — 0.125%/день без ограничения. Забрать раньше срока нельзя.':'Lock points away for N days — collect them back plus a bonus once matured. The rate decelerates the longer it runs: 0.5%/day through day 90 (45%), then 0.25%/day through day 120 (52.5%), then 0.125%/day with no ceiling beyond that. Can\'t be collected early.'}</p>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <input type="number" min="1" class="inp" id="savAmountInp" placeholder="${CURRENCY_TICKER}" style="flex:1">
       <input type="number" min="1" class="inp" id="savDaysInp" placeholder="${ru?'дней':'days'}" style="width:90px">
@@ -5260,6 +5498,91 @@ function wireSavingsShop(body){
   body.querySelectorAll("[data-savcollect]").forEach(b=>b.onclick=()=>{
     const ru=state.lang!=="en";
     if(collectSavingsDeposit(b.dataset.savcollect)){toast(ru?'Вклад получен!':'Deposit collected!');renderRewards();renderXP();}
+  });
+}
+
+/* ===== PERSONAL CHALLENGES UI (sub-tab of Rewards) ===== */
+function challengeRowHTML(ch,ru){
+  const st=challengeStatus(ch);
+  const todayIdx=challengeDayIndexForToday(ch);
+  const doneCount=Object.keys(ch.checks).length;
+  const emo=st==="completed"?"&#127942;":st==="failed"?"&#128128;":st==="cancelled"?"&#128683;":"&#127919;";
+  if(st==="active"){
+    const canCheckToday=todayIdx>=1&&todayIdx<=ch.days&&!ch.checks[todayIdx];
+    return`<div class="br-item">
+      <span class="br-emo" style="font-size:18px">${emo}</span>
+      <div class="br-info">
+        <div class="br-name">${escapeHtml(ch.name)}</div>
+        <div class="br-cost">${ru?'День':'Day'} ${Math.min(Math.max(todayIdx,1),ch.days)}/${ch.days} &middot; ${doneCount}/${ch.days} ${ru?'отмечено':'checked'}</div>
+      </div>
+      <div class="br-btns">
+        ${canCheckToday?`<button class="usebtn" data-chchecktoday="${ch.id}">${ru?'отметить':'check'}</button>`:''}
+        <button class="usebtn" data-chcancel="${ch.id}" style="opacity:.6">&times;</button>
+      </div>
+    </div>`;
+  }
+  const outcomeText=st==="completed"?`+${challengeRewardAmount(ch.days)} ${CURRENCY_TICKER}`
+    :st==="failed"?(ru?'Провалено':'Failed')
+    :(ru?'Отменено':'Cancelled');
+  return`<div class="br-item">
+    <span class="br-emo" style="font-size:18px">${emo}</span>
+    <div class="br-info">
+      <div class="br-name">${escapeHtml(ch.name)}</div>
+      <div class="br-cost" style="color:${st==='completed'?'var(--green)':'inherit'}">${outcomeText} &middot; ${ch.days} ${ru?'дн.':'d'}</div>
+    </div>
+  </div>`;
+}
+function challengesShopHTML(avail,ru){
+  const all=(state.challenges||[]).slice().sort((a,b)=>a.startDate<b.startDate?1:(a.startDate>b.startDate?-1:0));
+  const active=all.filter(c=>challengeStatus(c)==="active");
+  const past=all.filter(c=>challengeStatus(c)!=="active");
+  const activeRows=active.length?active.map(c=>challengeRowHTML(c,ru)).join(''):`<div class="empty" style="padding:12px 0"><b>${ru?'Нет активных челленджей':'No active challenges'}</b></div>`;
+  const pastRows=past.map(c=>challengeRowHTML(c,ru)).join('');
+  return`<div class="card" style="margin-bottom:12px">
+    <h3 style="margin-top:0">&#127919; ${ru?'Личный челлендж':'Personal challenge'}</h3>
+    <p class="hint" style="margin:0 0 10px">${ru?'Объяви себе испытание на N дней (например «7 дней без сахара»). Каждый день отмечай выполнение — пропустишь день, челлендж провален. Дойдёшь до конца без единого пропуска — получишь награду; чем длиннее и амбициознее срок, тем выше отдача за каждый день.':'Declare yourself a challenge for N days (e.g. "7 days without sugar"). Check in every day — miss one and it fails. Reach the end with zero misses and you get paid; the longer and more ambitious it is, the higher the payout per day.'}</p>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input type="text" class="inp" id="chNameInp" placeholder="${ru?'Название испытания':'Challenge name'}" style="flex:2">
+      <input type="number" min="1" class="inp" id="chDaysInp" placeholder="${ru?'дней':'days'}" style="width:90px">
+    </div>
+    <p class="hint" id="chPreview" style="margin:0 0 8px"></p>
+    <button class="btn primary" id="btnCreateChallenge" style="width:100%">${ru?'Начать':'Start'}</button>
+  </div>
+  <div class="card"><h3 style="margin-top:0">${ru?'Активные':'Active'}</h3>${activeRows}</div>
+  ${past.length?`<div class="card"><h3 style="margin-top:0">${ru?'История':'History'}</h3>${pastRows}</div>`:''}`;
+}
+function updateChallengePreview(){
+  const el=document.getElementById("chPreview");if(!el)return;
+  const ru=state.lang!=="en";
+  const days=+((document.getElementById("chDaysInp")||{}).value)||0;
+  if(days<=0){el.textContent=ru?'Укажи срок в днях':'Enter a duration in days';return}
+  const amount=challengeRewardAmount(days);
+  el.textContent=ru?`${Math.round(days)} дн. без единого пропуска = ${amount} ${CURRENCY_TICKER}`:`${Math.round(days)} day(s), zero misses = ${amount} ${CURRENCY_TICKER}`;
+}
+function wireChallengesShop(body){
+  const nameInp=document.getElementById("chNameInp"),daysInp=document.getElementById("chDaysInp");
+  if(daysInp)daysInp.oninput=updateChallengePreview;
+  updateChallengePreview();
+  const btn=document.getElementById("btnCreateChallenge");
+  if(btn)btn.onclick=()=>{
+    const ru=state.lang!=="en";
+    const name=(nameInp||{}).value||"",days=+((daysInp||{}).value)||0;
+    if(!name.trim()||days<=0){toast(ru?'Укажи название и срок':'Enter a name and duration');return}
+    createChallenge(name,days);
+    toast(ru?'Челлендж начат!':'Challenge started!');
+    renderRewards();renderXP();
+  };
+  body.querySelectorAll("[data-chchecktoday]").forEach(b=>b.onclick=()=>{
+    const ch=(state.challenges||[]).find(c=>c.id===b.dataset.chchecktoday);
+    if(!ch)return;
+    toggleChallengeDay(ch.id,challengeDayIndexForToday(ch));
+    renderRewards();renderXP();
+  });
+  body.querySelectorAll("[data-chcancel]").forEach(b=>b.onclick=()=>{
+    const ru=state.lang!=="en";
+    if(!confirm(ru?'Отменить челлендж? Награды не будет.':'Cancel this challenge? No reward.'))return;
+    cancelChallenge(b.dataset.chcancel);
+    renderRewards();renderXP();
   });
 }
 
