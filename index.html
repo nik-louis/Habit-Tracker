@@ -555,9 +555,19 @@ textarea.inp{resize:vertical;min-height:60px}
 .bj-handrow{margin-bottom:10px}
 .bj-handlabel{font-size:11px;color:var(--dim);margin-bottom:4px;display:flex;justify-content:space-between}
 .bj-hand{display:flex;gap:6px;flex-wrap:wrap}
-.bj-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#1a1a1a}
+@keyframes cardDeal{from{opacity:0;transform:translateY(-20px) scale(.85)}to{opacity:1;transform:translateY(0) scale(1)}}
+.bj-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#1a1a1a;animation:cardDeal .3s ease-out both}
 .bj-card.red{color:#d21}
 .bj-card.back{background:repeating-linear-gradient(45deg,var(--accent),var(--accent) 4px,#0a0a12 4px,#0a0a12 8px)}
+/* bj-hand re-renders its full innerHTML on every deal/hit/resolve, so every card in it is a fresh
+   element each time — staggering by position gives every redraw the feel of cards actually being
+   dealt out one at a time, initial deal included, without any JS-side timing code. */
+.bj-hand .bj-card:nth-child(1){animation-delay:0s}
+.bj-hand .bj-card:nth-child(2){animation-delay:.12s}
+.bj-hand .bj-card:nth-child(3){animation-delay:.24s}
+.bj-hand .bj-card:nth-child(4){animation-delay:.36s}
+.bj-hand .bj-card:nth-child(5){animation-delay:.48s}
+.bj-hand .bj-card:nth-child(n+6){animation-delay:.6s}
 .bj-actions{display:flex;gap:8px;margin-top:10px}
 .bj-actions .btn{flex:1}
 .casino-history{margin-top:10px}
