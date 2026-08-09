@@ -516,6 +516,43 @@ textarea.inp{resize:vertical;min-height:60px}
 .move-btn:active{transform:scale(.9)}
 .move-btn:disabled{opacity:.3}
 
+/* CASINO */
+.casino-balance{font-size:13px;color:var(--dim);text-align:right;margin-bottom:8px}
+.casino-balance b{color:var(--accent);font-size:16px}
+.bet-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.bet-row .inp{flex:1}
+.bet-chip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.bet-chip:active{transform:scale(.95)}
+.plinko-risk{display:flex;gap:6px;margin-bottom:10px}
+.plinko-risk .rk{flex:1;padding:8px;text-align:center;border-radius:8px;border:1px solid var(--line);font-size:12px;font-weight:700;cursor:pointer;color:var(--dim)}
+.plinko-risk .rk.active{background:var(--accent);color:#0a0a0a;border-color:var(--accent)}
+.plinko-board{position:relative;height:230px;margin:10px 0;background:var(--panel2);border-radius:12px;overflow:hidden}
+.plinko-peg{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--line);transform:translate(-50%,-50%)}
+.plinko-ball{position:absolute;width:13px;height:13px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);transform:translate(-50%,-50%);transition:left .16s ease,top .16s ease;z-index:2}
+.plinko-slots{display:flex;gap:2px;margin-top:2px}
+.plinko-slot{flex:1;text-align:center;font-size:9px;font-weight:800;padding:6px 0;border-radius:4px;background:var(--panel2);color:var(--dim)}
+.plinko-slot.hit{background:var(--accent);color:#0a0a0a}
+.double-strip{display:flex;gap:2px;border-radius:10px;overflow:hidden;margin:10px 0;position:relative;height:52px}
+.double-seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.double-seg.hit{outline:3px solid var(--accent);outline-offset:-3px}
+.double-picks{display:flex;gap:8px;margin-bottom:10px}
+.double-pick{flex:1;padding:12px 6px;text-align:center;border-radius:10px;border:2px solid transparent;cursor:pointer;font-weight:800;font-size:13px;color:#fff}
+.double-pick .mx{display:block;font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
+.double-pick.sel{border-color:var(--accent)}
+.crash-display{font-size:44px;font-weight:900;text-align:center;padding:26px 0;border-radius:12px;background:var(--panel2);margin:10px 0;transition:color .15s}
+.bj-table{background:var(--panel2);border-radius:12px;padding:12px;margin:10px 0}
+.bj-handrow{margin-bottom:10px}
+.bj-handlabel{font-size:11px;color:var(--dim);margin-bottom:4px;display:flex;justify-content:space-between}
+.bj-hand{display:flex;gap:6px;flex-wrap:wrap}
+.bj-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#1a1a1a}
+.bj-card.red{color:#d21}
+.bj-card.back{background:repeating-linear-gradient(45deg,var(--accent),var(--accent) 4px,#0a0a12 4px,#0a0a12 8px)}
+.bj-actions{display:flex;gap:8px;margin-top:10px}
+.bj-actions .btn{flex:1}
+.casino-history{margin-top:10px}
+.casino-hist-row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.casino-hist-row:last-child{border-bottom:none}
+
 </style>
 </head>
 <body>
@@ -539,6 +576,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="tab" data-view="track">&#128197; Months</button>
       <button class="tab" data-view="habits">&#127919; Habits</button>
       <button class="tab" data-view="rewards">&#127942; Shop</button>
+      <button class="tab" data-view="casino">&#127920; Casino</button>
       <button class="tab" data-view="stats">&#128200; Analytics</button>
       <button class="tab" data-view="settings">&#9881; Settings</button>
     </nav>
@@ -726,6 +764,11 @@ textarea.inp{resize:vertical;min-height:60px}
   <!-- REWARDS -->
   <section id="view-rewards">
     <div id="rewardsBody"></div>
+  </section>
+
+  <!-- CASINO -->
+  <section id="view-casino">
+    <div id="casinoBody"></div>
   </section>
 
   <!-- STATS -->
@@ -934,7 +977,7 @@ appTitle:"Habitunity",
 months:["January","February","March","April","May","June","July","August","September","October","November","December"],
 monthsShort:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
 daysShort:["Su","Mo","Tu","We","Th","Fr","Sa"],dayNames:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
-tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabRewards:"Shop",tabAnalytics:"Analytics",tabSettings:"Settings",
+tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabRewards:"Shop",tabCasino:"Casino",tabAnalytics:"Analytics",tabSettings:"Settings",
 syncLocal:"○ local",syncOnline:"● online",syncConnecting:"● connecting...",
 lvls:["Beginner","Practitioner","Expert","Master","Guru","Legend"],
 ranks:["Novice","Apprentice","Seeker","Guardian","Pathfinder","Warrior","Knight","Mystic","Sage","Hunter","Berserker","Paladin","Sorcerer","Titan","Phoenix","Dragon","Archon","Immortal","Legend","God"],
@@ -1050,7 +1093,7 @@ appTitle:"Habitunity",
 months:["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
 monthsShort:["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
 daysShort:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],dayNames:["Вск","Пон","Вт","Ср","Чт","Пт","Сб"],
-tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabRewards:"Магазин",tabAnalytics:"Аналитика",tabSettings:"Настройки",
+tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabRewards:"Магазин",tabCasino:"Казино",tabAnalytics:"Аналитика",tabSettings:"Настройки",
 syncLocal:"○ локально",syncOnline:"● онлайн",syncConnecting:"● подключение...",
 lvls:["Новичок","Практик","Эксперт","Мастер","Гуру","Легенда"],
 ranks:["Новичок","Ученик","Искатель","Страж","Следопыт","Воин","Рыцарь","Мистик","Мудрец","Охотник","Берсерк","Паладин","Чародей","Титан","Феникс","Дракон","Архонт","Бессмертный","Легенда","Бог"],
@@ -1166,7 +1209,7 @@ appTitle:"Habitunity",
 months:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
 monthsShort:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
 daysShort:["Do","Lu","Ma","Mi","Ju","Vi","Sá"],dayNames:["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],
-tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabRewards:"Tienda",tabAnalytics:"Análisis",tabSettings:"Ajustes",
+tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabRewards:"Tienda",tabCasino:"Casino",tabAnalytics:"Análisis",tabSettings:"Ajustes",
 syncLocal:"○ local",syncOnline:"● en línea",syncConnecting:"● conectando...",
 lvls:["Principiante","Practicante","Experto","Maestro","Gurú","Leyenda"],
 ranks:["Novato","Aprendiz","Buscador","Guardián","Explorador","Guerrero","Caballero","Místico","Sabio","Cazador","Berserker","Paladín","Hechicero","Titán","Fénix","Dragón","Arconte","Inmortal","Leyenda","Dios"],
@@ -1282,7 +1325,7 @@ appTitle:"Habitunity",
 months:["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
 monthsShort:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
 daysShort:["日","一","二","三","四","五","六"],dayNames:["周日","周一","周二","周三","周四","周五","周六"],
-tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabRewards:"商店",tabAnalytics:"分析",tabSettings:"设置",
+tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabRewards:"商店",tabCasino:"赌场",tabAnalytics:"分析",tabSettings:"设置",
 syncLocal:"○ 本地",syncOnline:"● 在线",syncConnecting:"● 连接中...",
 lvls:["初学者","修行者","专家","大师","导师","传奇"],
 ranks:["新手","学徒","探索者","守护者","探路者","战士","骑士","神秘者","贤者","猎人","狂战士","圣骑士","术士","泰坦","凤凰","龙","执政官","不朽者","传说","神"],
@@ -1398,7 +1441,7 @@ appTitle:"Habitunity",
 months:["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
 monthsShort:["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"],
 daysShort:["Di","Lu","Ma","Me","Je","Ve","Sa"],dayNames:["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"],
-tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabRewards:"Boutique",tabAnalytics:"Analyse",tabSettings:"Paramètres",
+tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabRewards:"Boutique",tabCasino:"Casino",tabAnalytics:"Analyse",tabSettings:"Paramètres",
 syncLocal:"○ local",syncOnline:"● en ligne",syncConnecting:"● connexion...",
 lvls:["Débutant","Praticien","Expert","Maître","Gourou","Légende"],
 ranks:["Novice","Apprenti","Chercheur","Gardien","Éclaireur","Guerrier","Chevalier","Mystique","Sage","Chasseur","Berserker","Paladin","Sorcier","Titan","Phénix","Dragon","Archonte","Immortel","Légende","Dieu"],
@@ -1517,9 +1560,9 @@ function applyLang(){
   const appTitleWithYear=T.appTitle+" "+activeYear();
   document.querySelector(".eyebrow").textContent=appTitleWithYear;
   document.title=appTitleWithYear;
-  const tvs=["today","track","habits","rewards","stats","settings"];
-  const tls=[T.tabToday,T.tabMonths,T.tabHabits,(T.tabRewards||"Пряники"),T.tabAnalytics,T.tabSettings];
-  const tic=["⚡","📅","🎯","🏆","📈","⚙"];
+  const tvs=["today","track","habits","rewards","casino","stats","settings"];
+  const tls=[T.tabToday,T.tabMonths,T.tabHabits,(T.tabRewards||"Пряники"),T.tabCasino,T.tabAnalytics,T.tabSettings];
+  const tic=["⚡","📅","🎯","🏆","🎰","📈","⚙"];
   document.querySelectorAll(".tab").forEach(t=>{const i=tvs.indexOf(t.dataset.view);if(i>=0)t.textContent=tic[i]+" "+tls[i]});
   const ids={lDarkMode:T.darkMode,lAccentColor:T.accentColor,lLanguage:T.language,
     lAppearance:T.appearance,lTagsTitle:T.tagsTitle,lTagsDesc:T.tagsDesc,lBtnAddTag:T.addTag,
@@ -1771,6 +1814,10 @@ function freshState(){
     // checks/startDate/days (see challengeStatus/challengeReward), so this array itself never needs
     // migration-time repair beyond simply existing.
     challenges:[],
+    // Casino — a frozen bet ledger (see placeCasinoBet), same "immutable record of fact" shape as
+    // purchases/savings: every round's bet and payout are locked in the moment it resolves, never
+    // re-derived from anything (there's nothing to re-derive an already-drawn random outcome from).
+    casinoBets:[],
     // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
     // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
@@ -2021,6 +2068,7 @@ function migrate(){
   if(!Array.isArray(state.savings))state.savings=[];
   if(!Array.isArray(state.achievementClaims))state.achievementClaims=[];
   if(!Array.isArray(state.challenges))state.challenges=[];
+  if(!Array.isArray(state.casinoBets))state.casinoBets=[];
   recalcXP();
   recalcPoints();
   scanTierWarnings();
@@ -2797,6 +2845,187 @@ function checkChallengeNotifications(){
   });
   if(notified)renderNotifBadge();
 }
+/* ===== CASINO =====
+   Four honest games, each with a real, disclosed negative expected value — never a mystery. The
+   rest of this economy ties money to real effort on purpose; the casino is deliberately NOT another
+   way to grow a balance, just a way to spend some of one on adrenaline, at odds you actually know.
+   Every round is a frozen historical fact the instant it resolves (see placeCasinoBet) — there's
+   nothing to re-derive an already-drawn random outcome from, so this is a ledger like purchases/
+   savings, not a live-recomputed value like the challenge/achievement systems above. A round that's
+   still in progress (Crash's climb, a Blackjack hand) lives only in a transient, unsaved JS variable
+   and is only ever committed to the ledger once fully resolved — if the app closes mid-round, that
+   round simply never happened, never a dangling charge or a free win.
+   Same debt gate as the reward shop (buyRewardFlat/buyCosmetic): can't place a new bet while already
+   in the hole, though a single bet — like a single purchase — can legitimately be the one that puts
+   you there. */
+const CASINO_HOUSE_EDGE=0.06;
+function placeCasinoBet(game,bet,payout,details){
+  if(!(bet>0))return null;
+  if(!Array.isArray(state.casinoBets))state.casinoBets=[];
+  const rec={id:uid(),game,bet:Math.round(bet),payout:Math.round(payout*100)/100,date:Date.now(),details:details||null};
+  state.casinoBets.push(rec);
+  recalcPoints();save();
+  return rec;
+}
+function casinoRecentBets(game,n){
+  return(state.casinoBets||[]).filter(b=>!game||b.game===game).slice(-n).reverse();
+}
+
+/* ---- Plinko: a ball falls through PLINKO_ROWS rows of pegs, going left/right 50/50 at each one,
+   landing in one of ROWS+1 slots at the bottom (a binomial walk) — center slots are far more likely
+   than edge slots, so center multipliers are low and edge multipliers are high. Tables are pre-
+   calibrated (A·B^|k-center|, solved so Σ P(slot)·multiplier = 1-CASINO_HOUSE_EDGE) per risk level;
+   see the "medium" B=1.75 / "high" B=2.6 spread for the more extreme high-risk swings. ---- */
+const PLINKO_ROWS=12;
+const PLINKO_TABLES={
+  low:   [3.58,2.65,1.97,1.46,1.08,0.8,0.59,0.8,1.08,1.46,1.97,2.65,3.58],
+  medium:[10.26,5.86,3.35,1.92,1.09,0.63,0.36,0.63,1.09,1.92,3.35,5.86,10.26],
+  high:  [41.06,15.79,6.07,2.34,0.9,0.35,0.13,0.35,0.9,2.34,6.07,15.79,41.06],
+};
+function plinkoDrop(){
+  const path=[];
+  let slot=0;
+  for(let i=0;i<PLINKO_ROWS;i++){
+    const right=Math.random()<0.5?0:1;
+    path.push(right);
+    slot+=right;
+  }
+  return{path,slot};
+}
+function casinoDebtBlocked(){
+  if(!debtBlocksPurchases())return false;
+  const ru=state.lang!=="en";
+  toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);
+  return true;
+}
+function playPlinko(bet,risk){
+  if(!(bet>0)||casinoDebtBlocked())return null;
+  const table=PLINKO_TABLES[risk]||PLINKO_TABLES.medium;
+  const{path,slot}=plinkoDrop();
+  const mult=table[slot];
+  const payout=bet*mult;
+  const rec=placeCasinoBet("plinko",bet,payout,{risk,slot,mult});
+  return{rec,path,slot,mult,payout:rec.payout};
+}
+
+/* ---- Double: the classic 15-slot color strip — 7 red, 7 black, 1 white — red/black pay 2×, white
+   pays 14×. Every bet type nets the same ~6.67% edge: (7/15)·2 = 14/15 for a color, (1/15)·14 = 14/15
+   for white. ---- */
+const DOUBLE_SLOTS=15,DOUBLE_PAYOUT={red:2,black:2,white:14};
+function doubleColorForSlot(slot){return slot===14?"white":(slot<7?"red":"black")}
+function doubleSpin(){
+  const slot=Math.floor(Math.random()*DOUBLE_SLOTS);
+  return{slot,color:doubleColorForSlot(slot)};
+}
+function playDouble(bet,pick){
+  if(!(bet>0)||casinoDebtBlocked())return null;
+  const{slot,color}=doubleSpin();
+  const win=color===pick;
+  const payout=win?bet*DOUBLE_PAYOUT[pick]:0;
+  const rec=placeCasinoBet("double",bet,payout,{pick,slot,color,win});
+  return{rec,slot,color,win,payout:rec.payout};
+}
+
+/* ---- Crash: the multiplier climbs from 1.00× until it hits a pre-drawn (but hidden) crash point;
+   cash out before it gets there and you win bet×(multiplier at that instant), or ride it past the
+   crash point and lose the bet. P(crashPoint >= m) = (1-houseEdge)/m for every m >= 1 — the classic
+   provably-fair-style formula — which makes the EV of cashing out at ANY multiplier exactly
+   1-houseEdge, so there's no "safer" multiplier to target, only a risk preference. ---- */
+function crashPointDraw(){
+  const r=1-Math.random(); // (0,1] — never exactly 0, so the division below can't blow up
+  return Math.max(1,Math.floor((1-CASINO_HOUSE_EDGE)/r*100)/100);
+}
+// The crash point is drawn now but only ever compared against internally — never displayed — until
+// the round resolves, same as a real crash game keeps it hidden while the multiplier is climbing.
+function startCrashRound(bet){
+  if(!(bet>0)||casinoDebtBlocked())return null;
+  return{bet,crashPoint:crashPointDraw()};
+}
+function resolveCrash(bet,crashPoint,cashOutAt){
+  const won=cashOutAt!=null&&cashOutAt<=crashPoint;
+  const payout=won?bet*cashOutAt:0;
+  const rec=placeCasinoBet("crash",bet,payout,{crashPoint,cashOutAt,won});
+  return{rec,won,payout:rec.payout};
+}
+
+/* ---- Blackjack: a real shuffled 52-card deck per hand (not drawn-with-replacement), dealer stands
+   on every 17 (hard or soft), blackjack pays 3:2, push returns the bet untouched. No split for now —
+   hit/stand/double only. Unlike the other three games this one has no hand-picked house edge: it's
+   whatever standard blackjack's actual rules produce (roughly break-even with correct play, worse
+   with bad play) — the one casino game here where skill, not just declared odds, is the honest deal. ---- */
+const BJ_RANKS=["2","3","4","5","6","7","8","9","10","J","Q","K","A"],BJ_SUITS=["♠","♥","♦","♣"];
+function freshShuffledDeck(){
+  const deck=[];
+  BJ_SUITS.forEach(s=>BJ_RANKS.forEach(r=>deck.push({rank:r,suit:s})));
+  for(let i=deck.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  return deck;
+}
+function bjCardValue(rank){return rank==="A"?11:(["J","Q","K"].includes(rank)?10:+rank)}
+// Soft = at least one Ace is still being counted as 11 without busting the hand.
+function bjHandValue(cards){
+  let value=cards.reduce((s,c)=>s+bjCardValue(c.rank),0);
+  let aces=cards.filter(c=>c.rank==="A").length;
+  while(value>21&&aces>0){value-=10;aces--}
+  return{value,soft:aces>0};
+}
+function bjIsBlackjack(cards){return cards.length===2&&bjHandValue(cards).value===21}
+// The in-progress hand — bet, deck, both hands — lives only here, never in `state`/save(): closing
+// the app mid-hand simply abandons it (no charge, no payout), same rule Crash's in-flight round
+// follows above. Only bjResolve() ever calls placeCasinoBet, once, with the hand's final outcome.
+let bjRound=null;
+function bjDeal(bet){
+  if(bjRound||!(bet>0)||casinoDebtBlocked())return null;
+  const deck=freshShuffledDeck();
+  const player=[deck.pop(),deck.pop()],dealer=[deck.pop(),deck.pop()];
+  bjRound={bet,deck,player,dealer,doubled:false};
+  if(bjIsBlackjack(player)||bjIsBlackjack(dealer))return bjResolve();
+  return{status:"playing",player:player.slice(),dealerUp:dealer[0]};
+}
+function bjHit(){
+  if(!bjRound)return null;
+  bjRound.player.push(bjRound.deck.pop());
+  if(bjHandValue(bjRound.player).value>21)return bjResolve();
+  return{status:"playing",player:bjRound.player.slice(),dealerUp:bjRound.dealer[0]};
+}
+function bjDouble(){
+  if(!bjRound||bjRound.player.length!==2)return null;
+  bjRound.doubled=true;
+  bjRound.player.push(bjRound.deck.pop());
+  return bjResolve();
+}
+function bjStand(){
+  if(!bjRound)return null;
+  return bjResolve();
+}
+function bjDealerPlay(){
+  while(bjHandValue(bjRound.dealer).value<17)bjRound.dealer.push(bjRound.deck.pop());
+}
+function bjResolve(){
+  const r=bjRound;
+  const playerBJ=bjIsBlackjack(r.player),pv=bjHandValue(r.player).value;
+  const effectiveBet=r.doubled?r.bet*2:r.bet;
+  let outcome,payout;
+  if(pv>21){
+    outcome="bust";payout=0;
+  }else{
+    if(!playerBJ)bjDealerPlay();
+    const dv=bjHandValue(r.dealer).value,dealerBJ=bjIsBlackjack(r.dealer);
+    if(playerBJ&&dealerBJ){outcome="push";payout=effectiveBet}
+    else if(playerBJ){outcome="blackjack";payout=effectiveBet*2.5}
+    else if(dealerBJ){outcome="lose";payout=0}
+    else if(dv>21){outcome="dealerbust";payout=effectiveBet*2}
+    else if(pv>dv){outcome="win";payout=effectiveBet*2}
+    else if(pv<dv){outcome="lose";payout=0}
+    else{outcome="push";payout=effectiveBet}
+  }
+  const rec=placeCasinoBet("blackjack",effectiveBet,payout,{outcome,doubled:r.doubled});
+  const result={status:"resolved",outcome,payout:rec.payout,bet:effectiveBet,player:r.player.slice(),dealer:r.dealer.slice()};
+  bjRound=null;
+  return result;
+}
 // Rebuilds the lifetime points balance from scratch: every habit × every month × every year the
 // user has ever touched, minus everything ever spent in the shop. Never patched incrementally.
 function recalcPoints(){
@@ -2832,12 +3061,19 @@ function recalcPoints(){
   // ledger — an active or cancelled challenge always contributes 0, same as a challenge that failed.
   checkChallengeNotifications();
   pts+=(state.challenges||[]).reduce((s,c)=>s+challengeReward(c),0);
+  // Casino: each round's net (payout minus bet) is a frozen historical fact the instant it resolves
+  // (see placeCasinoBet), so — exactly like purchases/savings — this is a plain sum, never replayed.
+  pts+=(state.casinoBets||[]).reduce((s,b)=>s+(b.payout-b.bet),0);
   // Real-money debt settlement: a fixed historical offset, exactly like purchases/savings above —
   // never a mutable "current debt" field that could drift. forgiveCurrentDebt() sets this to exactly
   // enough to zero out whatever the raw negative sum was at the moment it was clicked; it never
   // retroactively erases penalties, it just permanently offsets them going forward.
   pts+=(state.debtForgiven||0);
-  state.points=pts;
+  // Rounded to cents: every other term above was already a clean integer, but casino payouts carry
+  // 2 decimal places (a multiplier like 0.36× or 3.35× applied to an integer bet), and summing many
+  // of those over time accumulates plain binary floating-point noise (…000000001-type drift) that
+  // would otherwise eventually show up in the balance display.
+  state.points=Math.round(pts*100)/100;
   checkCosmeticAchievementUnlocks();
 }
 // ₽ this month's owed, if points is negative — same exchange rate the reward shop already uses
@@ -5586,6 +5822,365 @@ function wireChallengesShop(body){
   });
 }
 
+/* ===== CASINO UI (top-level tab) ===== */
+let casinoGame="plinko"; // "plinko" | "double" | "crash" | "blackjack" — session-only, not persisted
+let casinoBetAmount=10;  // last-used bet, shared across games purely for input convenience
+let plinkoRisk="medium";
+let doublePick="red";
+let crashState=null; // {bet,crashPoint,startTime,running,timerId} — a round in flight; null when idle
+function casinoTabsHTML(ru){
+  return`<div class="rewards-subtabs">
+    <div class="rewards-subtab ${casinoGame==='plinko'?'active':''}" data-cg="plinko">&#127920; Plinko</div>
+    <div class="rewards-subtab ${casinoGame==='double'?'active':''}" data-cg="double">&#128302; Double</div>
+    <div class="rewards-subtab ${casinoGame==='crash'?'active':''}" data-cg="crash">&#128200; Crash</div>
+    <div class="rewards-subtab ${casinoGame==='blackjack'?'active':''}" data-cg="blackjack">&#127183; ${ru?'Блэкджек':'Blackjack'}</div>
+  </div>`;
+}
+function casinoHistoryHTML(game,ru){
+  const rows=casinoRecentBets(game,8);
+  const line=b=>{
+    const net=Math.round((b.payout-b.bet)*100)/100;
+    return`<div class="casino-hist-row"><span>${b.bet} ${CURRENCY_TICKER}</span><span style="color:${net>0?'var(--green)':net<0?'var(--red)':'var(--dim)'}">${net>0?'+':''}${net}</span></div>`;
+  };
+  const inner=rows.length?rows.map(line).join(''):`<div class="hint" style="margin:0">${ru?'Пока нет ставок':'No bets yet'}</div>`;
+  // A stable id (always rendered, even empty) so a single resolved bet can refresh just this box —
+  // see updateCasinoHistoryDisplay — without a full renderCasino() wiping the transient result text
+  // the game itself just set, same reasoning as updateCasinoBalanceDisplay above.
+  return`<div class="card casino-history" id="casinoHistoryBox"><h3 style="margin-top:0;font-size:13px">${ru?'Последние ставки':'Recent bets'}</h3>${inner}</div>`;
+}
+function updateCasinoHistoryDisplay(){
+  const el=document.getElementById("casinoHistoryBox");
+  if(el)el.outerHTML=casinoHistoryHTML(casinoGame,state.lang!=="en");
+}
+function renderCasino(){
+  const body=document.getElementById("casinoBody");
+  const ru=state.lang!=="en";
+  const pts=state.points||0;
+  let inner=casinoTabsHTML(ru)+`<div class="casino-balance">${ru?'Баланс':'Balance'}: <b>${pts}</b> ${CURRENCY_TICKER}</div>`;
+  if(casinoGame==="plinko")inner+=plinkoHTML(ru);
+  else if(casinoGame==="double")inner+=doubleHTML(ru);
+  else if(casinoGame==="crash")inner+=crashHTML(ru);
+  else inner+=blackjackHTML(ru);
+  inner+=casinoHistoryHTML(casinoGame,ru);
+  body.innerHTML=inner;
+  body.querySelectorAll("[data-cg]").forEach(el=>el.onclick=()=>{
+    if(crashState&&crashState.running)return; // don't abandon a live crash round via a tab switch
+    casinoGame=el.dataset.cg;renderCasino();
+  });
+  if(casinoGame==="plinko")wirePlinko(body);
+  else if(casinoGame==="double")wireDouble(body);
+  else if(casinoGame==="crash")wireCrash(body);
+  else wireBlackjack(body);
+}
+// A full renderCasino() after every resolved bet would also wipe the just-set result text/highlight
+// (they're transient, not rebuilt from state), so each game updates just the balance number in place.
+function updateCasinoBalanceDisplay(){
+  const el=document.querySelector(".casino-balance b");
+  if(el)el.textContent=state.points||0;
+}
+
+/* ---- Plinko ---- */
+function plinkoHTML(ru){
+  return`<div class="card">
+    <div class="plinko-risk">
+      <div class="rk ${plinkoRisk==='low'?'active':''}" data-risk="low">${ru?'Низкий':'Low'}</div>
+      <div class="rk ${plinkoRisk==='medium'?'active':''}" data-risk="medium">${ru?'Средний':'Medium'}</div>
+      <div class="rk ${plinkoRisk==='high'?'active':''}" data-risk="high">${ru?'Высокий':'High'}</div>
+    </div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="plinkoBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnPlinkoDrop">${ru?'Бросить':'Drop'}</button>
+    </div>
+    <div class="plinko-board" id="plinkoBoard"></div>
+    <div class="plinko-slots" id="plinkoSlots"></div>
+    <p class="hint" id="plinkoResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function plinkoPegsHTML(){
+  let html="";
+  for(let i=0;i<PLINKO_ROWS;i++){
+    const pegsInRow=i+2;
+    for(let p=0;p<pegsInRow;p++){
+      html+=`<div class="plinko-peg" style="left:${(p+0.5)/pegsInRow*100}%;top:${(i+1)/(PLINKO_ROWS+1)*100}%"></div>`;
+    }
+  }
+  return html;
+}
+function plinkoSlotsHTML(risk){
+  return PLINKO_TABLES[risk].map(m=>`<div class="plinko-slot">${m}&times;</div>`).join('');
+}
+// Ball position is derived straight from the same binomial path used to pick the payout — after row
+// i, rightsSoFar - (ROWS-(i+1))/2 gives its horizontal offset in slot-units from center, landing
+// exactly on the final slot once all rows are done (see the comment above PLINKO_TABLES).
+function animatePlinkoBall(path,onDone){
+  const ball=document.getElementById("plinkoBall");
+  if(!ball){onDone();return}
+  ball.style.display="block";ball.style.left="50%";ball.style.top="0%";
+  let i=-1,rights=0;
+  const step=()=>{
+    i++;
+    if(i>=path.length){onDone();return}
+    rights+=path[i];
+    const posSlots=rights+(PLINKO_ROWS-(i+1))/2;
+    ball.style.left=((posSlots+0.5)/(PLINKO_ROWS+1)*100)+"%";
+    ball.style.top=((i+1)/(PLINKO_ROWS+1)*100)+"%";
+    setTimeout(step,130);
+  };
+  setTimeout(step,130);
+}
+function wirePlinko(body){
+  const ru=state.lang!=="en";
+  document.getElementById("plinkoBoard").innerHTML=plinkoPegsHTML()+'<div class="plinko-ball" id="plinkoBall" style="left:50%;top:0%;display:none"></div>';
+  document.getElementById("plinkoSlots").innerHTML=plinkoSlotsHTML(plinkoRisk);
+  body.querySelectorAll("[data-risk]").forEach(el=>el.onclick=()=>{plinkoRisk=el.dataset.risk;renderCasino()});
+  const betInp=document.getElementById("plinkoBetInp"),dropBtn=document.getElementById("btnPlinkoDrop");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+  dropBtn.onclick=()=>{
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const res=playPlinko(bet,plinkoRisk);
+    if(!res)return;
+    casinoBetAmount=bet;
+    dropBtn.disabled=true;betInp.disabled=true;
+    document.getElementById("plinkoResult").textContent="";
+    document.querySelectorAll("#plinkoSlots .plinko-slot").forEach(s=>s.classList.remove("hit"));
+    animatePlinkoBall(res.path,()=>{
+      const resEl=document.getElementById("plinkoResult");
+      const net=Math.round((res.payout-bet)*100)/100;
+      if(resEl)resEl.textContent=(net>0?"+":"")+net+` ${CURRENCY_TICKER} (×${res.mult})`;
+      const slots=document.querySelectorAll("#plinkoSlots .plinko-slot");
+      if(slots[res.slot])slots[res.slot].classList.add("hit");
+      dropBtn.disabled=false;betInp.disabled=false;
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
+    });
+  };
+}
+
+/* ---- Double ---- */
+function doubleHTML(ru){
+  return`<div class="card">
+    <div class="double-picks" id="doublePicks">
+      <div class="double-pick ${doublePick==='red'?'sel':''}" data-pick="red" style="background:#c0392b">${ru?'Красное':'Red'}<span class="mx">&times;2</span></div>
+      <div class="double-pick ${doublePick==='black'?'sel':''}" data-pick="black" style="background:#2c2c34">${ru?'Чёрное':'Black'}<span class="mx">&times;2</span></div>
+      <div class="double-pick ${doublePick==='white'?'sel':''}" data-pick="white" style="background:#7f8c8d">${ru?'Белое':'White'}<span class="mx">&times;14</span></div>
+    </div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="doubleBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnDoubleSpin">${ru?'Крутить':'Spin'}</button>
+    </div>
+    <div class="double-strip" id="doubleStrip"></div>
+    <p class="hint" id="doubleResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function doubleStripHTML(){
+  let html="";
+  for(let i=0;i<DOUBLE_SLOTS;i++){
+    const color=doubleColorForSlot(i);
+    const bg=color==="red"?"#c0392b":color==="black"?"#2c2c34":"#7f8c8d";
+    html+=`<div class="double-seg" data-slot="${i}" style="background:${bg}">${color==="white"?"&#9733;":""}</div>`;
+  }
+  return html;
+}
+function wireDouble(body){
+  const ru=state.lang!=="en";
+  document.getElementById("doubleStrip").innerHTML=doubleStripHTML();
+  body.querySelectorAll("[data-pick]").forEach(el=>el.onclick=()=>{
+    doublePick=el.dataset.pick;
+    body.querySelectorAll("[data-pick]").forEach(e2=>e2.classList.toggle("sel",e2.dataset.pick===doublePick));
+  });
+  const betInp=document.getElementById("doubleBetInp"),spinBtn=document.getElementById("btnDoubleSpin");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+  spinBtn.onclick=()=>{
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const res=playDouble(bet,doublePick);
+    if(!res)return;
+    casinoBetAmount=bet;
+    const segs=document.querySelectorAll("#doubleStrip .double-seg");
+    segs.forEach(s=>s.classList.remove("hit"));
+    if(segs[res.slot])segs[res.slot].classList.add("hit");
+    const net=Math.round((res.payout-bet)*100)/100;
+    const resEl=document.getElementById("doubleResult");
+    if(resEl)resEl.textContent=(net>0?"+":"")+net+` ${CURRENCY_TICKER} — ${res.color}`;
+    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
+  };
+}
+
+/* ---- Crash ---- */
+function crashMultAtTime(seconds){return Math.max(1,Math.floor(Math.pow(Math.E,0.18*seconds)*100)/100)}
+// Re-queries the DOM by id on every tick rather than closing over element references, so this one
+// running interval keeps updating whatever's currently mounted even if the user switches away to a
+// different top-level view and back (switchView never destroys the casino DOM, only hides it) — see
+// wireCrash's "resume" branch for the other half of that: showing the right state on return instead
+// of restarting.
+function crashTick(){
+  if(!crashState||!crashState.running)return;
+  const display=document.getElementById("crashDisplay");
+  const elapsed=(Date.now()-crashState.startTime)/1000;
+  const mult=crashMultAtTime(elapsed);
+  if(mult>=crashState.crashPoint){
+    clearInterval(crashState.timerId);
+    crashState.running=false;
+    const ru=state.lang!=="en",bet=crashState.bet,cp=crashState.crashPoint;
+    resolveCrash(bet,cp,null);
+    if(display){display.textContent=cp.toFixed(2)+"×";display.style.color="var(--red)"}
+    const resultEl=document.getElementById("crashResult");
+    if(resultEl)resultEl.textContent=(ru?"Крах! ":"Busted! ")+`-${bet} ${CURRENCY_TICKER}`;
+    const actionBtn=document.getElementById("btnCrashAction");
+    if(actionBtn)actionBtn.textContent=ru?"Начать":"Start";
+    const betInp=document.getElementById("crashBetInp");
+    if(betInp)betInp.disabled=false;
+    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
+    crashState=null;
+    return;
+  }
+  if(display)display.textContent=mult.toFixed(2)+"×";
+}
+function crashHTML(ru){
+  return`<div class="card">
+    <div class="crash-display" id="crashDisplay">1.00&times;</div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="crashBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnCrashAction">${ru?'Начать':'Start'}</button>
+    </div>
+    <p class="hint" id="crashResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function wireCrash(body){
+  const ru=state.lang!=="en";
+  const betInp=document.getElementById("crashBetInp"),actionBtn=document.getElementById("btnCrashAction"),display=document.getElementById("crashDisplay");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+  if(crashState&&crashState.running){
+    betInp.disabled=true;
+    actionBtn.textContent=ru?"Забрать":"Cash Out";
+    display.textContent=crashMultAtTime((Date.now()-crashState.startTime)/1000).toFixed(2)+"×";
+  }
+  actionBtn.onclick=()=>{
+    if(crashState&&crashState.running){
+      const elapsed=(Date.now()-crashState.startTime)/1000,mult=crashMultAtTime(elapsed);
+      if(mult>=crashState.crashPoint)return; // it's busting on this very tick — let crashTick handle it
+      clearInterval(crashState.timerId);
+      crashState.running=false;
+      const bet=crashState.bet;
+      const{payout}=resolveCrash(bet,crashState.crashPoint,mult);
+      const d=document.getElementById("crashDisplay");
+      if(d){d.textContent=mult.toFixed(2)+"×";d.style.color="var(--green)"}
+      const net=Math.round((payout-bet)*100)/100;
+      const resultEl=document.getElementById("crashResult");
+      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+` ${CURRENCY_TICKER}`;
+      const ab=document.getElementById("btnCrashAction");if(ab)ab.textContent=ru?"Начать":"Start";
+      const bi=document.getElementById("crashBetInp");if(bi)bi.disabled=false;
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
+      crashState=null;
+      return;
+    }
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const round=startCrashRound(bet);
+    if(!round)return;
+    casinoBetAmount=bet;
+    document.getElementById("crashResult").textContent="";
+    const d=document.getElementById("crashDisplay");d.style.color="var(--text)";d.textContent="1.00×";
+    betInp.disabled=true;actionBtn.textContent=ru?"Забрать":"Cash Out";
+    crashState={bet,crashPoint:round.crashPoint,startTime:Date.now(),running:true,timerId:null};
+    crashState.timerId=setInterval(crashTick,50);
+  };
+}
+
+/* ---- Blackjack ---- */
+function bjCardHTML(card,hidden){
+  if(hidden)return'<div class="bj-card back"></div>';
+  const red=card.suit==="♥"||card.suit==="♦";
+  return`<div class="bj-card ${red?"red":""}">${card.rank}${card.suit}</div>`;
+}
+function bjRenderHands(playerCards,dealerCards,hideDealerHole){
+  document.getElementById("bjPlayerHand").innerHTML=playerCards.map(c=>bjCardHTML(c,false)).join("");
+  document.getElementById("bjDealerHand").innerHTML=dealerCards.map((c,i)=>bjCardHTML(c,hideDealerHole&&i===1)).join("");
+  document.getElementById("bjPlayerVal").textContent=playerCards.length?bjHandValue(playerCards).value:"";
+  document.getElementById("bjDealerVal").textContent=dealerCards.length?(hideDealerHole?bjCardValue(dealerCards[0].rank):bjHandValue(dealerCards).value):"";
+}
+function bjOutcomeText(outcome,ru){
+  return{
+    bust:ru?"Перебор — вы проиграли":"Bust — you lose",
+    lose:ru?"Дилер выиграл":"Dealer wins",
+    win:ru?"Вы выиграли!":"You win!",
+    dealerbust:ru?"Перебор у дилера — вы выиграли!":"Dealer busts — you win!",
+    push:ru?"Ничья, ставка возвращена":"Push — bet returned",
+    blackjack:ru?"Блэкджек! 3:2":"Blackjack! 3:2",
+  }[outcome]||outcome;
+}
+function blackjackHTML(ru){
+  return`<div class="card">
+    <div class="bj-table">
+      <div class="bj-handrow">
+        <div class="bj-handlabel"><span>${ru?'Дилер':'Dealer'}</span><span id="bjDealerVal"></span></div>
+        <div class="bj-hand" id="bjDealerHand"></div>
+      </div>
+      <div class="bj-handrow">
+        <div class="bj-handlabel"><span>${ru?'Вы':'You'}</span><span id="bjPlayerVal"></span></div>
+        <div class="bj-hand" id="bjPlayerHand"></div>
+      </div>
+    </div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="bjBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnBjDeal">${ru?'Раздать':'Deal'}</button>
+    </div>
+    <div class="bj-actions" id="bjActions" style="display:none">
+      <button class="btn" id="btnBjHit">${ru?'Ещё':'Hit'}</button>
+      <button class="btn" id="btnBjStand">${ru?'Хватит':'Stand'}</button>
+      <button class="btn" id="btnBjDouble">${ru?'Удвоить':'Double'}</button>
+    </div>
+    <p class="hint" id="bjResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function wireBlackjack(body){
+  const ru=state.lang!=="en";
+  const betInp=document.getElementById("bjBetInp"),dealBtn=document.getElementById("btnBjDeal"),actions=document.getElementById("bjActions"),resultEl=document.getElementById("bjResult");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+
+  function finishUI(res){
+    bjRenderHands(res.player,res.dealer,false);
+    const net=Math.round((res.payout-res.bet)*100)/100;
+    resultEl.textContent=bjOutcomeText(res.outcome,ru)+` (${net>0?"+":""}${net} ${CURRENCY_TICKER})`;
+    actions.style.display="none";dealBtn.style.display="";betInp.disabled=false;
+    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
+  }
+  if(bjRound){
+    betInp.disabled=true;dealBtn.style.display="none";actions.style.display="flex";
+    document.getElementById("btnBjDouble").style.display=bjRound.player.length===2?"":"none";
+    bjRenderHands(bjRound.player,bjRound.dealer,true);
+  }else{
+    bjRenderHands([],[],false);
+  }
+  dealBtn.onclick=()=>{
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const res=bjDeal(bet);
+    if(!res)return;
+    casinoBetAmount=bet;
+    resultEl.textContent="";
+    if(res.status==="resolved"){finishUI(res);return}
+    betInp.disabled=true;dealBtn.style.display="none";actions.style.display="flex";
+    document.getElementById("btnBjDouble").style.display="";
+    bjRenderHands(bjRound.player,bjRound.dealer,true);
+  };
+  document.getElementById("btnBjHit").onclick=()=>{
+    const res=bjHit();
+    if(!res)return;
+    document.getElementById("btnBjDouble").style.display="none";
+    if(res.status==="resolved"){finishUI(res);return}
+    bjRenderHands(bjRound.player,bjRound.dealer,true);
+  };
+  document.getElementById("btnBjStand").onclick=()=>{
+    const res=bjStand();
+    if(res)finishUI(res);
+  };
+  document.getElementById("btnBjDouble").onclick=()=>{
+    const res=bjDouble();
+    if(res)finishUI(res);
+  };
+}
+
 /* ===== MONTHLY SUMMARY ===== */
 function showMonthSummary(m){
   const ru=state.lang!=="en";
@@ -6276,6 +6871,7 @@ function switchView(v){
   if(v==="track")renderTrack();
   if(v==="habits")renderHabitsManager();
   if(v==="rewards")renderRewards();
+  if(v==="casino")renderCasino();
   if(v==="stats")renderStats();
   if(v==="settings")renderSettings();
 }
@@ -6284,6 +6880,7 @@ function rerenderActive(){
   else if(currentView==="track")renderTrack();
   else if(currentView==="habits")renderHabitsManager();
   else if(currentView==="rewards")renderRewards();
+  else if(currentView==="casino")renderCasino();
   else if(currentView==="stats")renderStats();
   else if(currentView==="settings")renderSettings();
   renderXP();
