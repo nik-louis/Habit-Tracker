@@ -1818,6 +1818,11 @@ function freshState(){
     // purchases/savings: every round's bet and payout are locked in the moment it resolves, never
     // re-derived from anything (there's nothing to re-derive an already-drawn random outcome from).
     casinoBets:[],
+    // Casino play-money mode: an entirely separate, user-declared number that never touches
+    // recalcPoints()/state.points at all — casinoMode picks which wallet the games currently play
+    // against, casinoVirtualBalance is that number (null until the user sets a starting value the
+    // first time), persisted like any other setting so it survives reloads until reset on purpose.
+    casinoMode:"real",casinoVirtualBalance:null,
     // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
     // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
@@ -2069,6 +2074,8 @@ function migrate(){
   if(!Array.isArray(state.achievementClaims))state.achievementClaims=[];
   if(!Array.isArray(state.challenges))state.challenges=[];
   if(!Array.isArray(state.casinoBets))state.casinoBets=[];
+  if(state.casinoMode!=="real"&&state.casinoMode!=="virtual")state.casinoMode="real";
+  if(typeof state.casinoVirtualBalance!=="number"||!isFinite(state.casinoVirtualBalance))state.casinoVirtualBalance=null;
   recalcXP();
   recalcPoints();
   scanTierWarnings();
@@ -2857,10 +2864,21 @@ function checkChallengeNotifications(){
    round simply never happened, never a dangling charge or a free win.
    Same debt gate as the reward shop (buyRewardFlat/buyCosmetic): can't place a new bet while already
    in the hole, though a single bet — like a single purchase — can legitimately be the one that puts
-   you there. */
+   you there.
+   Play-money mode (state.casinoMode==="virtual") is a second, independent wallet for exactly the
+   same four games: casinoVirtualBalance is just a number the user sets/resets themselves, adjusted
+   directly by each round's net win/loss, and NEVER summed into recalcPoints() — real INLI is
+   completely untouched while playing on it. It also isn't logged to state.casinoBets (that ledger
+   is specifically the real-money record), so "recent bets" simply doesn't show virtual rounds. */
 const CASINO_HOUSE_EDGE=0.06;
 function placeCasinoBet(game,bet,payout,details){
   if(!(bet>0))return null;
+  const net=Math.round((payout-bet)*100)/100;
+  if(state.casinoMode==="virtual"){
+    state.casinoVirtualBalance=Math.round(((state.casinoVirtualBalance||0)+net)*100)/100;
+    save();
+    return{id:uid(),game,bet:Math.round(bet),payout:Math.round(payout*100)/100,date:Date.now(),details:details||null,virtual:true};
+  }
   if(!Array.isArray(state.casinoBets))state.casinoBets=[];
   const rec={id:uid(),game,bet:Math.round(bet),payout:Math.round(payout*100)/100,date:Date.now(),details:details||null};
   state.casinoBets.push(rec);
@@ -2893,8 +2911,17 @@ function plinkoDrop(){
   return{path,slot};
 }
 function casinoDebtBlocked(){
-  if(!debtBlocksPurchases())return false;
   const ru=state.lang!=="en";
+  // Virtual chips carry no real consequence, so the real-balance debt gate below doesn't apply to
+  // them at all — the only thing that can block a virtual bet is not having declared a balance yet.
+  if(state.casinoMode==="virtual"){
+    if(state.casinoVirtualBalance===null){
+      toast(ru?"Сначала задай виртуальный счёт":"Set a virtual balance first");
+      return true;
+    }
+    return false;
+  }
+  if(!debtBlocksPurchases())return false;
   toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);
   return true;
 }
@@ -5852,21 +5879,65 @@ function updateCasinoHistoryDisplay(){
   const el=document.getElementById("casinoHistoryBox");
   if(el)el.outerHTML=casinoHistoryHTML(casinoGame,state.lang!=="en");
 }
+// The unit shown after a number in game result text — real mode reads e.g. "+18 INLI", virtual mode
+// drops the ticker entirely (it's explicitly not a currency, just a number the player set).
+function casinoUnit(){return state.casinoMode==="virtual"?"":" "+CURRENCY_TICKER}
+function casinoModeToggleHTML(ru){
+  return`<div class="rewards-subtabs" style="margin-bottom:6px">
+    <div class="rewards-subtab ${state.casinoMode!=='virtual'?'active':''}" data-cm="real">${CURRENCY_TICKER}</div>
+    <div class="rewards-subtab ${state.casinoMode==='virtual'?'active':''}" data-cm="virtual">${ru?'Виртуальный счёт':'Virtual balance'}</div>
+  </div>`;
+}
+// Real mode just shows the live INLI balance (read-only here — it's earned, not typed in). Virtual
+// mode instead shows an editable number: type anything and hit Set to start or reset it, any day,
+// to whatever you want — that's the whole point of it being a declared, not earned, number.
+function casinoBalanceAreaHTML(ru){
+  if(state.casinoMode==="virtual"){
+    const bal=state.casinoVirtualBalance;
+    return`<div class="casino-balance">${ru?'Виртуальный счёт':'Virtual balance'}: <b>${bal===null?"—":bal}</b></div>
+    <div class="bet-row">
+      <input type="number" class="inp" id="casinoVirtInp" placeholder="${ru?'Новое значение':'New value'}" value="${bal===null?'':bal}">
+      <button class="btn" id="btnCasinoVirtSet">${ru?'Задать/сбросить':'Set / Reset'}</button>
+    </div>`;
+  }
+  const pts=state.points||0;
+  return`<div class="casino-balance">${ru?'Баланс':'Balance'}: <b>${pts}</b> ${CURRENCY_TICKER}</div>`;
+}
 function renderCasino(){
   const body=document.getElementById("casinoBody");
   const ru=state.lang!=="en";
-  const pts=state.points||0;
-  let inner=casinoTabsHTML(ru)+`<div class="casino-balance">${ru?'Баланс':'Balance'}: <b>${pts}</b> ${CURRENCY_TICKER}</div>`;
+  let inner=casinoTabsHTML(ru)+casinoModeToggleHTML(ru)+casinoBalanceAreaHTML(ru);
   if(casinoGame==="plinko")inner+=plinkoHTML(ru);
   else if(casinoGame==="double")inner+=doubleHTML(ru);
   else if(casinoGame==="crash")inner+=crashHTML(ru);
   else inner+=blackjackHTML(ru);
-  inner+=casinoHistoryHTML(casinoGame,ru);
+  // The recent-bets ledger is specifically the real-money record (see placeCasinoBet) — showing it
+  // during virtual play would either be empty (confusing, looks broken) or show stale real history
+  // that has nothing to do with the round just played, so it's simplest to just hide it there.
+  if(state.casinoMode!=="virtual")inner+=casinoHistoryHTML(casinoGame,ru);
   body.innerHTML=inner;
+  // Switching GAMES mid-hand is fine — Blackjack's own "resume" branch below picks the hand back up
+  // exactly where it left off, and Plinko/Double/an idle Crash don't touch bjRound at all. Switching
+  // WALLETS mid-round is the one that's actually unsafe (the open bet is tied to whichever wallet was
+  // active when it was placed), so that check also covers an open Blackjack hand, not just Crash.
   body.querySelectorAll("[data-cg]").forEach(el=>el.onclick=()=>{
     if(crashState&&crashState.running)return; // don't abandon a live crash round via a tab switch
     casinoGame=el.dataset.cg;renderCasino();
   });
+  body.querySelectorAll("[data-cm]").forEach(el=>el.onclick=()=>{
+    if(el.dataset.cm===state.casinoMode)return;
+    if((crashState&&crashState.running)||bjRound){toast(ru?"Сначала заверши текущий раунд":"Finish the current round first");return}
+    state.casinoMode=el.dataset.cm;save();renderCasino();
+  });
+  const virtInp=document.getElementById("casinoVirtInp"),virtBtn=document.getElementById("btnCasinoVirtSet");
+  if(virtBtn)virtBtn.onclick=()=>{
+    if((crashState&&crashState.running)||bjRound){toast(ru?"Сначала заверши текущий раунд":"Finish the current round first");return}
+    const v=+virtInp.value;
+    if(!Number.isFinite(v)){toast(ru?"Введи число":"Enter a number");return}
+    state.casinoVirtualBalance=Math.round(v*100)/100;
+    save();
+    renderCasino();
+  };
   if(casinoGame==="plinko")wirePlinko(body);
   else if(casinoGame==="double")wireDouble(body);
   else if(casinoGame==="crash")wireCrash(body);
@@ -5876,7 +5947,8 @@ function renderCasino(){
 // (they're transient, not rebuilt from state), so each game updates just the balance number in place.
 function updateCasinoBalanceDisplay(){
   const el=document.querySelector(".casino-balance b");
-  if(el)el.textContent=state.points||0;
+  if(!el)return;
+  el.textContent=state.casinoMode==="virtual"?(state.casinoVirtualBalance===null?"—":state.casinoVirtualBalance):(state.points||0);
 }
 
 /* ---- Plinko ---- */
@@ -5947,7 +6019,7 @@ function wirePlinko(body){
     animatePlinkoBall(res.path,()=>{
       const resEl=document.getElementById("plinkoResult");
       const net=Math.round((res.payout-bet)*100)/100;
-      if(resEl)resEl.textContent=(net>0?"+":"")+net+` ${CURRENCY_TICKER} (×${res.mult})`;
+      if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` (×${res.mult})`;
       const slots=document.querySelectorAll("#plinkoSlots .plinko-slot");
       if(slots[res.slot])slots[res.slot].classList.add("hit");
       dropBtn.disabled=false;betInp.disabled=false;
@@ -6001,7 +6073,7 @@ function wireDouble(body){
     if(segs[res.slot])segs[res.slot].classList.add("hit");
     const net=Math.round((res.payout-bet)*100)/100;
     const resEl=document.getElementById("doubleResult");
-    if(resEl)resEl.textContent=(net>0?"+":"")+net+` ${CURRENCY_TICKER} — ${res.color}`;
+    if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` — ${res.color}`;
     updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
   };
 }
@@ -6025,7 +6097,7 @@ function crashTick(){
     resolveCrash(bet,cp,null);
     if(display){display.textContent=cp.toFixed(2)+"×";display.style.color="var(--red)"}
     const resultEl=document.getElementById("crashResult");
-    if(resultEl)resultEl.textContent=(ru?"Крах! ":"Busted! ")+`-${bet} ${CURRENCY_TICKER}`;
+    if(resultEl)resultEl.textContent=(ru?"Крах! ":"Busted! ")+`-${bet}`+casinoUnit();
     const actionBtn=document.getElementById("btnCrashAction");
     if(actionBtn)actionBtn.textContent=ru?"Начать":"Start";
     const betInp=document.getElementById("crashBetInp");
@@ -6067,7 +6139,7 @@ function wireCrash(body){
       if(d){d.textContent=mult.toFixed(2)+"×";d.style.color="var(--green)"}
       const net=Math.round((payout-bet)*100)/100;
       const resultEl=document.getElementById("crashResult");
-      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+` ${CURRENCY_TICKER}`;
+      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+casinoUnit();
       const ab=document.getElementById("btnCrashAction");if(ab)ab.textContent=ru?"Начать":"Start";
       const bi=document.getElementById("crashBetInp");if(bi)bi.disabled=false;
       updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
@@ -6141,7 +6213,7 @@ function wireBlackjack(body){
   function finishUI(res){
     bjRenderHands(res.player,res.dealer,false);
     const net=Math.round((res.payout-res.bet)*100)/100;
-    resultEl.textContent=bjOutcomeText(res.outcome,ru)+` (${net>0?"+":""}${net} ${CURRENCY_TICKER})`;
+    resultEl.textContent=bjOutcomeText(res.outcome,ru)+` (${net>0?"+":""}${net}${casinoUnit()})`;
     actions.style.display="none";dealBtn.style.display="";betInp.disabled=false;
     updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();renderXP();
   }
