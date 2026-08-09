@@ -533,21 +533,49 @@ textarea.inp{resize:vertical;min-height:60px}
 .plinko-slots{display:flex;gap:2px;margin-top:2px}
 .plinko-slot{flex:1;text-align:center;font-size:9px;font-weight:800;padding:6px 0;border-radius:4px;background:var(--panel2);color:var(--dim)}
 .plinko-slot.hit{background:var(--accent);color:#0a0a0a}
-.double-strip{display:flex;gap:2px;border-radius:10px;overflow:hidden;margin:10px 0;position:relative;height:52px}
-.double-seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
-.double-seg.hit{outline:3px solid var(--accent);outline-offset:-3px}
+.double-strip-viewport{position:relative;height:52px;border-radius:10px;overflow:hidden;margin:10px 0;background:var(--panel2)}
+.double-strip{display:flex;position:absolute;top:0;left:0;height:100%;will-change:transform}
+.double-seg{flex:0 0 50px;width:50px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);border-right:2px solid rgba(0,0,0,.3)}
+.double-seg.landed{outline:3px solid var(--accent);outline-offset:-3px}
+.double-marker{position:absolute;top:0;bottom:0;left:50%;width:0;transform:translateX(-50%);z-index:2;pointer-events:none}
+.double-marker .ln{position:absolute;top:8px;bottom:8px;left:50%;width:2px;background:var(--accent);transform:translateX(-1px)}
+.double-marker .tri{position:absolute;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent}
+.double-marker .tri.top{top:0;border-top:8px solid var(--accent)}
+.double-marker .tri.bot{bottom:0;border-bottom:8px solid var(--accent)}
 .double-picks{display:flex;gap:8px;margin-bottom:10px}
 .double-pick{flex:1;padding:12px 6px;text-align:center;border-radius:10px;border:2px solid transparent;cursor:pointer;font-weight:800;font-size:13px;color:#fff}
 .double-pick .mx{display:block;font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
 .double-pick.sel{border-color:var(--accent)}
-.crash-display{font-size:44px;font-weight:900;text-align:center;padding:26px 0;border-radius:12px;background:var(--panel2);margin:10px 0;transition:color .15s}
-.bj-table{background:var(--panel2);border-radius:12px;padding:12px;margin:10px 0}
+.crash-history{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;min-height:0}
+.crash-chip{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;color:#0a0a0a}
+.crash-graph-wrap{position:relative;height:170px;border-radius:12px;background:var(--panel2);overflow:hidden;margin-bottom:10px}
+.crash-graph-wrap svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.crash-display{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;font-weight:900;transition:color .15s;text-shadow:0 2px 10px rgba(0,0,0,.7);z-index:1}
+.bj-table{background:var(--panel2);border-radius:12px;padding:12px;margin:10px 0;transition:box-shadow .1s}
 .bj-handrow{margin-bottom:10px}
 .bj-handlabel{font-size:11px;color:var(--dim);margin-bottom:4px;display:flex;justify-content:space-between}
-.bj-hand{display:flex;gap:6px;flex-wrap:wrap}
-.bj-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#1a1a1a}
+.bj-handlabel span:last-child{transition:color .2s,transform .2s}
+.bj-hand{display:flex;gap:6px;flex-wrap:wrap;perspective:700px}
+@keyframes cardDeal{0%{opacity:0;transform:translate(46px,-60px) rotate(20deg) scale(.6)}60%{opacity:1}100%{opacity:1;transform:translate(0,0) rotate(0) scale(1)}}
+@keyframes bjFlip{0%{transform:rotateY(0)}50%{transform:rotateY(90deg)}100%{transform:rotateY(0)}}
+@keyframes bjFlashWin{0%{box-shadow:0 0 0 0 rgba(46,204,113,0)}30%{box-shadow:0 0 0 8px rgba(46,204,113,.55)}100%{box-shadow:0 0 0 0 rgba(46,204,113,0)}}
+@keyframes bjFlashLose{0%{box-shadow:0 0 0 0 rgba(231,76,60,0)}30%{box-shadow:0 0 0 8px rgba(231,76,60,.55)}100%{box-shadow:0 0 0 0 rgba(231,76,60,0)}}
+.bj-table.bj-flash-win{animation:bjFlashWin .7s ease-out}
+.bj-table.bj-flash-lose{animation:bjFlashLose .7s ease-out}
+.bj-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#1a1a1a;animation:cardDeal .4s cubic-bezier(.25,.9,.35,1.15) both}
 .bj-card.red{color:#d21}
 .bj-card.back{background:repeating-linear-gradient(45deg,var(--accent),var(--accent) 4px,#0a0a12 4px,#0a0a12 8px)}
+/* The initial 2+2 deal still goes through bj-hand's full innerHTML replace, so every card in that
+   batch is a fresh element — staggering by position gives that one redraw the feel of cards being
+   dealt out one at a time, without any JS-side timing code. Cards added afterwards (a hit, a dealer
+   draw during auto-play) are appended one at a time from JS instead, each with animation-delay
+   forced to 0 inline so it plays the instant it lands rather than inheriting a stale position delay. */
+.bj-hand .bj-card:nth-child(1){animation-delay:0s}
+.bj-hand .bj-card:nth-child(2){animation-delay:.12s}
+.bj-hand .bj-card:nth-child(3){animation-delay:.24s}
+.bj-hand .bj-card:nth-child(4){animation-delay:.36s}
+.bj-hand .bj-card:nth-child(5){animation-delay:.48s}
+.bj-hand .bj-card:nth-child(n+6){animation-delay:.6s}
 .bj-actions{display:flex;gap:8px;margin-top:10px}
 .bj-actions .btn{flex:1}
 .casino-history{margin-top:10px}
@@ -6082,8 +6110,22 @@ function wirePlinko(body){
 }
 
 /* ---- Double ---- */
+// Last 10 spins' colors, regardless of real/virtual mode — same "purely informational, not part of
+// any ledger" reasoning as crashHistory above.
+let doubleHistory=[];
+const DOUBLE_SEG_WIDTH=50,DOUBLE_REEL_REPEATS=8,DOUBLE_TARGET_REPEAT=DOUBLE_REEL_REPEATS-2;
+function doubleColorHex(color){return color==="red"?"#c0392b":color==="black"?"#2c2c34":"#7f8c8d"}
+function doubleHistoryStripHTML(){
+  const chips=doubleHistory.slice(-10).reverse().map(c=>`<span class="crash-chip" style="background:${doubleColorHex(c)};min-width:20px"></span>`).join("");
+  return`<div class="crash-history" id="doubleHistoryStrip">${chips}</div>`;
+}
+function updateDoubleHistoryStrip(){
+  const el=document.getElementById("doubleHistoryStrip");
+  if(el)el.outerHTML=doubleHistoryStripHTML();
+}
 function doubleHTML(ru){
   return`<div class="card">
+    ${doubleHistoryStripHTML()}
     <div class="double-picks" id="doublePicks">
       <div class="double-pick ${doublePick==='red'?'sel':''}" data-pick="red" style="background:#c0392b">${ru?'Красное':'Red'}<span class="mx">&times;2</span></div>
       <div class="double-pick ${doublePick==='black'?'sel':''}" data-pick="black" style="background:#2c2c34">${ru?'Чёрное':'Black'}<span class="mx">&times;2</span></div>
@@ -6093,22 +6135,43 @@ function doubleHTML(ru){
       <input type="number" min="1" class="inp" id="doubleBetInp" value="${casinoBetAmount}">
       <button class="btn primary" id="btnDoubleSpin">${ru?'Крутить':'Spin'}</button>
     </div>
-    <div class="double-strip" id="doubleStrip"></div>
+    <div class="double-strip-viewport">
+      <div class="double-strip" id="doubleStrip"></div>
+      <div class="double-marker"><div class="tri top"></div><div class="ln"></div><div class="tri bot"></div></div>
+    </div>
     <p class="hint" id="doubleResult" style="margin:6px 0 0;text-align:center"></p>
   </div>`;
 }
-function doubleStripHTML(){
+// A long reel (several repeats of the real 15-slot pattern back to back) so a spin can travel a
+// satisfying distance and coast to a stop — the underlying RNG is still exactly the 15-slot
+// doubleSpin() draw from playDouble(); this only decides where that same result appears to land.
+function doubleReelHTML(){
   let html="";
-  for(let i=0;i<DOUBLE_SLOTS;i++){
-    const color=doubleColorForSlot(i);
-    const bg=color==="red"?"#c0392b":color==="black"?"#2c2c34":"#7f8c8d";
-    html+=`<div class="double-seg" data-slot="${i}" style="background:${bg}">${color==="white"?"&#9733;":""}</div>`;
+  for(let r=0;r<DOUBLE_REEL_REPEATS;r++){
+    for(let i=0;i<DOUBLE_SLOTS;i++){
+      const color=doubleColorForSlot(i);
+      html+=`<div class="double-seg" data-slot="${i}" data-rep="${r}" style="background:${doubleColorHex(color)}">${color==="white"?"&#9733;":""}</div>`;
+    }
   }
   return html;
 }
+function doubleSpinTo(slot){
+  const viewport=document.querySelector(".double-strip-viewport"),strip=document.getElementById("doubleStrip");
+  if(!viewport||!strip)return;
+  const viewportWidth=viewport.getBoundingClientRect().width;
+  const targetIndex=DOUBLE_TARGET_REPEAT*DOUBLE_SLOTS+slot; // land in a late repeat so the spin has real distance to cover
+  const targetCenter=targetIndex*DOUBLE_SEG_WIDTH+DOUBLE_SEG_WIDTH/2;
+  const offset=targetCenter-viewportWidth/2;
+  strip.style.transition="none";
+  strip.style.transform="translateX(0px)";
+  void strip.offsetWidth; // force a reflow so the reset above is actually applied before re-enabling the transition below
+  strip.style.transition="transform 3.2s cubic-bezier(.12,.85,.2,1)";
+  strip.style.transform=`translateX(-${offset}px)`;
+}
 function wireDouble(body){
   const ru=state.lang!=="en";
-  document.getElementById("doubleStrip").innerHTML=doubleStripHTML();
+  document.getElementById("doubleStrip").innerHTML=doubleReelHTML();
+  document.getElementById("doubleStrip").style.transform="translateX(0px)";
   body.querySelectorAll("[data-pick]").forEach(el=>el.onclick=()=>{
     doublePick=el.dataset.pick;
     body.querySelectorAll("[data-pick]").forEach(e2=>e2.classList.toggle("sel",e2.dataset.pick===doublePick));
@@ -6116,23 +6179,66 @@ function wireDouble(body){
   const betInp=document.getElementById("doubleBetInp"),spinBtn=document.getElementById("btnDoubleSpin");
   betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
   spinBtn.onclick=()=>{
+    if(spinBtn.disabled)return;
     const bet=+betInp.value||0;
     if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
     const res=playDouble(bet,doublePick);
     if(!res)return;
     casinoBetAmount=bet;
-    const segs=document.querySelectorAll("#doubleStrip .double-seg");
-    segs.forEach(s=>s.classList.remove("hit"));
-    if(segs[res.slot])segs[res.slot].classList.add("hit");
-    const net=Math.round((res.payout-bet)*100)/100;
-    const resEl=document.getElementById("doubleResult");
-    if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` — ${res.color}`;
-    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    spinBtn.disabled=true;betInp.disabled=true;
+    document.getElementById("doubleResult").textContent="";
+    document.querySelectorAll("#doubleStrip .double-seg.landed").forEach(s=>s.classList.remove("landed"));
+    doubleSpinTo(res.slot);
+    setTimeout(()=>{
+      const seg=document.querySelector(`#doubleStrip .double-seg[data-rep="${DOUBLE_TARGET_REPEAT}"][data-slot="${res.slot}"]`);
+      if(seg)seg.classList.add("landed");
+      const net=Math.round((res.payout-bet)*100)/100;
+      const resEl=document.getElementById("doubleResult");
+      if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` — ${res.color}`;
+      doubleHistory.push(res.color);updateDoubleHistoryStrip();
+      spinBtn.disabled=false;betInp.disabled=false;
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    },3300);
   };
 }
 
 /* ---- Crash ---- */
 function crashMultAtTime(seconds){return Math.max(1,Math.floor(Math.pow(Math.E,0.18*seconds)*100)/100)}
+// Last 10 TRUE crash points (not just what the player personally cashed out at), regardless of
+// real/virtual mode — purely informational, session-only (not persisted, not part of any ledger),
+// so it's independent of the money-specific hide-in-virtual-mode logic the other casino stats use.
+let crashHistory=[];
+function crashChipColor(cp){
+  if(cp>=100)return"#ffd400";
+  if(cp>=10)return"#a855f7";
+  if(cp>=2)return"#00c9a7";
+  return"#e6455a";
+}
+function crashHistoryStripHTML(){
+  const chips=crashHistory.slice(-10).reverse().map(cp=>`<span class="crash-chip" style="background:${crashChipColor(cp)}">${cp.toFixed(2)}&times;</span>`).join("");
+  return`<div class="crash-history" id="crashHistoryStrip">${chips}</div>`;
+}
+function updateCrashHistoryStrip(){
+  const el=document.getElementById("crashHistoryStrip");
+  if(el)el.outerHTML=crashHistoryStripHTML();
+}
+// Redraws the live curve from crashState.points (pushed once per tick below) into the two paths of
+// the graph SVG — the filled area and its outline. Both axes auto-scale to whatever the round's
+// current max time/multiplier are (with a little headroom), which is what gives the "always fits
+// the frame" look real crash games have instead of the line running off the edge.
+function crashDrawCurve(){
+  if(!crashState||!crashState.points.length)return;
+  const svg=document.getElementById("crashSvg");
+  if(!svg)return;
+  const pts=crashState.points,W=300,H=170;
+  const maxT=Math.max(1,pts[pts.length-1].t);
+  const maxM=Math.max(1.5,pts[pts.length-1].m*1.15);
+  const coords=pts.map(p=>((p.t/maxT)*W).toFixed(1)+","+(H-((p.m-1)/(maxM-1))*H).toFixed(1));
+  const line="M"+coords.join(" L");
+  const pathEl=svg.querySelector("#crashPath"),areaEl=svg.querySelector("#crashArea");
+  if(pathEl)pathEl.setAttribute("d",line);
+  if(areaEl)areaEl.setAttribute("d",line+` L${W},${H} L0,${H} Z`);
+}
 // Re-queries the DOM by id on every tick rather than closing over element references, so this one
 // running interval keeps updating whatever's currently mounted even if the user switches away to a
 // different top-level view and back (switchView never destroys the casino DOM, only hides it) — see
@@ -6143,12 +6249,17 @@ function crashTick(){
   const display=document.getElementById("crashDisplay");
   const elapsed=(Date.now()-crashState.startTime)/1000;
   const mult=crashMultAtTime(elapsed);
+  crashState.points.push({t:elapsed,m:mult});
+  crashDrawCurve();
   if(mult>=crashState.crashPoint){
     clearInterval(crashState.timerId);
     crashState.running=false;
     const ru=state.lang!=="en",bet=crashState.bet,cp=crashState.crashPoint;
     resolveCrash(bet,cp,null);
+    crashHistory.push(cp);updateCrashHistoryStrip();
     if(display){display.textContent=cp.toFixed(2)+"×";display.style.color="var(--red)"}
+    const svg=document.getElementById("crashSvg");
+    if(svg){const p=svg.querySelector("#crashPath");if(p)p.setAttribute("stroke","var(--red)")}
     const resultEl=document.getElementById("crashResult");
     if(resultEl)resultEl.textContent=(ru?"Крах! ":"Busted! ")+`-${bet}`+casinoUnit();
     const actionBtn=document.getElementById("btnCrashAction");
@@ -6163,7 +6274,14 @@ function crashTick(){
 }
 function crashHTML(ru){
   return`<div class="card">
-    <div class="crash-display" id="crashDisplay">1.00&times;</div>
+    ${crashHistoryStripHTML()}
+    <div class="crash-graph-wrap" id="crashGraphWrap">
+      <svg id="crashSvg" viewBox="0 0 300 170" preserveAspectRatio="none">
+        <path id="crashArea" d="" fill="var(--accent)" opacity=".18"></path>
+        <path id="crashPath" d="" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <div class="crash-display" id="crashDisplay">1.00&times;</div>
+    </div>
     <div class="bet-row">
       <input type="number" min="1" class="inp" id="crashBetInp" value="${casinoBetAmount}">
       <button class="btn primary" id="btnCrashAction">${ru?'Начать':'Start'}</button>
@@ -6179,6 +6297,7 @@ function wireCrash(body){
     betInp.disabled=true;
     actionBtn.textContent=ru?"Забрать":"Cash Out";
     display.textContent=crashMultAtTime((Date.now()-crashState.startTime)/1000).toFixed(2)+"×";
+    crashDrawCurve();
   }
   actionBtn.onclick=()=>{
     if(crashState&&crashState.running){
@@ -6186,13 +6305,19 @@ function wireCrash(body){
       if(mult>=crashState.crashPoint)return; // it's busting on this very tick — let crashTick handle it
       clearInterval(crashState.timerId);
       crashState.running=false;
-      const bet=crashState.bet;
-      const{payout}=resolveCrash(bet,crashState.crashPoint,mult);
+      const bet=crashState.bet,truePoint=crashState.crashPoint;
+      const{payout}=resolveCrash(bet,truePoint,mult);
+      crashHistory.push(truePoint);updateCrashHistoryStrip();
       const d=document.getElementById("crashDisplay");
       if(d){d.textContent=mult.toFixed(2)+"×";d.style.color="var(--green)"}
+      const svg=document.getElementById("crashSvg");
+      if(svg){const p=svg.querySelector("#crashPath");if(p)p.setAttribute("stroke","var(--green)")}
       const net=Math.round((payout-bet)*100)/100;
+      // Reveals what the round actually would have gone on to, same as a real crash game shows once
+      // you're out of it — the round's true crash point never depended on when anyone cashed out.
+      const wouldve=truePoint>mult?(ru?` (докатился бы до ${truePoint.toFixed(2)}×)`:` (would've gone to ${truePoint.toFixed(2)}×)`):"";
       const resultEl=document.getElementById("crashResult");
-      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+casinoUnit();
+      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+casinoUnit()+wouldve;
       const ab=document.getElementById("btnCrashAction");if(ab)ab.textContent=ru?"Начать":"Start";
       const bi=document.getElementById("crashBetInp");if(bi)bi.disabled=false;
       updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
@@ -6206,8 +6331,10 @@ function wireCrash(body){
     casinoBetAmount=bet;
     document.getElementById("crashResult").textContent="";
     const d=document.getElementById("crashDisplay");d.style.color="var(--text)";d.textContent="1.00×";
+    const svg=document.getElementById("crashSvg");
+    if(svg){const p=svg.querySelector("#crashPath"),a=svg.querySelector("#crashArea");if(p){p.setAttribute("d","");p.setAttribute("stroke","var(--accent)")}if(a)a.setAttribute("d","")}
     betInp.disabled=true;actionBtn.textContent=ru?"Забрать":"Cash Out";
-    crashState={bet,crashPoint:round.crashPoint,startTime:Date.now(),running:true,timerId:null};
+    crashState={bet,crashPoint:round.crashPoint,startTime:Date.now(),running:true,timerId:null,points:[{t:0,m:1}]};
     crashState.timerId=setInterval(crashTick,50);
   };
 }
@@ -6223,6 +6350,18 @@ function bjRenderHands(playerCards,dealerCards,hideDealerHole){
   document.getElementById("bjDealerHand").innerHTML=dealerCards.map((c,i)=>bjCardHTML(c,hideDealerHole&&i===1)).join("");
   document.getElementById("bjPlayerVal").textContent=playerCards.length?bjHandValue(playerCards).value:"";
   document.getElementById("bjDealerVal").textContent=dealerCards.length?(hideDealerHole?bjCardValue(dealerCards[0].rank):bjHandValue(dealerCards).value):"";
+}
+// Appends one already-decided card to a hand that's already on screen (a hit, a dealer draw during
+// auto-play) instead of re-rendering the whole hand, so cards already showing don't replay their
+// deal animation. animation-delay is forced to 0 inline since the nth-child stagger rules are meant
+// only for a same-tick batch coming out of bjRenderHands, not a card landing on its own.
+function bjAppendCard(handEl,card){
+  const wrap=document.createElement("div");
+  wrap.innerHTML=bjCardHTML(card,false);
+  const el=wrap.firstElementChild;
+  el.style.animationDelay="0s";
+  handEl.appendChild(el);
+  return el;
 }
 function bjOutcomeText(outcome,ru){
   return{
@@ -6263,13 +6402,71 @@ function wireBlackjack(body){
   const betInp=document.getElementById("bjBetInp"),dealBtn=document.getElementById("btnBjDeal"),actions=document.getElementById("bjActions"),resultEl=document.getElementById("bjResult");
   betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
 
+  // Plays the settled outcome back as a short sequence instead of an instant swap: any card the
+  // player hasn't seen yet lands first (a hit that busted, a double-down card), then the dealer's
+  // hole card physically flips face up, then any cards the dealer's auto-play drew appear one at a
+  // time, and only then does the result text/flash/balance land. `res` is already the final, settled
+  // outcome from bjResolve — nothing here can change it, it only paces how it's revealed.
   function finishUI(res){
-    bjRenderHands(res.player,res.dealer,false);
-    const net=Math.round((res.payout-res.bet)*100)/100;
-    resultEl.textContent=bjOutcomeText(res.outcome,ru)+` (${net>0?"+":""}${net}${casinoUnit()})`;
-    actions.style.display="none";dealBtn.style.display="";betInp.disabled=false;
-    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    actions.style.display="none";
+    const table=document.querySelector(".bj-table");
+    const playerHandEl=document.getElementById("bjPlayerHand"),dealerHandEl=document.getElementById("bjDealerHand");
+
+    function finalize(){
+      betInp.disabled=false;dealBtn.style.display="";
+      const net=Math.round((res.payout-res.bet)*100)/100;
+      resultEl.textContent=bjOutcomeText(res.outcome,ru)+` (${net>0?"+":""}${net}${casinoUnit()})`;
+      if(res.outcome==="lose"||res.outcome==="bust"){table.classList.add("bj-flash-lose");setTimeout(()=>table.classList.remove("bj-flash-lose"),700)}
+      else if(res.outcome!=="push"){table.classList.add("bj-flash-win");setTimeout(()=>table.classList.remove("bj-flash-win"),700)}
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    }
+    function dealExtraDealerCards(){
+      let i=dealerHandEl.children.length;
+      (function next(){
+        if(i>=res.dealer.length){finalize();return}
+        bjAppendCard(dealerHandEl,res.dealer[i]);
+        document.getElementById("bjDealerVal").textContent=bjHandValue(res.dealer.slice(0,i+1)).value;
+        i++;
+        setTimeout(next,320);
+      })();
+    }
+    function revealHole(){
+      const holeEl=dealerHandEl.children[1];
+      if(!holeEl||!holeEl.classList.contains("back")){dealExtraDealerCards();return}
+      setTimeout(()=>{
+        const card=res.dealer[1],red=card.suit==="♥"||card.suit==="♦";
+        // Driven from inline style (not a class) so the flip never has to be "removed" afterwards —
+        // toggling a class off would hand the element back to .bj-card's own cardDeal animation,
+        // which restarts from its 0% (off-screen) keyframe and makes the card fly in a second time.
+        // Ending on an explicit inline animation:none avoids that entirely.
+        holeEl.style.animation="bjFlip .35s linear";
+        setTimeout(()=>{
+          holeEl.classList.remove("back");
+          if(red)holeEl.classList.add("red");
+          holeEl.textContent=card.rank+card.suit;
+        },175);
+        setTimeout(()=>{
+          holeEl.style.animation="none";
+          document.getElementById("bjDealerVal").textContent=bjHandValue(res.dealer.slice(0,2)).value;
+          dealExtraDealerCards();
+        },350);
+      },300);
+    }
+    const newPlayerCards=res.player.length-playerHandEl.children.length;
+    if(newPlayerCards>0){
+      let i=playerHandEl.children.length;
+      (function next(){
+        if(i>=res.player.length){revealHole();return}
+        bjAppendCard(playerHandEl,res.player[i]);
+        document.getElementById("bjPlayerVal").textContent=bjHandValue(res.player.slice(0,i+1)).value;
+        i++;
+        setTimeout(next,280);
+      })();
+    }else{
+      revealHole();
+    }
   }
+
   if(bjRound){
     betInp.disabled=true;dealBtn.style.display="none";actions.style.display="flex";
     document.getElementById("btnBjDouble").style.display=bjRound.player.length===2?"":"none";
@@ -6284,8 +6481,14 @@ function wireBlackjack(body){
     if(!res)return;
     casinoBetAmount=bet;
     resultEl.textContent="";
-    if(res.status==="resolved"){finishUI(res);return}
-    betInp.disabled=true;dealBtn.style.display="none";actions.style.display="flex";
+    document.querySelector(".bj-table").classList.remove("bj-flash-win","bj-flash-lose");
+    betInp.disabled=true;dealBtn.style.display="none";
+    if(res.status==="resolved"){
+      bjRenderHands(res.player,res.dealer.slice(0,2),true);
+      setTimeout(()=>finishUI(res),650);
+      return;
+    }
+    actions.style.display="flex";
     document.getElementById("btnBjDouble").style.display="";
     bjRenderHands(bjRound.player,bjRound.dealer,true);
   };
@@ -6294,7 +6497,8 @@ function wireBlackjack(body){
     if(!res)return;
     document.getElementById("btnBjDouble").style.display="none";
     if(res.status==="resolved"){finishUI(res);return}
-    bjRenderHands(bjRound.player,bjRound.dealer,true);
+    bjAppendCard(document.getElementById("bjPlayerHand"),res.player[res.player.length-1]);
+    document.getElementById("bjPlayerVal").textContent=bjHandValue(res.player).value;
   };
   document.getElementById("btnBjStand").onclick=()=>{
     const res=bjStand();
