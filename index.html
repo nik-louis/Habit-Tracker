@@ -2234,6 +2234,23 @@ function beforeTrackingStart(year,m,d,h){
   const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
   return ds<start;
 }
+// False only when EVERY day of (year,m) is before h's own tracking start — i.e. the habit didn't
+// exist for even a single day of that month. A habit created partway through the month still
+// "exists" here; per-day exclusion for the days before its creation is handled separately by
+// beforeTrackingStart. Used to keep a not-yet-created habit out of any per-month judgment (good/bad
+// counts, charity, score%) the exact same way an archived-all-month habit is already excluded,
+// instead of silently scoring it as a full month of failure.
+function habitExistsInMonth(h,year,m){
+  return!beforeTrackingStart(year,m,daysInMonthY(year,m),h);
+}
+// Day-count version of the same check, for shrinking a flat day-count target the same way frozen/
+// archived days already do (see effTarget) — how many of this month's days fall before h existed.
+function countPreCreationDaysInMonth(h,year,m){
+  const total=daysInMonthY(year,m);
+  let count=0;
+  for(let d=1;d<=total;d++)if(beforeTrackingStart(year,m,d,h))count++;
+  return count;
+}
 // A tier is "available" for the NEXT unplanned use if dateISO is marked on its OWN calendar
 // (t.calendarDays — unconditional, never consumes freeLimit, mirrors sinCalendarDays below), or it
 // has no free-use cap, or hasn't hit its cap yet.
@@ -3220,8 +3237,12 @@ function forgiveCurrentDebt(){
 }
 /* ===== MONEY POOL (weighted, no cliff — replaces per-habit zone-rate escalation) =====
    pool = income × ratePct; each failed habit owes pool × (weight / Σ weight of active habits).
-   Failing every active habit costs exactly the pool, never more — no matter how many habits exist. */
-function activeMoneyWeight(){return activeHabits().reduce((s,h)=>s+(h.weight||1),0)}
+   Failing every active habit costs exactly the pool, never more — no matter how many habits exist.
+   Optionally scoped to a month: habitMoneyOwed passes m so a habit that didn't exist yet (or was
+   fully excused) that month doesn't inflate the denominator and shrink everyone else's real share —
+   the other two call sites (dailyUnit, the habit-editor weight preview) omit m on purpose, since
+   those want "everything active right now", not any one month's roster. */
+function activeMoneyWeight(m){return activeHabits().filter(h=>m===undefined||effTarget(h,m)>0).reduce((s,h)=>s+(h.weight||1),0)}
 /* ===== REWARD AUTO-PRICING =====
    A reward stores `days` — how many "perfect days" it's worth, frozen at creation — never a flat
    INLI number picked by hand. Its INLI price is always re-derived: days × dailyUnit(). Grow your
@@ -3325,8 +3346,12 @@ function getEffectiveRatePct(m){
 }
 function moneyPool(m){return getIncome(m)*getEffectiveRatePct(m)/100}
 function habitMoneyOwed(h,m){
+  // Nothing was actually asked of this habit this month (didn't exist yet, or fully frozen/archived
+  // out) — habitMonthBalance is exactly 0 either way, same as a real 0-net month, so the balance
+  // check alone can't tell "excused" apart from "failed and broke even." Check the target first.
+  if(effTarget(h,m)<=0)return 0;
   if(habitMonthBalance(h,m)>0)return 0;
-  const tw=activeMoneyWeight();if(!tw)return 0;
+  const tw=activeMoneyWeight(m);if(!tw)return 0;
   return moneyPool(m)*(h.weight||1)/tw;
 }
 function monthMoneyOwed(m){
@@ -3560,10 +3585,18 @@ function checkedCount(m,hid){return Object.keys(getChecks(m,hid)).length}
 // scores both as a flat 0), so it must shrink the achievable norm the same way, or hitting 100%
 // becomes impossible the moment a personal freeze is used.
 function effTarget(h,m){
+  const year=activeYear();
+  if(!habitExistsInMonth(h,year,m))return 0;
   const frozen=getFreezes(m).length;
   const mk="m"+m;
   const habitFrozen=Object.keys((state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{}).length;
-  const archivedDays=countArchivedDaysInMonth(h,activeYear(),m);
+  const archivedDays=countArchivedDaysInMonth(h,year,m);
+  // Event-type targets are a count of occurrences, not a day-count, and the pace-line that judges
+  // them (eventPaceStatus/eventHabitPointsForMonth) already grants full grace for every pre-creation
+  // day on its own — shrinking N here too would double-count that grace and could zero out an easily
+  // achievable target for a habit created late in the month. Daily-type targets ARE a day count, so
+  // they shrink by pre-creation days exactly like frozen/archived days already do below.
+  const preCreationDays=h.type==="event"?0:countPreCreationDaysInMonth(h,year,m);
   const mt=h.monthTargets&&h.monthTargets["m"+m];
   let base;
   if(mt!==undefined&&mt!==null&&mt!==""){
@@ -3571,7 +3604,7 @@ function effTarget(h,m){
   }else{
     base=h.everyday?daysInMonth(m):Math.min(h.target||0,daysInMonth(m));
   }
-  return Math.max(0,base-frozen-habitFrozen-archivedDays);
+  return Math.max(0,base-frozen-habitFrozen-archivedDays-preCreationDays);
 }
 function metTarget(h,m){return habitMonthBalance(h,m)>0}
 // A day counts toward the streak if it was checked, OR it was neutrally excused (frozen, personally
@@ -4307,7 +4340,7 @@ function renderHabitList(){
       recalcPoints();save();renderHabitsManager();renderXP();toast(T.restoredActive);
     });
     el.querySelectorAll("[data-restore]").forEach(b=>b.onclick=()=>{
-      const h=state.habits.find(x=>x.id===b.dataset.restore);if(h){h.deleted=false;h.deletedAt=null;save();renderHabitsManager();toast(T.restoredLabel)}
+      const h=state.habits.find(x=>x.id===b.dataset.restore);if(h){h.deleted=false;h.deletedAt=null;recalcPoints();save();renderHabitsManager();renderXP();toast(T.restoredLabel)}
     });
 
     initDragDrop(el);
@@ -4780,7 +4813,7 @@ function delHabit(id){
   const h=state.habits.find(x=>x.id===id);
   if(!confirm(T.confirmDelete.replace("{0}",h?h.name:"")))return;
   h.deleted=true;h.deletedAt=Date.now();
-  save();renderHabitsManager();toast(T.deletedPreserved);
+  recalcPoints();save();renderHabitsManager();renderXP();toast(T.deletedPreserved);
 }
 function updatePenaltyPreview(){
   const w=+document.getElementById("fWeight").value||5;
@@ -4981,7 +5014,11 @@ function yearStatsHTML(){
   const hasIncome=fm.some(m=>getIncome(m)>0);
   const moneyChart=hasIncome&&keptArr.length?barChart(keptArr,fmLabels,"k","var(--accent)"):"";
 
-  const charityTotal=fm.reduce((s,m)=>s+monthCharityAmount(m),0);
+  // Reuses totalPen (already scoped to fh, the filtered habit set) rather than re-summing
+  // monthCharityAmount(m) — that reads ALL active habits regardless of the filter, which used to
+  // make "Kept" and "To charity" disagree with each other (and with Income) the moment any habit/tag
+  // filter was applied, since the two stats were silently drawing from two different habit sets.
+  const charityTotal=totalPen;
   const ach=achievementsForYear();
 
   const pointsTrend=pointsTrendHTML(fm,fh);
