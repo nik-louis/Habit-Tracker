@@ -540,7 +540,11 @@ textarea.inp{resize:vertical;min-height:60px}
 .double-pick{flex:1;padding:12px 6px;text-align:center;border-radius:10px;border:2px solid transparent;cursor:pointer;font-weight:800;font-size:13px;color:#fff}
 .double-pick .mx{display:block;font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
 .double-pick.sel{border-color:var(--accent)}
-.crash-display{font-size:44px;font-weight:900;text-align:center;padding:26px 0;border-radius:12px;background:var(--panel2);margin:10px 0;transition:color .15s}
+.crash-history{display:flex;gap:4px;flex-wrap:wrap;margin-bottom:8px;min-height:0}
+.crash-chip{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:800;color:#0a0a0a}
+.crash-graph-wrap{position:relative;height:170px;border-radius:12px;background:var(--panel2);overflow:hidden;margin-bottom:10px}
+.crash-graph-wrap svg{position:absolute;inset:0;width:100%;height:100%;display:block}
+.crash-display{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);font-size:40px;font-weight:900;transition:color .15s;text-shadow:0 2px 10px rgba(0,0,0,.7);z-index:1}
 .bj-table{background:var(--panel2);border-radius:12px;padding:12px;margin:10px 0}
 .bj-handrow{margin-bottom:10px}
 .bj-handlabel{font-size:11px;color:var(--dim);margin-bottom:4px;display:flex;justify-content:space-between}
@@ -6133,6 +6137,41 @@ function wireDouble(body){
 
 /* ---- Crash ---- */
 function crashMultAtTime(seconds){return Math.max(1,Math.floor(Math.pow(Math.E,0.18*seconds)*100)/100)}
+// Last 10 TRUE crash points (not just what the player personally cashed out at), regardless of
+// real/virtual mode — purely informational, session-only (not persisted, not part of any ledger),
+// so it's independent of the money-specific hide-in-virtual-mode logic the other casino stats use.
+let crashHistory=[];
+function crashChipColor(cp){
+  if(cp>=100)return"#ffd400";
+  if(cp>=10)return"#a855f7";
+  if(cp>=2)return"#00c9a7";
+  return"#e6455a";
+}
+function crashHistoryStripHTML(){
+  const chips=crashHistory.slice(-10).reverse().map(cp=>`<span class="crash-chip" style="background:${crashChipColor(cp)}">${cp.toFixed(2)}&times;</span>`).join("");
+  return`<div class="crash-history" id="crashHistoryStrip">${chips}</div>`;
+}
+function updateCrashHistoryStrip(){
+  const el=document.getElementById("crashHistoryStrip");
+  if(el)el.outerHTML=crashHistoryStripHTML();
+}
+// Redraws the live curve from crashState.points (pushed once per tick below) into the two paths of
+// the graph SVG — the filled area and its outline. Both axes auto-scale to whatever the round's
+// current max time/multiplier are (with a little headroom), which is what gives the "always fits
+// the frame" look real crash games have instead of the line running off the edge.
+function crashDrawCurve(){
+  if(!crashState||!crashState.points.length)return;
+  const svg=document.getElementById("crashSvg");
+  if(!svg)return;
+  const pts=crashState.points,W=300,H=170;
+  const maxT=Math.max(1,pts[pts.length-1].t);
+  const maxM=Math.max(1.5,pts[pts.length-1].m*1.15);
+  const coords=pts.map(p=>((p.t/maxT)*W).toFixed(1)+","+(H-((p.m-1)/(maxM-1))*H).toFixed(1));
+  const line="M"+coords.join(" L");
+  const pathEl=svg.querySelector("#crashPath"),areaEl=svg.querySelector("#crashArea");
+  if(pathEl)pathEl.setAttribute("d",line);
+  if(areaEl)areaEl.setAttribute("d",line+` L${W},${H} L0,${H} Z`);
+}
 // Re-queries the DOM by id on every tick rather than closing over element references, so this one
 // running interval keeps updating whatever's currently mounted even if the user switches away to a
 // different top-level view and back (switchView never destroys the casino DOM, only hides it) — see
@@ -6143,12 +6182,17 @@ function crashTick(){
   const display=document.getElementById("crashDisplay");
   const elapsed=(Date.now()-crashState.startTime)/1000;
   const mult=crashMultAtTime(elapsed);
+  crashState.points.push({t:elapsed,m:mult});
+  crashDrawCurve();
   if(mult>=crashState.crashPoint){
     clearInterval(crashState.timerId);
     crashState.running=false;
     const ru=state.lang!=="en",bet=crashState.bet,cp=crashState.crashPoint;
     resolveCrash(bet,cp,null);
+    crashHistory.push(cp);updateCrashHistoryStrip();
     if(display){display.textContent=cp.toFixed(2)+"×";display.style.color="var(--red)"}
+    const svg=document.getElementById("crashSvg");
+    if(svg){const p=svg.querySelector("#crashPath");if(p)p.setAttribute("stroke","var(--red)")}
     const resultEl=document.getElementById("crashResult");
     if(resultEl)resultEl.textContent=(ru?"Крах! ":"Busted! ")+`-${bet}`+casinoUnit();
     const actionBtn=document.getElementById("btnCrashAction");
@@ -6163,7 +6207,14 @@ function crashTick(){
 }
 function crashHTML(ru){
   return`<div class="card">
-    <div class="crash-display" id="crashDisplay">1.00&times;</div>
+    ${crashHistoryStripHTML()}
+    <div class="crash-graph-wrap" id="crashGraphWrap">
+      <svg id="crashSvg" viewBox="0 0 300 170" preserveAspectRatio="none">
+        <path id="crashArea" d="" fill="var(--accent)" opacity=".18"></path>
+        <path id="crashPath" d="" fill="none" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></path>
+      </svg>
+      <div class="crash-display" id="crashDisplay">1.00&times;</div>
+    </div>
     <div class="bet-row">
       <input type="number" min="1" class="inp" id="crashBetInp" value="${casinoBetAmount}">
       <button class="btn primary" id="btnCrashAction">${ru?'Начать':'Start'}</button>
@@ -6179,6 +6230,7 @@ function wireCrash(body){
     betInp.disabled=true;
     actionBtn.textContent=ru?"Забрать":"Cash Out";
     display.textContent=crashMultAtTime((Date.now()-crashState.startTime)/1000).toFixed(2)+"×";
+    crashDrawCurve();
   }
   actionBtn.onclick=()=>{
     if(crashState&&crashState.running){
@@ -6186,13 +6238,19 @@ function wireCrash(body){
       if(mult>=crashState.crashPoint)return; // it's busting on this very tick — let crashTick handle it
       clearInterval(crashState.timerId);
       crashState.running=false;
-      const bet=crashState.bet;
-      const{payout}=resolveCrash(bet,crashState.crashPoint,mult);
+      const bet=crashState.bet,truePoint=crashState.crashPoint;
+      const{payout}=resolveCrash(bet,truePoint,mult);
+      crashHistory.push(truePoint);updateCrashHistoryStrip();
       const d=document.getElementById("crashDisplay");
       if(d){d.textContent=mult.toFixed(2)+"×";d.style.color="var(--green)"}
+      const svg=document.getElementById("crashSvg");
+      if(svg){const p=svg.querySelector("#crashPath");if(p)p.setAttribute("stroke","var(--green)")}
       const net=Math.round((payout-bet)*100)/100;
+      // Reveals what the round actually would have gone on to, same as a real crash game shows once
+      // you're out of it — the round's true crash point never depended on when anyone cashed out.
+      const wouldve=truePoint>mult?(ru?` (докатился бы до ${truePoint.toFixed(2)}×)`:` (would've gone to ${truePoint.toFixed(2)}×)`):"";
       const resultEl=document.getElementById("crashResult");
-      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+casinoUnit();
+      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+casinoUnit()+wouldve;
       const ab=document.getElementById("btnCrashAction");if(ab)ab.textContent=ru?"Начать":"Start";
       const bi=document.getElementById("crashBetInp");if(bi)bi.disabled=false;
       updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
@@ -6206,8 +6264,10 @@ function wireCrash(body){
     casinoBetAmount=bet;
     document.getElementById("crashResult").textContent="";
     const d=document.getElementById("crashDisplay");d.style.color="var(--text)";d.textContent="1.00×";
+    const svg=document.getElementById("crashSvg");
+    if(svg){const p=svg.querySelector("#crashPath"),a=svg.querySelector("#crashArea");if(p){p.setAttribute("d","");p.setAttribute("stroke","var(--accent)")}if(a)a.setAttribute("d","")}
     betInp.disabled=true;actionBtn.textContent=ru?"Забрать":"Cash Out";
-    crashState={bet,crashPoint:round.crashPoint,startTime:Date.now(),running:true,timerId:null};
+    crashState={bet,crashPoint:round.crashPoint,startTime:Date.now(),running:true,timerId:null,points:[{t:0,m:1}]};
     crashState.timerId=setInterval(crashTick,50);
   };
 }
