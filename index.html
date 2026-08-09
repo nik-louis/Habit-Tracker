@@ -533,9 +533,15 @@ textarea.inp{resize:vertical;min-height:60px}
 .plinko-slots{display:flex;gap:2px;margin-top:2px}
 .plinko-slot{flex:1;text-align:center;font-size:9px;font-weight:800;padding:6px 0;border-radius:4px;background:var(--panel2);color:var(--dim)}
 .plinko-slot.hit{background:var(--accent);color:#0a0a0a}
-.double-strip{display:flex;gap:2px;border-radius:10px;overflow:hidden;margin:10px 0;position:relative;height:52px}
-.double-seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
-.double-seg.hit{outline:3px solid var(--accent);outline-offset:-3px}
+.double-strip-viewport{position:relative;height:52px;border-radius:10px;overflow:hidden;margin:10px 0;background:var(--panel2)}
+.double-strip{display:flex;position:absolute;top:0;left:0;height:100%;will-change:transform}
+.double-seg{flex:0 0 50px;width:50px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5);border-right:2px solid rgba(0,0,0,.3)}
+.double-seg.landed{outline:3px solid var(--accent);outline-offset:-3px}
+.double-marker{position:absolute;top:0;bottom:0;left:50%;width:0;transform:translateX(-50%);z-index:2;pointer-events:none}
+.double-marker .ln{position:absolute;top:8px;bottom:8px;left:50%;width:2px;background:var(--accent);transform:translateX(-1px)}
+.double-marker .tri{position:absolute;left:50%;transform:translateX(-50%);width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent}
+.double-marker .tri.top{top:0;border-top:8px solid var(--accent)}
+.double-marker .tri.bot{bottom:0;border-bottom:8px solid var(--accent)}
 .double-picks{display:flex;gap:8px;margin-bottom:10px}
 .double-pick{flex:1;padding:12px 6px;text-align:center;border-radius:10px;border:2px solid transparent;cursor:pointer;font-weight:800;font-size:13px;color:#fff}
 .double-pick .mx{display:block;font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
@@ -6086,8 +6092,22 @@ function wirePlinko(body){
 }
 
 /* ---- Double ---- */
+// Last 10 spins' colors, regardless of real/virtual mode — same "purely informational, not part of
+// any ledger" reasoning as crashHistory above.
+let doubleHistory=[];
+const DOUBLE_SEG_WIDTH=50,DOUBLE_REEL_REPEATS=8,DOUBLE_TARGET_REPEAT=DOUBLE_REEL_REPEATS-2;
+function doubleColorHex(color){return color==="red"?"#c0392b":color==="black"?"#2c2c34":"#7f8c8d"}
+function doubleHistoryStripHTML(){
+  const chips=doubleHistory.slice(-10).reverse().map(c=>`<span class="crash-chip" style="background:${doubleColorHex(c)};min-width:20px"></span>`).join("");
+  return`<div class="crash-history" id="doubleHistoryStrip">${chips}</div>`;
+}
+function updateDoubleHistoryStrip(){
+  const el=document.getElementById("doubleHistoryStrip");
+  if(el)el.outerHTML=doubleHistoryStripHTML();
+}
 function doubleHTML(ru){
   return`<div class="card">
+    ${doubleHistoryStripHTML()}
     <div class="double-picks" id="doublePicks">
       <div class="double-pick ${doublePick==='red'?'sel':''}" data-pick="red" style="background:#c0392b">${ru?'Красное':'Red'}<span class="mx">&times;2</span></div>
       <div class="double-pick ${doublePick==='black'?'sel':''}" data-pick="black" style="background:#2c2c34">${ru?'Чёрное':'Black'}<span class="mx">&times;2</span></div>
@@ -6097,22 +6117,43 @@ function doubleHTML(ru){
       <input type="number" min="1" class="inp" id="doubleBetInp" value="${casinoBetAmount}">
       <button class="btn primary" id="btnDoubleSpin">${ru?'Крутить':'Spin'}</button>
     </div>
-    <div class="double-strip" id="doubleStrip"></div>
+    <div class="double-strip-viewport">
+      <div class="double-strip" id="doubleStrip"></div>
+      <div class="double-marker"><div class="tri top"></div><div class="ln"></div><div class="tri bot"></div></div>
+    </div>
     <p class="hint" id="doubleResult" style="margin:6px 0 0;text-align:center"></p>
   </div>`;
 }
-function doubleStripHTML(){
+// A long reel (several repeats of the real 15-slot pattern back to back) so a spin can travel a
+// satisfying distance and coast to a stop — the underlying RNG is still exactly the 15-slot
+// doubleSpin() draw from playDouble(); this only decides where that same result appears to land.
+function doubleReelHTML(){
   let html="";
-  for(let i=0;i<DOUBLE_SLOTS;i++){
-    const color=doubleColorForSlot(i);
-    const bg=color==="red"?"#c0392b":color==="black"?"#2c2c34":"#7f8c8d";
-    html+=`<div class="double-seg" data-slot="${i}" style="background:${bg}">${color==="white"?"&#9733;":""}</div>`;
+  for(let r=0;r<DOUBLE_REEL_REPEATS;r++){
+    for(let i=0;i<DOUBLE_SLOTS;i++){
+      const color=doubleColorForSlot(i);
+      html+=`<div class="double-seg" data-slot="${i}" data-rep="${r}" style="background:${doubleColorHex(color)}">${color==="white"?"&#9733;":""}</div>`;
+    }
   }
   return html;
 }
+function doubleSpinTo(slot){
+  const viewport=document.querySelector(".double-strip-viewport"),strip=document.getElementById("doubleStrip");
+  if(!viewport||!strip)return;
+  const viewportWidth=viewport.getBoundingClientRect().width;
+  const targetIndex=DOUBLE_TARGET_REPEAT*DOUBLE_SLOTS+slot; // land in a late repeat so the spin has real distance to cover
+  const targetCenter=targetIndex*DOUBLE_SEG_WIDTH+DOUBLE_SEG_WIDTH/2;
+  const offset=targetCenter-viewportWidth/2;
+  strip.style.transition="none";
+  strip.style.transform="translateX(0px)";
+  void strip.offsetWidth; // force a reflow so the reset above is actually applied before re-enabling the transition below
+  strip.style.transition="transform 3.2s cubic-bezier(.12,.85,.2,1)";
+  strip.style.transform=`translateX(-${offset}px)`;
+}
 function wireDouble(body){
   const ru=state.lang!=="en";
-  document.getElementById("doubleStrip").innerHTML=doubleStripHTML();
+  document.getElementById("doubleStrip").innerHTML=doubleReelHTML();
+  document.getElementById("doubleStrip").style.transform="translateX(0px)";
   body.querySelectorAll("[data-pick]").forEach(el=>el.onclick=()=>{
     doublePick=el.dataset.pick;
     body.querySelectorAll("[data-pick]").forEach(e2=>e2.classList.toggle("sel",e2.dataset.pick===doublePick));
@@ -6120,18 +6161,26 @@ function wireDouble(body){
   const betInp=document.getElementById("doubleBetInp"),spinBtn=document.getElementById("btnDoubleSpin");
   betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
   spinBtn.onclick=()=>{
+    if(spinBtn.disabled)return;
     const bet=+betInp.value||0;
     if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
     const res=playDouble(bet,doublePick);
     if(!res)return;
     casinoBetAmount=bet;
-    const segs=document.querySelectorAll("#doubleStrip .double-seg");
-    segs.forEach(s=>s.classList.remove("hit"));
-    if(segs[res.slot])segs[res.slot].classList.add("hit");
-    const net=Math.round((res.payout-bet)*100)/100;
-    const resEl=document.getElementById("doubleResult");
-    if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` — ${res.color}`;
-    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    spinBtn.disabled=true;betInp.disabled=true;
+    document.getElementById("doubleResult").textContent="";
+    document.querySelectorAll("#doubleStrip .double-seg.landed").forEach(s=>s.classList.remove("landed"));
+    doubleSpinTo(res.slot);
+    setTimeout(()=>{
+      const seg=document.querySelector(`#doubleStrip .double-seg[data-rep="${DOUBLE_TARGET_REPEAT}"][data-slot="${res.slot}"]`);
+      if(seg)seg.classList.add("landed");
+      const net=Math.round((res.payout-bet)*100)/100;
+      const resEl=document.getElementById("doubleResult");
+      if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` — ${res.color}`;
+      doubleHistory.push(res.color);updateDoubleHistoryStrip();
+      spinBtn.disabled=false;betInp.disabled=false;
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    },3300);
   };
 }
 
