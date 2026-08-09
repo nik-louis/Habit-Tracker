@@ -516,6 +516,43 @@ textarea.inp{resize:vertical;min-height:60px}
 .move-btn:active{transform:scale(.9)}
 .move-btn:disabled{opacity:.3}
 
+/* CASINO */
+.casino-balance{font-size:13px;color:var(--dim);text-align:right;margin-bottom:8px}
+.casino-balance b{color:var(--accent);font-size:16px}
+.bet-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+.bet-row .inp{flex:1}
+.bet-chip{background:var(--panel2);border:1px solid var(--line);color:var(--text);border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;cursor:pointer}
+.bet-chip:active{transform:scale(.95)}
+.plinko-risk{display:flex;gap:6px;margin-bottom:10px}
+.plinko-risk .rk{flex:1;padding:8px;text-align:center;border-radius:8px;border:1px solid var(--line);font-size:12px;font-weight:700;cursor:pointer;color:var(--dim)}
+.plinko-risk .rk.active{background:var(--accent);color:#0a0a0a;border-color:var(--accent)}
+.plinko-board{position:relative;height:230px;margin:10px 0;background:var(--panel2);border-radius:12px;overflow:hidden}
+.plinko-peg{position:absolute;width:5px;height:5px;border-radius:50%;background:var(--line);transform:translate(-50%,-50%)}
+.plinko-ball{position:absolute;width:13px;height:13px;border-radius:50%;background:var(--accent);box-shadow:0 0 8px var(--accent);transform:translate(-50%,-50%);transition:left .16s ease,top .16s ease;z-index:2}
+.plinko-slots{display:flex;gap:2px;margin-top:2px}
+.plinko-slot{flex:1;text-align:center;font-size:9px;font-weight:800;padding:6px 0;border-radius:4px;background:var(--panel2);color:var(--dim)}
+.plinko-slot.hit{background:var(--accent);color:#0a0a0a}
+.double-strip{display:flex;gap:2px;border-radius:10px;overflow:hidden;margin:10px 0;position:relative;height:52px}
+.double-seg{flex:1;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.5)}
+.double-seg.hit{outline:3px solid var(--accent);outline-offset:-3px}
+.double-picks{display:flex;gap:8px;margin-bottom:10px}
+.double-pick{flex:1;padding:12px 6px;text-align:center;border-radius:10px;border:2px solid transparent;cursor:pointer;font-weight:800;font-size:13px;color:#fff}
+.double-pick .mx{display:block;font-size:11px;font-weight:600;opacity:.85;margin-top:2px}
+.double-pick.sel{border-color:var(--accent)}
+.crash-display{font-size:44px;font-weight:900;text-align:center;padding:26px 0;border-radius:12px;background:var(--panel2);margin:10px 0;transition:color .15s}
+.bj-table{background:var(--panel2);border-radius:12px;padding:12px;margin:10px 0}
+.bj-handrow{margin-bottom:10px}
+.bj-handlabel{font-size:11px;color:var(--dim);margin-bottom:4px;display:flex;justify-content:space-between}
+.bj-hand{display:flex;gap:6px;flex-wrap:wrap}
+.bj-card{width:38px;height:54px;border-radius:6px;background:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:13px;box-shadow:0 2px 4px rgba(0,0,0,.35);color:#1a1a1a}
+.bj-card.red{color:#d21}
+.bj-card.back{background:repeating-linear-gradient(45deg,var(--accent),var(--accent) 4px,#0a0a12 4px,#0a0a12 8px)}
+.bj-actions{display:flex;gap:8px;margin-top:10px}
+.bj-actions .btn{flex:1}
+.casino-history{margin-top:10px}
+.casino-hist-row{display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid var(--line)}
+.casino-hist-row:last-child{border-bottom:none}
+
 </style>
 </head>
 <body>
@@ -539,6 +576,7 @@ textarea.inp{resize:vertical;min-height:60px}
       <button class="tab" data-view="track">&#128197; Months</button>
       <button class="tab" data-view="habits">&#127919; Habits</button>
       <button class="tab" data-view="rewards">&#127942; Shop</button>
+      <button class="tab" data-view="casino">&#127920; Casino</button>
       <button class="tab" data-view="stats">&#128200; Analytics</button>
       <button class="tab" data-view="settings">&#9881; Settings</button>
     </nav>
@@ -726,6 +764,11 @@ textarea.inp{resize:vertical;min-height:60px}
   <!-- REWARDS -->
   <section id="view-rewards">
     <div id="rewardsBody"></div>
+  </section>
+
+  <!-- CASINO -->
+  <section id="view-casino">
+    <div id="casinoBody"></div>
   </section>
 
   <!-- STATS -->
@@ -934,7 +977,7 @@ appTitle:"Habitunity",
 months:["January","February","March","April","May","June","July","August","September","October","November","December"],
 monthsShort:["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
 daysShort:["Su","Mo","Tu","We","Th","Fr","Sa"],dayNames:["Sun","Mon","Tue","Wed","Thu","Fri","Sat"],
-tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabRewards:"Shop",tabAnalytics:"Analytics",tabSettings:"Settings",
+tabToday:"Today",tabMonths:"Months",tabHabits:"Habits",tabRewards:"Shop",tabCasino:"Casino",tabAnalytics:"Analytics",tabSettings:"Settings",
 syncLocal:"○ local",syncOnline:"● online",syncConnecting:"● connecting...",
 lvls:["Beginner","Practitioner","Expert","Master","Guru","Legend"],
 ranks:["Novice","Apprentice","Seeker","Guardian","Pathfinder","Warrior","Knight","Mystic","Sage","Hunter","Berserker","Paladin","Sorcerer","Titan","Phoenix","Dragon","Archon","Immortal","Legend","God"],
@@ -1003,6 +1046,8 @@ achUnbreakable:"Unbreakable",achUnbreakableD:"21+ day streak",
 achRewardCollector:"Reward Collector",achRewardCollectorD:"50+ rewards earned in year",
 achYearPositive:"Year in the Black",achYearPositiveD:"Net INLI balance change this year is positive",
 achLevel25:"Quarter Way",achLevel25D:"Reached level 25",
+achLevel50:"Halfway There",achLevel50D:"Reached level 50",achLevel75:"Three-Quarter Way",achLevel75D:"Reached level 75",achLevel100:"The Summit",achLevel100D:"Reached the maximum, level 100",
+achCasinoPlinko:"Jackpot Drop",achCasinoPlinkoD:"Hit a 10×+ multiplier on Plinko",achCasinoDouble:"White Out",achCasinoDoubleD:"Won a bet on white in Double",achCasinoCrash:"Nerves of Steel",achCasinoCrashD:"Cashed out a Crash round at 10×+",achCasinoBJ:"Natural",achCasinoBJD:"Hit a natural blackjack",achCasinoHighRoller:"High Roller",achCasinoHighRollerD:"Wagered 1000+ INLI total at the casino",
 appearance:"Appearance",darkMode:"Dark Mode",accentColor:"Accent Color",language:"Language",
 tagsTitle:"Tags",tagsDesc:"Manage categories. Changing a tag updates all linked habits.",
 addTag:"+ Add Tag",newTag:"New Tag",editTagTitle:"Edit Tag",
@@ -1049,7 +1094,7 @@ appTitle:"Habitunity",
 months:["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"],
 monthsShort:["Янв","Фев","Мар","Апр","Май","Июн","Июл","Авг","Сен","Окт","Ноя","Дек"],
 daysShort:["Вс","Пн","Вт","Ср","Чт","Пт","Сб"],dayNames:["Вск","Пон","Вт","Ср","Чт","Пт","Сб"],
-tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabRewards:"Магазин",tabAnalytics:"Аналитика",tabSettings:"Настройки",
+tabToday:"Сегодня",tabMonths:"Месяцы",tabHabits:"Привычки",tabRewards:"Магазин",tabCasino:"Казино",tabAnalytics:"Аналитика",tabSettings:"Настройки",
 syncLocal:"○ локально",syncOnline:"● онлайн",syncConnecting:"● подключение...",
 lvls:["Новичок","Практик","Эксперт","Мастер","Гуру","Легенда"],
 ranks:["Новичок","Ученик","Искатель","Страж","Следопыт","Воин","Рыцарь","Мистик","Мудрец","Охотник","Берсерк","Паладин","Чародей","Титан","Феникс","Дракон","Архонт","Бессмертный","Легенда","Бог"],
@@ -1118,6 +1163,8 @@ achUnbreakable:"Несокрушимый",achUnbreakableD:"Серия 21+ ден
 achRewardCollector:"Коллекционер наград",achRewardCollectorD:"50+ наград за год",
 achYearPositive:"Год в плюсе",achYearPositiveD:"Баланс INLI за год положительный",
 achLevel25:"Четверть пути",achLevel25D:"Достигнут 25 уровень",
+achLevel50:"Половина пути",achLevel50D:"Достигнут 50 уровень",achLevel75:"Три четверти пути",achLevel75D:"Достигнут 75 уровень",achLevel100:"Вершина",achLevel100D:"Достигнут максимальный, 100 уровень",
+achCasinoPlinko:"Джекпот Plinko",achCasinoPlinkoD:"Множитель ×10 и выше в Plinko",achCasinoDouble:"Белая полоса",achCasinoDoubleD:"Выигрыш на белом в Double",achCasinoCrash:"Стальные нервы",achCasinoCrashD:"Кэшаут в Crash на ×10 и выше",achCasinoBJ:"Натуральный",achCasinoBJD:"Натуральный блэкджек",achCasinoHighRoller:"Хайроллер",achCasinoHighRollerD:"Поставлено 1000+ INLI в казино суммарно",
 appearance:"Внешний вид",darkMode:"Тёмная тема",accentColor:"Цвет акцента",language:"Язык",
 tagsTitle:"Теги",tagsDesc:"Управление категориями. Изменение тега обновляет все связанные привычки.",
 addTag:"+ Добавить тег",newTag:"Новый тег",editTagTitle:"Редактировать тег",
@@ -1164,7 +1211,7 @@ appTitle:"Habitunity",
 months:["Enero","Febrero","Marzo","Abril","Mayo","Junio","Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"],
 monthsShort:["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"],
 daysShort:["Do","Lu","Ma","Mi","Ju","Vi","Sá"],dayNames:["Dom","Lun","Mar","Mié","Jue","Vie","Sáb"],
-tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabRewards:"Tienda",tabAnalytics:"Análisis",tabSettings:"Ajustes",
+tabToday:"Hoy",tabMonths:"Meses",tabHabits:"Hábitos",tabRewards:"Tienda",tabCasino:"Casino",tabAnalytics:"Análisis",tabSettings:"Ajustes",
 syncLocal:"○ local",syncOnline:"● en línea",syncConnecting:"● conectando...",
 lvls:["Principiante","Practicante","Experto","Maestro","Gurú","Leyenda"],
 ranks:["Novato","Aprendiz","Buscador","Guardián","Explorador","Guerrero","Caballero","Místico","Sabio","Cazador","Berserker","Paladín","Hechicero","Titán","Fénix","Dragón","Arconte","Inmortal","Leyenda","Dios"],
@@ -1233,6 +1280,8 @@ achUnbreakable:"Inquebrantable",achUnbreakableD:"Racha 21+ días",
 achRewardCollector:"Coleccionista",achRewardCollectorD:"50+ recompensas en el año",
 achYearPositive:"Año en positivo",achYearPositiveD:"El cambio neto de saldo INLI este año es positivo",
 achLevel25:"Un cuarto del camino",achLevel25D:"Nivel 25 alcanzado",
+achLevel50:"Mitad del camino",achLevel50D:"Nivel 50 alcanzado",achLevel75:"Tres cuartos del camino",achLevel75D:"Nivel 75 alcanzado",achLevel100:"La Cumbre",achLevel100D:"Nivel máximo, 100, alcanzado",
+achCasinoPlinko:"Jackpot de Plinko",achCasinoPlinkoD:"Multiplicador de ×10 o más en Plinko",achCasinoDouble:"Racha Blanca",achCasinoDoubleD:"Ganaste una apuesta al blanco en Double",achCasinoCrash:"Nervios de Acero",achCasinoCrashD:"Retiraste en Crash a ×10 o más",achCasinoBJ:"Natural",achCasinoBJD:"Blackjack natural",achCasinoHighRoller:"Gran Apostador",achCasinoHighRollerD:"1000+ INLI apostados en total en el casino",
 appearance:"Apariencia",darkMode:"Modo oscuro",accentColor:"Color de acento",language:"Idioma",
 tagsTitle:"Etiquetas",tagsDesc:"Gestionar categorías. Cambiar etiqueta actualiza hábitos vinculados.",
 addTag:"+ Agregar etiqueta",newTag:"Nueva etiqueta",editTagTitle:"Editar etiqueta",
@@ -1279,7 +1328,7 @@ appTitle:"Habitunity",
 months:["一月","二月","三月","四月","五月","六月","七月","八月","九月","十月","十一月","十二月"],
 monthsShort:["1月","2月","3月","4月","5月","6月","7月","8月","9月","10月","11月","12月"],
 daysShort:["日","一","二","三","四","五","六"],dayNames:["周日","周一","周二","周三","周四","周五","周六"],
-tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabRewards:"商店",tabAnalytics:"分析",tabSettings:"设置",
+tabToday:"今天",tabMonths:"月份",tabHabits:"习惯",tabRewards:"商店",tabCasino:"赌场",tabAnalytics:"分析",tabSettings:"设置",
 syncLocal:"○ 本地",syncOnline:"● 在线",syncConnecting:"● 连接中...",
 lvls:["初学者","修行者","专家","大师","导师","传奇"],
 ranks:["新手","学徒","探索者","守护者","探路者","战士","骑士","神秘者","贤者","猎人","狂战士","圣骑士","术士","泰坦","凤凰","龙","执政官","不朽者","传说","神"],
@@ -1348,6 +1397,8 @@ achUnbreakable:"不可破",achUnbreakableD:"连续21天+",
 achRewardCollector:"奖励收集者",achRewardCollectorD:"年度50+奖励",
 achYearPositive:"本年盈余",achYearPositiveD:"本年INLI净变化为正",
 achLevel25:"四分之一路程",achLevel25D:"达到25级",
+achLevel50:"半程",achLevel50D:"达到50级",achLevel75:"四分之三路程",achLevel75D:"达到75级",achLevel100:"顶峰",achLevel100D:"达到最高等级100级",
+achCasinoPlinko:"Plinko头奖",achCasinoPlinkoD:"Plinko命中10倍以上倍率",achCasinoDouble:"白色连胜",achCasinoDoubleD:"在Double中押白色获胜",achCasinoCrash:"钢铁神经",achCasinoCrashD:"在Crash中以10倍以上提现",achCasinoBJ:"天生赢家",achCasinoBJD:"获得天生21点",achCasinoHighRoller:"豪赌客",achCasinoHighRollerD:"赌场累计下注1000+ INLI",
 appearance:"外观",darkMode:"深色模式",accentColor:"强调色",language:"语言",
 tagsTitle:"标签",tagsDesc:"管理分类。更改标签会更新所有相关习惯。",
 addTag:"+ 添加标签",newTag:"新标签",editTagTitle:"编辑标签",
@@ -1394,7 +1445,7 @@ appTitle:"Habitunity",
 months:["Janvier","Février","Mars","Avril","Mai","Juin","Juillet","Août","Septembre","Octobre","Novembre","Décembre"],
 monthsShort:["Jan","Fév","Mar","Avr","Mai","Jun","Jul","Aoû","Sep","Oct","Nov","Déc"],
 daysShort:["Di","Lu","Ma","Me","Je","Ve","Sa"],dayNames:["Dim","Lun","Mar","Mer","Jeu","Ven","Sam"],
-tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabRewards:"Boutique",tabAnalytics:"Analyse",tabSettings:"Paramètres",
+tabToday:"Aujourd'hui",tabMonths:"Mois",tabHabits:"Habitudes",tabRewards:"Boutique",tabCasino:"Casino",tabAnalytics:"Analyse",tabSettings:"Paramètres",
 syncLocal:"○ local",syncOnline:"● en ligne",syncConnecting:"● connexion...",
 lvls:["Débutant","Praticien","Expert","Maître","Gourou","Légende"],
 ranks:["Novice","Apprenti","Chercheur","Gardien","Éclaireur","Guerrier","Chevalier","Mystique","Sage","Chasseur","Berserker","Paladin","Sorcier","Titan","Phénix","Dragon","Archonte","Immortel","Légende","Dieu"],
@@ -1463,6 +1514,8 @@ achUnbreakable:"Incassable",achUnbreakableD:"Série 21+ jours",
 achRewardCollector:"Collectionneur",achRewardCollectorD:"50+ récompenses dans l'année",
 achYearPositive:"Année positive",achYearPositiveD:"Le solde net INLI cette année est positif",
 achLevel25:"Un quart du chemin",achLevel25D:"Niveau 25 atteint",
+achLevel50:"Mi-chemin",achLevel50D:"Niveau 50 atteint",achLevel75:"Trois quarts du chemin",achLevel75D:"Niveau 75 atteint",achLevel100:"Le Sommet",achLevel100D:"Niveau maximum, 100, atteint",
+achCasinoPlinko:"Jackpot Plinko",achCasinoPlinkoD:"Multiplicateur ×10 ou plus sur Plinko",achCasinoDouble:"Sorti en Blanc",achCasinoDoubleD:"Pari gagnant sur blanc à Double",achCasinoCrash:"Nerfs d'Acier",achCasinoCrashD:"Retrait à ×10 ou plus sur Crash",achCasinoBJ:"Naturel",achCasinoBJD:"Blackjack naturel",achCasinoHighRoller:"Gros Joueur",achCasinoHighRollerD:"1000+ INLI misés au total au casino",
 appearance:"Apparence",darkMode:"Mode sombre",accentColor:"Couleur d'accent",language:"Langue",
 tagsTitle:"Étiquettes",tagsDesc:"Gérer les catégories. Modifier une étiquette met à jour les habitudes liées.",
 addTag:"+ Ajouter étiquette",newTag:"Nouvelle étiquette",editTagTitle:"Modifier étiquette",
@@ -1512,9 +1565,9 @@ function applyLang(){
   const appTitleWithYear=T.appTitle+" "+activeYear();
   document.querySelector(".eyebrow").textContent=appTitleWithYear;
   document.title=appTitleWithYear;
-  const tvs=["today","track","habits","rewards","stats","settings"];
-  const tls=[T.tabToday,T.tabMonths,T.tabHabits,(T.tabRewards||"Пряники"),T.tabAnalytics,T.tabSettings];
-  const tic=["⚡","📅","🎯","🏆","📈","⚙"];
+  const tvs=["today","track","habits","rewards","casino","stats","settings"];
+  const tls=[T.tabToday,T.tabMonths,T.tabHabits,(T.tabRewards||"Пряники"),T.tabCasino,T.tabAnalytics,T.tabSettings];
+  const tic=["⚡","📅","🎯","🏆","🎰","📈","⚙"];
   document.querySelectorAll(".tab").forEach(t=>{const i=tvs.indexOf(t.dataset.view);if(i>=0)t.textContent=tic[i]+" "+tls[i]});
   const ids={lDarkMode:T.darkMode,lAccentColor:T.accentColor,lLanguage:T.language,
     lAppearance:T.appearance,lTagsTitle:T.tagsTitle,lTagsDesc:T.tagsDesc,lBtnAddTag:T.addTag,
@@ -1687,11 +1740,23 @@ function addDaysISO(iso,days){
   return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
 }
 /* ===== SAVINGS ("вклад") — lock INLI for a continuous, duration-scaled bonus =====
-   Deliberately a smooth formula (0.5%/day, capped at 40%) rather than a handful of fixed-duration
-   tiers — the whole economy already avoids discrete cliffs everywhere else (the money pool, the
-   pace-line, tier escalation), so a "pick 7/30/90 days" preset ladder here would be the one place
-   that reintroduces exactly the dead-zone-adjacent effect this project keeps designing away from. */
-function savingsBonusPctForDays(days){return Math.min(40,Math.round(days*0.5*10)/10)}
+   Deliberately a smooth formula rather than a handful of fixed-duration tiers — the whole economy
+   already avoids discrete cliffs everywhere else (the money pool, the pace-line, tier escalation),
+   so a "pick 7/30/90 days" preset ladder here would be the one place that reintroduces exactly the
+   dead-zone-adjacent effect this project keeps designing away from.
+   The rate itself decelerates in steps instead of hitting a hard ceiling: 0.5%/day through day 90
+   (45%), 0.25%/day from day 91-120 (52.5%), then a slow 0.125%/day trickle forever after — a very
+   long lock keeps growing, just ever more slowly, rather than flatlining at a fixed cap. */
+const SAVINGS_TIERS=[{upTo:90,rate:0.5},{upTo:120,rate:0.25},{upTo:Infinity,rate:0.125}];
+function savingsBonusPctForDays(days){
+  let pct=0,prevBound=0;
+  for(const tier of SAVINGS_TIERS){
+    pct+=Math.max(0,Math.min(days,tier.upTo)-prevBound)*tier.rate;
+    if(days<=tier.upTo)break;
+    prevBound=tier.upTo;
+  }
+  return Math.round(pct*10)/10;
+}
 function createSavingsDeposit(amount,days){
   if(!(amount>0)||!(days>0))return null;
   const start=todayISO();
@@ -1746,6 +1811,23 @@ function freshState(){
     // Savings ("вклад"): lock INLI away for N days for a continuous (never a fixed-tier cliff)
     // bonus on collection — a lifetime ledger of fact, not derived, mirroring purchases' shape.
     savings:[],
+    // Achievement currency payouts — a frozen claim ledger (see checkAchievementRewardUnlocks),
+    // mirroring purchases'/savings' shape for the same reason: achievements are live-derived and
+    // could in theory flip, so what's actually been paid out must be an immutable record of fact.
+    achievementClaims:[],
+    // Personal challenges — unlike the ledgers above, purely derived from each entry's own
+    // checks/startDate/days (see challengeStatus/challengeReward), so this array itself never needs
+    // migration-time repair beyond simply existing.
+    challenges:[],
+    // Casino — a frozen bet ledger (see placeCasinoBet), same "immutable record of fact" shape as
+    // purchases/savings: every round's bet and payout are locked in the moment it resolves, never
+    // re-derived from anything (there's nothing to re-derive an already-drawn random outcome from).
+    casinoBets:[],
+    // Casino play-money mode: an entirely separate, user-declared number that never touches
+    // recalcPoints()/state.points at all — casinoMode picks which wallet the games currently play
+    // against, casinoVirtualBalance is that number (null until the user sets a starting value the
+    // first time), persisted like any other setting so it survives reloads until reset on purpose.
+    casinoMode:"real",casinoVirtualBalance:null,
     // Days before this (ISO "YYYY-MM-DD") never enter the points economy (or XP) at all — a
     // brand-new install starts counting from today, not from Jan 1. Existing installs get a one-time
     // heuristic default in migrate() (earliest checked day), editable in Settings afterward.
@@ -1994,6 +2076,11 @@ function migrate(){
   if(!state.cosmetics.unlockedViaAchievement)state.cosmetics.unlockedViaAchievement={};
   if(!Array.isArray(state.cosmeticPurchases))state.cosmeticPurchases=[];
   if(!Array.isArray(state.savings))state.savings=[];
+  if(!Array.isArray(state.achievementClaims))state.achievementClaims=[];
+  if(!Array.isArray(state.challenges))state.challenges=[];
+  if(!Array.isArray(state.casinoBets))state.casinoBets=[];
+  if(state.casinoMode!=="real"&&state.casinoMode!=="virtual")state.casinoMode="real";
+  if(typeof state.casinoVirtualBalance!=="number"||!isFinite(state.casinoVirtualBalance))state.casinoVirtualBalance=null;
   recalcXP();
   recalcPoints();
   scanTierWarnings();
@@ -2606,16 +2693,21 @@ function eventPaceStatus(h,m,d){
 // them are actual misses. year-explicit throughout (not eventPaceStatus, which only ever reads the
 // currently-bound year) so this works correctly across every year in state.years, not just the active one.
 const PERFECT_DAY_BONUS_RATE=0.15;
-function perfectDaysBonusForMonth(year,m,yd){
+// Shared by perfectDaysBonusForMonth and perfectWeekBonusForMonth so the "what counts as satisfied"
+// rule (checked, or neutrally excused via freeze/archive/pace-line/not-yet-created) lives in exactly
+// one place. Returns null when the month has no eligible days yet (mirrors the early-return 0s the
+// two callers used to have individually). satisfied[d] is true/false, or null for a day that's
+// entirely before global tracking started (excluded from the economy, not a miss).
+function satisfiedDaysForMonth(year,m,yd){
   const hs=(state.habits||[]).filter(h=>!h.deleted&&!h.archived);
-  if(!hs.length)return 0;
+  if(!hs.length)return null;
   const totalDays=daysInMonthY(year,m);
   const elapsed=elapsedDaysInMonthY(year,m);
   const rt=realTodayParts();
   const isCurMonth=(year===rt.y&&m===rt.m);
-  if(elapsed<=0&&!isCurMonth)return 0;
+  if(elapsed<=0&&!isCurMonth)return null;
   const upper=isCurMonth?rt.d-1:totalDays;
-  if(upper<1)return 0;
+  if(upper<1)return null;
   const mk="m"+m;
   const totalWeight=hs.reduce((s,h)=>s+(h.weight||1),0);
   const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
@@ -2630,10 +2722,10 @@ function perfectDaysBonusForMonth(year,m,yd){
     }
     eventDoneSoFar[h.id]=arr;
   });
-  let bonus=0;
+  const satisfied=[null];
   for(let d=1;d<=upper;d++){
-    if(beforeTrackingStart(year,m,d))continue;
-    const allSatisfied=hs.every(h=>{
+    if(beforeTrackingStart(year,m,d)){satisfied.push(null);continue}
+    satisfied.push(hs.every(h=>{
       const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
       if(checksBucket[d])return true;
       if(frozen.includes(d))return true;
@@ -2648,10 +2740,323 @@ function perfectDaysBonusForMonth(year,m,yd){
         if(eventDoneSoFar[h.id][d]>=minRequired)return true;
       }
       return false;
-    });
-    if(allSatisfied)bonus+=totalWeight*PERFECT_DAY_BONUS_RATE;
+    }));
+  }
+  return{satisfied,totalWeight,upper};
+}
+// Both bonus functions below accept an optional pre-computed satisfiedDaysForMonth() result so a
+// caller that needs both (recalcPoints) can walk the — fairly expensive, event-habit-tracking —
+// day computation exactly once per month instead of twice; standalone callers can still omit it
+// and each function will compute its own, same as before.
+function perfectDaysBonusForMonth(year,m,yd,precomputed){
+  const r=precomputed||satisfiedDaysForMonth(year,m,yd);
+  if(!r)return 0;
+  let bonus=0;
+  for(let d=1;d<=r.upper;d++)if(r.satisfied[d])bonus+=r.totalWeight*PERFECT_DAY_BONUS_RATE;
+  return Math.round(bonus);
+}
+// An intermediate bonus between the daily perfect-day payout and the monthly achPerfectMonth
+// achievement: every 7th CONSECUTIVE perfect day pays an extra chunk, on top of (not instead of)
+// each individual day's own PERFECT_DAY_BONUS_RATE payout. A day excluded from the economy entirely
+// (satisfied===null, before tracking start) is skipped without breaking the streak, same as it's
+// invisible to the daily bonus above. Resets at 0 on any real miss, and — like every other streak
+// in this app — never carries across a month boundary.
+const PERFECT_WEEK_BONUS_RATE=0.5;
+function perfectWeekBonusForMonth(year,m,yd,precomputed){
+  const r=precomputed||satisfiedDaysForMonth(year,m,yd);
+  if(!r)return 0;
+  let bonus=0,streak=0;
+  for(let d=1;d<=r.upper;d++){
+    if(r.satisfied[d]===null)continue;
+    if(r.satisfied[d]){
+      streak++;
+      if(streak%7===0)bonus+=r.totalWeight*PERFECT_WEEK_BONUS_RATE;
+    }else streak=0;
   }
   return Math.round(bonus);
+}
+/* ===== PERSONAL CHALLENGES =====
+   A user-declared commitment ("N days without X" / "N days of Y") — deliberately separate from the
+   habit grid, since a challenge is often about something not otherwise tracked as a habit at all.
+   Ground truth is still real day-by-day check-ins (never a pure honor-system "mark it done at the
+   end" flag — that would be the one place in this whole economy money could be gotten for free),
+   just scoped to the challenge's own day range (day 1 = its own startDate) instead of a calendar
+   month. Status and reward are both purely DERIVED from checks/startDate/days — exactly like
+   perfectDaysBonusForMonth above, never a stored/frozen flag — so editing a past day (fixing an
+   honest miss, same as the Track grid already allows everywhere else) immediately and safely
+   re-derives the right outcome instead of leaving a stale status behind. A challenge never locks
+   away any principal — it's pure upside, not a wager — so unlike savings there's nothing to
+   subtract while one is active, only a reward to add once one is won.
+   The reward itself is auto-priced from duration via CHALLENGE_TIERS rather than a hand-typed INLI
+   number — the same "derive it, don't hand-pick it" principle the reward shop's day-based
+   auto-pricing already uses (REWARD_TIER_DAYS_*) — expressed in dailyUnit()-days so it floats with
+   the user's own habit weights instead of sitting as a disconnected flat number. Both days AND the
+   per-day coefficient rise together with duration, so a longer, more ambitious challenge pays off
+   super-linearly rather than just proportionally more. */
+const CHALLENGE_TIERS=[{maxDays:3,coef:0.7},{maxDays:7,coef:0.9},{maxDays:14,coef:1.1},{maxDays:30,coef:1.3},{maxDays:Infinity,coef:1.5}];
+function challengeRewardDays(days){
+  const tier=CHALLENGE_TIERS.find(t=>days<=t.maxDays);
+  return Math.round(days*tier.coef*10)/10;
+}
+function challengeRewardAmount(days){return Math.round(challengeRewardDays(days)*dailyUnit())}
+function createChallenge(name,days){
+  name=(name||"").trim();
+  if(!name||!(days>0))return null;
+  if(!Array.isArray(state.challenges))state.challenges=[];
+  const ch={id:uid(),name,days:Math.round(days),startDate:todayISO(),checks:{},cancelled:false};
+  state.challenges.push(ch);
+  recalcPoints();save();
+  return ch;
+}
+// Day 1 is the challenge's own startDate, not a calendar-month day — so each challenge runs on its
+// own private day-index timeline, however many calendar days that turns out to span.
+function challengeDayIndexForToday(ch){
+  const start=new Date(ch.startDate+"T00:00:00"),today=new Date(todayISO()+"T00:00:00");
+  return Math.round((today-start)/86400000)+1;
+}
+// Purely derived, recomputed fresh every call — never a stored status that could drift out of sync
+// with the underlying checks. "failed" the moment any day strictly before today (i.e. fully elapsed,
+// no time left to still check it) turns up unchecked; "completed" only once the full duration has
+// actually elapsed AND every one of its days ended up checked; "active" while still inside the
+// window (unless explicitly cancelled, which always wins).
+function challengeStatus(ch){
+  if(ch.cancelled)return"cancelled";
+  const todayIdx=challengeDayIndexForToday(ch);
+  for(let d=1;d<Math.min(todayIdx,ch.days+1);d++)if(!ch.checks[d])return"failed";
+  return todayIdx<=ch.days?"active":"completed";
+}
+function challengeReward(ch){return challengeStatus(ch)==="completed"?challengeRewardAmount(ch.days):0}
+function toggleChallengeDay(id,dayIdx){
+  const ch=(state.challenges||[]).find(c=>c.id===id);
+  if(!ch||ch.cancelled||dayIdx<1||dayIdx>ch.days)return;
+  if(ch.checks[dayIdx])delete ch.checks[dayIdx];else ch.checks[dayIdx]=true;
+  recalcPoints();save();
+}
+function cancelChallenge(id){
+  const ch=(state.challenges||[]).find(c=>c.id===id);
+  if(!ch||ch.cancelled)return false;
+  ch.cancelled=true;
+  recalcPoints();save();
+  return true;
+}
+// A dedup flag purely for the notification popup (mirrors tierWarningKeys) — completely decoupled
+// from challengeReward's own live re-derivation above, so it never influences the actual payout,
+// it just stops the same "you won/lost" popup from firing again on every subsequent recalc.
+function checkChallengeNotifications(){
+  let notified=false;
+  (state.challenges||[]).forEach(ch=>{
+    const st=challengeStatus(ch);
+    const ru=state.lang!=="en";
+    if(st==="completed"&&!ch.completeNotified){
+      ch.completeNotified=true;notified=true;
+      addNotification("challenge",(ru?"🏆 Челлендж пройден: ":"🏆 Challenge complete: ")+ch.name,`+${challengeRewardAmount(ch.days)} ${CURRENCY_TICKER}`);
+    }else if(st==="failed"&&!ch.failNotified){
+      ch.failNotified=true;notified=true;
+      addNotification("challenge",(ru?"💔 Челлендж провален: ":"💔 Challenge failed: ")+ch.name,ru?"Пропущен день":"A day was missed");
+    }
+  });
+  if(notified)renderNotifBadge();
+}
+/* ===== CASINO =====
+   Four honest games, each with a real, disclosed negative expected value — never a mystery. The
+   rest of this economy ties money to real effort on purpose; the casino is deliberately NOT another
+   way to grow a balance, just a way to spend some of one on adrenaline, at odds you actually know.
+   Every round is a frozen historical fact the instant it resolves (see placeCasinoBet) — there's
+   nothing to re-derive an already-drawn random outcome from, so this is a ledger like purchases/
+   savings, not a live-recomputed value like the challenge/achievement systems above. A round that's
+   still in progress (Crash's climb, a Blackjack hand) lives only in a transient, unsaved JS variable
+   and is only ever committed to the ledger once fully resolved — if the app closes mid-round, that
+   round simply never happened, never a dangling charge or a free win.
+   Same debt gate as the reward shop (buyRewardFlat/buyCosmetic): can't place a new bet while already
+   in the hole, though a single bet — like a single purchase — can legitimately be the one that puts
+   you there.
+   Play-money mode (state.casinoMode==="virtual") is a second, independent wallet for exactly the
+   same four games: casinoVirtualBalance is just a number the user sets/resets themselves, adjusted
+   directly by each round's net win/loss, and NEVER summed into recalcPoints() — real INLI is
+   completely untouched while playing on it. It also isn't logged to state.casinoBets (that ledger
+   is specifically the real-money record), so "recent bets" simply doesn't show virtual rounds. */
+const CASINO_HOUSE_EDGE=0.06;
+function placeCasinoBet(game,bet,payout,details){
+  if(!(bet>0))return null;
+  const net=Math.round((payout-bet)*100)/100;
+  if(state.casinoMode==="virtual"){
+    state.casinoVirtualBalance=Math.round(((state.casinoVirtualBalance||0)+net)*100)/100;
+    save();
+    return{id:uid(),game,bet:Math.round(bet),payout:Math.round(payout*100)/100,date:Date.now(),details:details||null,virtual:true};
+  }
+  if(!Array.isArray(state.casinoBets))state.casinoBets=[];
+  const rec={id:uid(),game,bet:Math.round(bet),payout:Math.round(payout*100)/100,date:Date.now(),details:details||null};
+  state.casinoBets.push(rec);
+  recalcPoints();save();
+  return rec;
+}
+function casinoRecentBets(game,n){
+  return(state.casinoBets||[]).filter(b=>!game||b.game===game).slice(-n).reverse();
+}
+
+/* ---- Plinko: a ball falls through PLINKO_ROWS rows of pegs, going left/right 50/50 at each one,
+   landing in one of ROWS+1 slots at the bottom (a binomial walk) — center slots are far more likely
+   than edge slots, so center multipliers are low and edge multipliers are high. Tables are pre-
+   calibrated (A·B^|k-center|, solved so Σ P(slot)·multiplier = 1-CASINO_HOUSE_EDGE) per risk level;
+   see the "medium" B=1.75 / "high" B=2.6 spread for the more extreme high-risk swings. ---- */
+const PLINKO_ROWS=12;
+const PLINKO_TABLES={
+  low:   [3.58,2.65,1.97,1.46,1.08,0.8,0.59,0.8,1.08,1.46,1.97,2.65,3.58],
+  medium:[10.26,5.86,3.35,1.92,1.09,0.63,0.36,0.63,1.09,1.92,3.35,5.86,10.26],
+  high:  [41.06,15.79,6.07,2.34,0.9,0.35,0.13,0.35,0.9,2.34,6.07,15.79,41.06],
+};
+function plinkoDrop(){
+  const path=[];
+  let slot=0;
+  for(let i=0;i<PLINKO_ROWS;i++){
+    const right=Math.random()<0.5?0:1;
+    path.push(right);
+    slot+=right;
+  }
+  return{path,slot};
+}
+function casinoDebtBlocked(){
+  const ru=state.lang!=="en";
+  // Virtual chips carry no real consequence, so the real-balance debt gate below doesn't apply to
+  // them at all — the only thing that can block a virtual bet is not having declared a balance yet.
+  if(state.casinoMode==="virtual"){
+    if(state.casinoVirtualBalance===null){
+      toast(ru?"Сначала задай виртуальный счёт":"Set a virtual balance first");
+      return true;
+    }
+    return false;
+  }
+  if(!debtBlocksPurchases())return false;
+  toast(ru?`Сначала закройте долг ≈${debtRub()} ₽ (см. магазин)`:`Settle your ≈${debtRub()}₽ debt first (see the shop)`);
+  return true;
+}
+function playPlinko(bet,risk){
+  if(!(bet>0)||casinoDebtBlocked())return null;
+  const table=PLINKO_TABLES[risk]||PLINKO_TABLES.medium;
+  const{path,slot}=plinkoDrop();
+  const mult=table[slot];
+  const payout=bet*mult;
+  const rec=placeCasinoBet("plinko",bet,payout,{risk,slot,mult});
+  return{rec,path,slot,mult,payout:rec.payout};
+}
+
+/* ---- Double: the classic 15-slot color strip — 7 red, 7 black, 1 white — red/black pay 2×, white
+   pays 14×. Every bet type nets the same ~6.67% edge: (7/15)·2 = 14/15 for a color, (1/15)·14 = 14/15
+   for white. ---- */
+const DOUBLE_SLOTS=15,DOUBLE_PAYOUT={red:2,black:2,white:14};
+function doubleColorForSlot(slot){return slot===14?"white":(slot<7?"red":"black")}
+function doubleSpin(){
+  const slot=Math.floor(Math.random()*DOUBLE_SLOTS);
+  return{slot,color:doubleColorForSlot(slot)};
+}
+function playDouble(bet,pick){
+  if(!(bet>0)||casinoDebtBlocked())return null;
+  const{slot,color}=doubleSpin();
+  const win=color===pick;
+  const payout=win?bet*DOUBLE_PAYOUT[pick]:0;
+  const rec=placeCasinoBet("double",bet,payout,{pick,slot,color,win});
+  return{rec,slot,color,win,payout:rec.payout};
+}
+
+/* ---- Crash: the multiplier climbs from 1.00× until it hits a pre-drawn (but hidden) crash point;
+   cash out before it gets there and you win bet×(multiplier at that instant), or ride it past the
+   crash point and lose the bet. P(crashPoint >= m) = (1-houseEdge)/m for every m >= 1 — the classic
+   provably-fair-style formula — which makes the EV of cashing out at ANY multiplier exactly
+   1-houseEdge, so there's no "safer" multiplier to target, only a risk preference. ---- */
+function crashPointDraw(){
+  const r=1-Math.random(); // (0,1] — never exactly 0, so the division below can't blow up
+  return Math.max(1,Math.floor((1-CASINO_HOUSE_EDGE)/r*100)/100);
+}
+// The crash point is drawn now but only ever compared against internally — never displayed — until
+// the round resolves, same as a real crash game keeps it hidden while the multiplier is climbing.
+function startCrashRound(bet){
+  if(!(bet>0)||casinoDebtBlocked())return null;
+  return{bet,crashPoint:crashPointDraw()};
+}
+function resolveCrash(bet,crashPoint,cashOutAt){
+  const won=cashOutAt!=null&&cashOutAt<=crashPoint;
+  const payout=won?bet*cashOutAt:0;
+  const rec=placeCasinoBet("crash",bet,payout,{crashPoint,cashOutAt,won});
+  return{rec,won,payout:rec.payout};
+}
+
+/* ---- Blackjack: a real shuffled 52-card deck per hand (not drawn-with-replacement), dealer stands
+   on every 17 (hard or soft), blackjack pays 3:2, push returns the bet untouched. No split for now —
+   hit/stand/double only. Unlike the other three games this one has no hand-picked house edge: it's
+   whatever standard blackjack's actual rules produce (roughly break-even with correct play, worse
+   with bad play) — the one casino game here where skill, not just declared odds, is the honest deal. ---- */
+const BJ_RANKS=["2","3","4","5","6","7","8","9","10","J","Q","K","A"],BJ_SUITS=["♠","♥","♦","♣"];
+function freshShuffledDeck(){
+  const deck=[];
+  BJ_SUITS.forEach(s=>BJ_RANKS.forEach(r=>deck.push({rank:r,suit:s})));
+  for(let i=deck.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [deck[i],deck[j]]=[deck[j],deck[i]];
+  }
+  return deck;
+}
+function bjCardValue(rank){return rank==="A"?11:(["J","Q","K"].includes(rank)?10:+rank)}
+// Soft = at least one Ace is still being counted as 11 without busting the hand.
+function bjHandValue(cards){
+  let value=cards.reduce((s,c)=>s+bjCardValue(c.rank),0);
+  let aces=cards.filter(c=>c.rank==="A").length;
+  while(value>21&&aces>0){value-=10;aces--}
+  return{value,soft:aces>0};
+}
+function bjIsBlackjack(cards){return cards.length===2&&bjHandValue(cards).value===21}
+// The in-progress hand — bet, deck, both hands — lives only here, never in `state`/save(): closing
+// the app mid-hand simply abandons it (no charge, no payout), same rule Crash's in-flight round
+// follows above. Only bjResolve() ever calls placeCasinoBet, once, with the hand's final outcome.
+let bjRound=null;
+function bjDeal(bet){
+  if(bjRound||!(bet>0)||casinoDebtBlocked())return null;
+  const deck=freshShuffledDeck();
+  const player=[deck.pop(),deck.pop()],dealer=[deck.pop(),deck.pop()];
+  bjRound={bet,deck,player,dealer,doubled:false};
+  if(bjIsBlackjack(player)||bjIsBlackjack(dealer))return bjResolve();
+  return{status:"playing",player:player.slice(),dealerUp:dealer[0]};
+}
+function bjHit(){
+  if(!bjRound)return null;
+  bjRound.player.push(bjRound.deck.pop());
+  if(bjHandValue(bjRound.player).value>21)return bjResolve();
+  return{status:"playing",player:bjRound.player.slice(),dealerUp:bjRound.dealer[0]};
+}
+function bjDouble(){
+  if(!bjRound||bjRound.player.length!==2)return null;
+  bjRound.doubled=true;
+  bjRound.player.push(bjRound.deck.pop());
+  return bjResolve();
+}
+function bjStand(){
+  if(!bjRound)return null;
+  return bjResolve();
+}
+function bjDealerPlay(){
+  while(bjHandValue(bjRound.dealer).value<17)bjRound.dealer.push(bjRound.deck.pop());
+}
+function bjResolve(){
+  const r=bjRound;
+  const playerBJ=bjIsBlackjack(r.player),pv=bjHandValue(r.player).value;
+  const effectiveBet=r.doubled?r.bet*2:r.bet;
+  let outcome,payout;
+  if(pv>21){
+    outcome="bust";payout=0;
+  }else{
+    if(!playerBJ)bjDealerPlay();
+    const dv=bjHandValue(r.dealer).value,dealerBJ=bjIsBlackjack(r.dealer);
+    if(playerBJ&&dealerBJ){outcome="push";payout=effectiveBet}
+    else if(playerBJ){outcome="blackjack";payout=effectiveBet*2.5}
+    else if(dealerBJ){outcome="lose";payout=0}
+    else if(dv>21){outcome="dealerbust";payout=effectiveBet*2}
+    else if(pv>dv){outcome="win";payout=effectiveBet*2}
+    else if(pv<dv){outcome="lose";payout=0}
+    else{outcome="push";payout=effectiveBet}
+  }
+  const rec=placeCasinoBet("blackjack",effectiveBet,payout,{outcome,doubled:r.doubled});
+  const result={status:"resolved",outcome,payout:rec.payout,bet:effectiveBet,player:r.player.slice(),dealer:r.dealer.slice()};
+  bjRound=null;
+  return result;
 }
 // Rebuilds the lifetime points balance from scratch: every habit × every month × every year the
 // user has ever touched, minus everything ever spent in the shop. Never patched incrementally.
@@ -2664,7 +3069,10 @@ function recalcPoints(){
       (state.habits||[]).forEach(h=>{
         for(let m=0;m<12;m++)pts+=habitPointsForMonth(h,yNum,m,yd);
       });
-      for(let m=0;m<12;m++)pts+=perfectDaysBonusForMonth(yNum,m,yd);
+      for(let m=0;m<12;m++){
+        const satDays=satisfiedDaysForMonth(yNum,m,yd);
+        pts+=perfectDaysBonusForMonth(yNum,m,yd,satDays)+perfectWeekBonusForMonth(yNum,m,yd,satDays);
+      }
     });
   }
   pts-=(state.purchases||[]).reduce((s,p)=>s+(p.cost||0),0);
@@ -2676,12 +3084,28 @@ function recalcPoints(){
     if(!dep.collected)pts-=dep.principal;
     else pts+=Math.round(dep.principal*dep.bonusPct/100);
   });
+  // Achievement rewards: detected lazily (see checkAchievementRewardUnlocks) but once a claim
+  // lands in the ledger it's a frozen receipt exactly like purchases/savings above, so this is a
+  // plain sum, never a mutable running total.
+  checkAchievementRewardUnlocks();
+  pts+=(state.achievementClaims||[]).reduce((s,c)=>s+c.amount,0);
+  // Personal challenges: purely derived (see challengeReward above), so this is a live sum, not a
+  // ledger — an active or cancelled challenge always contributes 0, same as a challenge that failed.
+  checkChallengeNotifications();
+  pts+=(state.challenges||[]).reduce((s,c)=>s+challengeReward(c),0);
+  // Casino: each round's net (payout minus bet) is a frozen historical fact the instant it resolves
+  // (see placeCasinoBet), so — exactly like purchases/savings — this is a plain sum, never replayed.
+  pts+=(state.casinoBets||[]).reduce((s,b)=>s+(b.payout-b.bet),0);
   // Real-money debt settlement: a fixed historical offset, exactly like purchases/savings above —
   // never a mutable "current debt" field that could drift. forgiveCurrentDebt() sets this to exactly
   // enough to zero out whatever the raw negative sum was at the moment it was clicked; it never
   // retroactively erases penalties, it just permanently offsets them going forward.
   pts+=(state.debtForgiven||0);
-  state.points=pts;
+  // Rounded to cents: every other term above was already a clean integer, but casino payouts carry
+  // 2 decimal places (a multiplier like 0.36× or 3.35× applied to an integer bet), and summing many
+  // of those over time accumulates plain binary floating-point noise (…000000001-type drift) that
+  // would otherwise eventually show up in the balance display.
+  state.points=Math.round(pts*100)/100;
   checkCosmeticAchievementUnlocks();
 }
 // ₽ this month's owed, if points is negative — same exchange rate the reward shop already uses
@@ -4629,7 +5053,11 @@ function calculateCorrelations(m){
 }
 
 /* ===== ACHIEVEMENTS ===== */
-function achCard(a){return`<div class="ach ${a.on?'unlocked':''}"><div class="emo">${a.on?a.emo:'&#128274;'}</div><div class="at">${a.title}</div><div class="ad">${a.desc}</div></div>`}
+function achCard(a){
+  const days=ACHIEVEMENT_REWARD_DAYS[a.key];
+  const rewardHTML=days?`<div class="ar" style="color:var(--green);font-size:11px;font-weight:700;margin-top:3px">+${Math.round(days*dailyUnit())} ${CURRENCY_TICKER}</div>`:'';
+  return`<div class="ach ${a.on?'unlocked':''}"><div class="emo">${a.on?a.emo:'&#128274;'}</div><div class="at">${a.title}</div><div class="ad">${a.desc}</div>${rewardHTML}</div>`;
+}
 // Replaces the old abstinenceMet() (which matched English substrings "porn"/"reels"/"junk"
 // against habit names — meaningless for real, custom-named habits and never tied to any actual
 // habit data). This is data-driven instead: true only if the habit has 2+ violation tiers
@@ -4670,6 +5098,15 @@ function achievementsForYear(){
   const totalRew=T.months.reduce((s,_,m)=>s+monthRewards(m).length,0);
   const yearNet=T.months.reduce((s,_,m)=>s+monthPointsNet(m),0);
   const level=levelFromXp(state.xp||0);
+  // Casino lifetime achievements — deliberately read ONLY state.casinoBets (the real-money ledger),
+  // never the virtual play-money balance: a virtual bet is never pushed into this array at all (see
+  // placeCasinoBet), so resetting/replaying the virtual number can't farm these for real currency.
+  const casinoBets=state.casinoBets||[];
+  const plinkoJackpot=casinoBets.some(b=>b.game==="plinko"&&b.details&&b.details.mult>=10);
+  const doubleWhiteWin=casinoBets.some(b=>b.game==="double"&&b.details&&b.details.color==="white"&&b.details.win);
+  const crashHighCashout=casinoBets.some(b=>b.game==="crash"&&b.details&&b.details.won&&b.details.cashOutAt>=10);
+  const blackjackNatural=casinoBets.some(b=>b.game==="blackjack"&&b.details&&b.details.outcome==="blackjack");
+  const casinoWagered=casinoBets.reduce((s,b)=>s+b.bet,0);
   return[
     {key:"achHalfYear",emo:"&#128081;",title:T.achHalfYear,desc:T.achHalfYearD,on:goodMonths>=6},
     {key:"achYear",emo:"&#127942;",title:T.achYear,desc:T.achYearD,on:goodMonths>=12},
@@ -4679,6 +5116,14 @@ function achievementsForYear(){
     {key:"achRewardCollector",emo:"&#127805;",title:T.achRewardCollector,desc:T.achRewardCollectorD,on:totalRew>=50},
     {key:"achYearPositive",emo:"&#128176;",title:T.achYearPositive,desc:T.achYearPositiveD,on:hs.length>0&&yearNet>0},
     {key:"achLevel25",emo:"&#11088;",title:T.achLevel25,desc:T.achLevel25D,on:level>=25},
+    {key:"achLevel50",emo:"&#127775;",title:T.achLevel50,desc:T.achLevel50D,on:level>=50},
+    {key:"achLevel75",emo:"&#128171;",title:T.achLevel75,desc:T.achLevel75D,on:level>=75},
+    {key:"achLevel100",emo:"&#128081;",title:T.achLevel100,desc:T.achLevel100D,on:level>=100},
+    {key:"achCasinoPlinko",emo:"&#127920;",title:T.achCasinoPlinko,desc:T.achCasinoPlinkoD,on:plinkoJackpot},
+    {key:"achCasinoDouble",emo:"&#9898;",title:T.achCasinoDouble,desc:T.achCasinoDoubleD,on:doubleWhiteWin},
+    {key:"achCasinoCrash",emo:"&#128200;",title:T.achCasinoCrash,desc:T.achCasinoCrashD,on:crashHighCashout},
+    {key:"achCasinoBJ",emo:"&#127183;",title:T.achCasinoBJ,desc:T.achCasinoBJD,on:blackjackNatural},
+    {key:"achCasinoHighRoller",emo:"&#128176;",title:T.achCasinoHighRoller,desc:T.achCasinoHighRollerD,on:casinoWagered>=1000},
   ];
 }
 
@@ -4778,6 +5223,7 @@ const COSMETIC_CATALOG=[
   {id:"badge_leaf",cat:"badge",name:"Чистая совесть",nameEn:"Clear Conscience",cost:null,rarity:"epic",achKey:"ach6Clean",emo:"🍃"},
   {id:"badge_yearpositive",cat:"badge",name:"Год в плюсе",nameEn:"Year in the Black",cost:null,rarity:"epic",achKey:"achYearPositive",emo:"💹"},
   {id:"badge_diamond",cat:"badge",name:"Бриллиант",nameEn:"Diamond",cost:null,rarity:"legendary",achKey:"achPerfectionist",emo:"💎"},
+  {id:"badge_rocket_crash",cat:"badge",name:"Стальные нервы",nameEn:"Nerves of Steel",cost:null,rarity:"epic",achKey:"achCasinoCrash",emo:"🚀"},
 
   {id:"title_discipline",cat:"title",name:"Дисциплина превыше всего",nameEn:"Discipline above all",cost:20,rarity:"common"},
   {id:"title_iron",cat:"title",name:"Железная воля",nameEn:"Iron will",cost:20,rarity:"common"},
@@ -4795,7 +5241,79 @@ const COSMETIC_CATALOG=[
   {id:"title_noexcuses",cat:"title",name:"Без поблажек",nameEn:"No Excuses",cost:null,rarity:"rare",achKey:"achNoFreeze"},
   {id:"title_yearlegend",cat:"title",name:"Легенда года",nameEn:"Year's Legend",cost:null,rarity:"legendary",achKey:"achYear"},
   {id:"title_level25",cat:"title",name:"Мастер уровня 25",nameEn:"Level 25 Master",cost:null,rarity:"epic",achKey:"achLevel25"},
+  {id:"title_highroller",cat:"title",name:"Хайроллер",nameEn:"High Roller",cost:null,rarity:"epic",achKey:"achCasinoHighRoller"},
 ];
+/* ===== ACHIEVEMENT REWARDS =====
+   Achievements are live-derived booleans (see achievementsForMonth/Year above), not one-time
+   events — editing old history could in theory flip one back off. Paying them out currency
+   therefore needs a frozen claim ledger, exactly like purchases/savings: once a (key,scope,year,
+   month) combo is claimed, its amount is locked in and only ever summed plainly, never reversed or
+   re-derived. Amounts are expressed in dailyUnit()-days, the same unit the reward shop prices in,
+   so a payout scales with the user's own habit weights instead of sitting as a disconnected flat
+   number — monthly/yearly keys pay out again every time a new qualifying month/year rolls around,
+   lifetime keys (the level milestones) pay out exactly once ever.
+   Detection is lazy — only the currently active year, and every month within it, gets checked on
+   each recalc — the same "current context" tradeoff checkCosmeticAchievementUnlocks below already
+   accepts, rather than rebinding every year in state.years on every keystroke. Nothing is lost by
+   not having a given year open when it first turns true (the underlying achievement stays true
+   until claimed), it just gets claimed the next time that year is actually viewed. */
+const ACHIEVEMENT_REWARD_DAYS={
+  achOnFire:0.5,achStreak14:1.5,achCleanMonth:1,ach80:1,achZeroPenalty:0.5,
+  achMonthPositive:0.5,achNoFreeze:2,achPerfectMonth:3,
+  achHalfYear:5,achYear:20,achPerfectionist:8,ach6Clean:6,achUnbreakable:4,
+  achRewardCollector:3,achYearPositive:2,
+  achLevel25:10,achLevel50:25,achLevel75:45,achLevel100:75,
+  // Deliberately modest next to the discipline-based rewards above — these mark a memorable moment
+  // (or, for achCasinoHighRoller, real persistence) at the tables, not another serious income path.
+  achCasinoPlinko:3,achCasinoDouble:3,achCasinoCrash:3,achCasinoBJ:2,achCasinoHighRoller:4,
+};
+const ACHIEVEMENT_LIFETIME_KEYS=["achLevel25","achLevel50","achLevel75","achLevel100","achCasinoPlinko","achCasinoDouble","achCasinoCrash","achCasinoBJ","achCasinoHighRoller"];
+function checkAchievementRewardUnlocks(){
+  if(!Array.isArray(state.achievementClaims))state.achievementClaims=[];
+  const ay=activeYear(),rt=realTodayParts();
+  let claimedNew=false;
+  const claim=(key,scope,year,month,title,emo)=>{
+    const days=ACHIEVEMENT_REWARD_DAYS[key];
+    if(!days)return;
+    if(state.achievementClaims.some(c=>c.key===key&&c.scope===scope&&c.year===year&&c.month===month))return;
+    const amount=Math.round(days*dailyUnit());
+    if(amount<=0)return;
+    state.achievementClaims.push({id:uid(),key,scope,year,month,amount,date:Date.now()});
+    claimedNew=true;
+    const ru=state.lang!=="en";
+    addNotification("achievement",(ru?"🏆 Достижение: ":"🏆 Achievement: ")+title,`${emo} +${amount} ${CURRENCY_TICKER}`);
+  };
+  // Monthly rewards only for months that have fully ended. Several monthly achievements are
+  // "avoided a bad thing" predicates (achZeroPenalty, achNoFreeze, achCleanMonth) that read as
+  // vacuously true on day 1 of a brand-new month — nothing bad has happened YET, simply because
+  // nothing has happened at all. Waiting for the month to actually finish before it can be claimed
+  // closes that off, at the cost of the payout landing next month instead of instantly mid-month.
+  const lastElapsedMonth=ay<rt.y?11:(ay===rt.y?rt.m-1:-1);
+  for(let m=0;m<=lastElapsedMonth;m++){
+    // A month that hadn't started tracking yet at all (entirely before state.trackingStart) has
+    // zero real activity, which makes "avoided a bad thing" predicates like achZeroPenalty/
+    // achNoFreeze read as vacuously true for it too — nothing bad happened only because nothing
+    // happened, period. Skip claiming for those months entirely rather than reward doing nothing.
+    if(beforeTrackingStart(ay,m,daysInMonthY(ay,m)))continue;
+    achievementsForMonth(m).forEach(a=>{if(a.on)claim(a.key,"month",ay,m,a.title,a.emo)});
+  }
+  // Same reasoning one level up for yearly keys: ach6Clean etc. aggregate a "fully avoided" predicate
+  // across all 12 months, which reads as vacuously satisfied for months later in the year that simply
+  // haven't happened yet — so those only get claimed once the year itself is fully in the past.
+  // Lifetime (level) milestones have no such concern — a level, once reached, never un-reaches — so
+  // those alone are still checked against the in-progress year too.
+  // (ach6Clean has the same pre-trackingStart vacuous-truth risk as achZeroPenalty/achNoFreeze
+  // above, one level up, if trackingStart falls mid-year — left unguarded here since fixing it
+  // properly means touching avoidedHarshestTier's own month-by-month walk, not just this claimer;
+  // the exposure is small and one-time per historical year, not an ongoing drain like the monthly
+  // case was.)
+  achievementsForYear().forEach(a=>{
+    if(!a.on)return;
+    if(ACHIEVEMENT_LIFETIME_KEYS.includes(a.key))claim(a.key,"lifetime",null,null,a.title,a.emo);
+    else if(ay<rt.y)claim(a.key,"year",ay,null,a.title,a.emo);
+  });
+  if(claimedNew)renderNotifBadge();
+}
 function cosmeticById(id){return COSMETIC_CATALOG.find(c=>c.id===id)}
 // Achievement-gated items unlock permanently the first time their underlying achievement is
 // detected true — checked here (called from the end of every recalcPoints()) against the CURRENT
@@ -4837,12 +5355,13 @@ function equipCosmetic(id){
 
 /* ===== REWARDS VIEW (unified points shop) ===== */
 let bigRewardEditId=null; // null=off, 'new'=adding, id=editing
-let rewardsSubTab="rewards"; // "rewards" | "cosmetics" | "savings"
+let rewardsSubTab="rewards"; // "rewards" | "cosmetics" | "savings" | "challenges"
 function rewardsSubtabsHTML(ru){
   return`<div class="rewards-subtabs">
     <div class="rewards-subtab ${rewardsSubTab==='rewards'?'active':''}" data-rst="rewards">${ru?'Награды':'Rewards'}</div>
     <div class="rewards-subtab ${rewardsSubTab==='cosmetics'?'active':''}" data-rst="cosmetics">&#10024; ${ru?'Эстетика':'Aesthetics'}</div>
     <div class="rewards-subtab ${rewardsSubTab==='savings'?'active':''}" data-rst="savings">&#128176; ${ru?'Вклад':'Savings'}</div>
+    <div class="rewards-subtab ${rewardsSubTab==='challenges'?'active':''}" data-rst="challenges">&#127919; ${ru?'Челленджи':'Challenges'}</div>
   </div>`;
 }
 function wireRewardsSubtabs(body){
@@ -4863,6 +5382,12 @@ function renderRewards(){
     body.innerHTML=rewardsSubtabsHTML(ru)+savingsShopHTML(avail,ru);
     wireRewardsSubtabs(body);
     wireSavingsShop(body);
+    return;
+  }
+  if(rewardsSubTab==="challenges"){
+    body.innerHTML=rewardsSubtabsHTML(ru)+challengesShopHTML(avail,ru);
+    wireRewardsSubtabs(body);
+    wireChallengesShop(body);
     return;
   }
 
@@ -5223,7 +5748,7 @@ function savingsShopHTML(avail,ru){
       <h3 style="margin:0">&#128176; ${ru?'Вклад':'Savings'}</h3>
       <div class="stat" style="flex:0 0 auto"><div class="lab">${ru?'Баланс':'Balance'} ${CURRENCY_TICKER}</div><div class="val" style="color:${avail>=0?'var(--accent)':'var(--red)'}">${avail>=0?'+':''}${avail}</div></div>
     </div>
-    <p class="hint" style="margin:0 0 10px">${ru?'Заморозь баллы на N дней — при снятии получишь их обратно плюс бонус. Чем дольше срок, тем выше процент (0.5%/день, максимум 40% при 80+ днях). Забрать раньше срока нельзя.':'Lock points away for N days — collect them back plus a bonus once matured. Longer locks earn a higher rate (0.5%/day, capped at 40% at 80+ days). Can\'t be collected early.'}</p>
+    <p class="hint" style="margin:0 0 10px">${ru?'Заморозь баллы на N дней — при снятии получишь их обратно плюс бонус. Чем дольше срок, тем выше процент: 0.5%/день до 90 дней (45%), затем 0.25%/день до 120 дней (52.5%), дальше — 0.125%/день без ограничения. Забрать раньше срока нельзя.':'Lock points away for N days — collect them back plus a bonus once matured. The rate decelerates the longer it runs: 0.5%/day through day 90 (45%), then 0.25%/day through day 120 (52.5%), then 0.125%/day with no ceiling beyond that. Can\'t be collected early.'}</p>
     <div style="display:flex;gap:8px;margin-bottom:6px">
       <input type="number" min="1" class="inp" id="savAmountInp" placeholder="${CURRENCY_TICKER}" style="flex:1">
       <input type="number" min="1" class="inp" id="savDaysInp" placeholder="${ru?'дней':'days'}" style="width:90px">
@@ -5261,6 +5786,523 @@ function wireSavingsShop(body){
     const ru=state.lang!=="en";
     if(collectSavingsDeposit(b.dataset.savcollect)){toast(ru?'Вклад получен!':'Deposit collected!');renderRewards();renderXP();}
   });
+}
+
+/* ===== PERSONAL CHALLENGES UI (sub-tab of Rewards) ===== */
+function challengeRowHTML(ch,ru){
+  const st=challengeStatus(ch);
+  const todayIdx=challengeDayIndexForToday(ch);
+  const doneCount=Object.keys(ch.checks).length;
+  const emo=st==="completed"?"&#127942;":st==="failed"?"&#128128;":st==="cancelled"?"&#128683;":"&#127919;";
+  if(st==="active"){
+    const canCheckToday=todayIdx>=1&&todayIdx<=ch.days&&!ch.checks[todayIdx];
+    return`<div class="br-item">
+      <span class="br-emo" style="font-size:18px">${emo}</span>
+      <div class="br-info">
+        <div class="br-name">${escapeHtml(ch.name)}</div>
+        <div class="br-cost">${ru?'День':'Day'} ${Math.min(Math.max(todayIdx,1),ch.days)}/${ch.days} &middot; ${doneCount}/${ch.days} ${ru?'отмечено':'checked'}</div>
+      </div>
+      <div class="br-btns">
+        ${canCheckToday?`<button class="usebtn" data-chchecktoday="${ch.id}">${ru?'отметить':'check'}</button>`:''}
+        <button class="usebtn" data-chcancel="${ch.id}" style="opacity:.6">&times;</button>
+      </div>
+    </div>`;
+  }
+  const outcomeText=st==="completed"?`+${challengeRewardAmount(ch.days)} ${CURRENCY_TICKER}`
+    :st==="failed"?(ru?'Провалено':'Failed')
+    :(ru?'Отменено':'Cancelled');
+  return`<div class="br-item">
+    <span class="br-emo" style="font-size:18px">${emo}</span>
+    <div class="br-info">
+      <div class="br-name">${escapeHtml(ch.name)}</div>
+      <div class="br-cost" style="color:${st==='completed'?'var(--green)':'inherit'}">${outcomeText} &middot; ${ch.days} ${ru?'дн.':'d'}</div>
+    </div>
+  </div>`;
+}
+function challengesShopHTML(avail,ru){
+  const all=(state.challenges||[]).slice().sort((a,b)=>a.startDate<b.startDate?1:(a.startDate>b.startDate?-1:0));
+  const active=all.filter(c=>challengeStatus(c)==="active");
+  const past=all.filter(c=>challengeStatus(c)!=="active");
+  const activeRows=active.length?active.map(c=>challengeRowHTML(c,ru)).join(''):`<div class="empty" style="padding:12px 0"><b>${ru?'Нет активных челленджей':'No active challenges'}</b></div>`;
+  const pastRows=past.map(c=>challengeRowHTML(c,ru)).join('');
+  return`<div class="card" style="margin-bottom:12px">
+    <h3 style="margin-top:0">&#127919; ${ru?'Личный челлендж':'Personal challenge'}</h3>
+    <p class="hint" style="margin:0 0 10px">${ru?'Объяви себе испытание на N дней (например «7 дней без сахара»). Каждый день отмечай выполнение — пропустишь день, челлендж провален. Дойдёшь до конца без единого пропуска — получишь награду; чем длиннее и амбициознее срок, тем выше отдача за каждый день.':'Declare yourself a challenge for N days (e.g. "7 days without sugar"). Check in every day — miss one and it fails. Reach the end with zero misses and you get paid; the longer and more ambitious it is, the higher the payout per day.'}</p>
+    <div style="display:flex;gap:8px;margin-bottom:6px">
+      <input type="text" class="inp" id="chNameInp" placeholder="${ru?'Название испытания':'Challenge name'}" style="flex:2">
+      <input type="number" min="1" class="inp" id="chDaysInp" placeholder="${ru?'дней':'days'}" style="width:90px">
+    </div>
+    <p class="hint" id="chPreview" style="margin:0 0 8px"></p>
+    <button class="btn primary" id="btnCreateChallenge" style="width:100%">${ru?'Начать':'Start'}</button>
+  </div>
+  <div class="card"><h3 style="margin-top:0">${ru?'Активные':'Active'}</h3>${activeRows}</div>
+  ${past.length?`<div class="card"><h3 style="margin-top:0">${ru?'История':'History'}</h3>${pastRows}</div>`:''}`;
+}
+function updateChallengePreview(){
+  const el=document.getElementById("chPreview");if(!el)return;
+  const ru=state.lang!=="en";
+  const days=+((document.getElementById("chDaysInp")||{}).value)||0;
+  if(days<=0){el.textContent=ru?'Укажи срок в днях':'Enter a duration in days';return}
+  const amount=challengeRewardAmount(days);
+  el.textContent=ru?`${Math.round(days)} дн. без единого пропуска = ${amount} ${CURRENCY_TICKER}`:`${Math.round(days)} day(s), zero misses = ${amount} ${CURRENCY_TICKER}`;
+}
+function wireChallengesShop(body){
+  const nameInp=document.getElementById("chNameInp"),daysInp=document.getElementById("chDaysInp");
+  if(daysInp)daysInp.oninput=updateChallengePreview;
+  updateChallengePreview();
+  const btn=document.getElementById("btnCreateChallenge");
+  if(btn)btn.onclick=()=>{
+    const ru=state.lang!=="en";
+    const name=(nameInp||{}).value||"",days=+((daysInp||{}).value)||0;
+    if(!name.trim()||days<=0){toast(ru?'Укажи название и срок':'Enter a name and duration');return}
+    createChallenge(name,days);
+    toast(ru?'Челлендж начат!':'Challenge started!');
+    renderRewards();renderXP();
+  };
+  body.querySelectorAll("[data-chchecktoday]").forEach(b=>b.onclick=()=>{
+    const ch=(state.challenges||[]).find(c=>c.id===b.dataset.chchecktoday);
+    if(!ch)return;
+    toggleChallengeDay(ch.id,challengeDayIndexForToday(ch));
+    renderRewards();renderXP();
+  });
+  body.querySelectorAll("[data-chcancel]").forEach(b=>b.onclick=()=>{
+    const ru=state.lang!=="en";
+    if(!confirm(ru?'Отменить челлендж? Награды не будет.':'Cancel this challenge? No reward.'))return;
+    cancelChallenge(b.dataset.chcancel);
+    renderRewards();renderXP();
+  });
+}
+
+/* ===== CASINO UI (top-level tab) ===== */
+let casinoGame="plinko"; // "plinko" | "double" | "crash" | "blackjack" — session-only, not persisted
+let casinoBetAmount=10;  // last-used bet, shared across games purely for input convenience
+let plinkoRisk="medium";
+let doublePick="red";
+let crashState=null; // {bet,crashPoint,startTime,running,timerId} — a round in flight; null when idle
+function casinoTabsHTML(ru){
+  return`<div class="rewards-subtabs">
+    <div class="rewards-subtab ${casinoGame==='plinko'?'active':''}" data-cg="plinko">&#127920; Plinko</div>
+    <div class="rewards-subtab ${casinoGame==='double'?'active':''}" data-cg="double">&#128302; Double</div>
+    <div class="rewards-subtab ${casinoGame==='crash'?'active':''}" data-cg="crash">&#128200; Crash</div>
+    <div class="rewards-subtab ${casinoGame==='blackjack'?'active':''}" data-cg="blackjack">&#127183; ${ru?'Блэкджек':'Blackjack'}</div>
+  </div>`;
+}
+function casinoHistoryHTML(game,ru){
+  const rows=casinoRecentBets(game,8);
+  const line=b=>{
+    const net=Math.round((b.payout-b.bet)*100)/100;
+    return`<div class="casino-hist-row"><span>${b.bet} ${CURRENCY_TICKER}</span><span style="color:${net>0?'var(--green)':net<0?'var(--red)':'var(--dim)'}">${net>0?'+':''}${net}</span></div>`;
+  };
+  const inner=rows.length?rows.map(line).join(''):`<div class="hint" style="margin:0">${ru?'Пока нет ставок':'No bets yet'}</div>`;
+  // A stable id (always rendered, even empty) so a single resolved bet can refresh just this box —
+  // see updateCasinoHistoryDisplay — without a full renderCasino() wiping the transient result text
+  // the game itself just set, same reasoning as updateCasinoBalanceDisplay above.
+  return`<div class="card casino-history" id="casinoHistoryBox"><h3 style="margin-top:0;font-size:13px">${ru?'Последние ставки':'Recent bets'}</h3>${inner}</div>`;
+}
+function updateCasinoHistoryDisplay(){
+  const el=document.getElementById("casinoHistoryBox");
+  if(el)el.outerHTML=casinoHistoryHTML(casinoGame,state.lang!=="en");
+}
+// Lifetime real-money summary across all four games at once (unlike casinoHistoryHTML, which is
+// scoped to whichever game tab is open) — reinforces the same "know your odds" honesty this whole
+// feature is built on by just showing the actual running total, not just the last few rounds.
+function casinoStatsHTML(ru){
+  const bets=state.casinoBets||[];
+  if(!bets.length)return"";
+  const wagered=bets.reduce((s,b)=>s+b.bet,0);
+  const net=Math.round(bets.reduce((s,b)=>s+(b.payout-b.bet),0)*100)/100;
+  const biggestWin=Math.round(bets.reduce((m,b)=>Math.max(m,b.payout-b.bet),0)*100)/100;
+  const row=(label,value,color)=>`<div class="casino-hist-row"><span>${label}</span><span${color?` style="color:${color}"`:''}>${value}</span></div>`;
+  return`<div class="card" id="casinoStatsBox">
+    <h3 style="margin-top:0;font-size:13px">${ru?'Статистика казино':'Casino stats'}</h3>
+    ${row(ru?'Раундов сыграно':'Rounds played',bets.length)}
+    ${row(ru?'Всего поставлено':'Total wagered',wagered+' '+CURRENCY_TICKER)}
+    ${row(ru?'Итог':'Net result',(net>0?'+':'')+net+' '+CURRENCY_TICKER,net>0?'var(--green)':net<0?'var(--red)':'var(--dim)')}
+    ${biggestWin>0?row(ru?'Лучший выигрыш':'Biggest win','+'+biggestWin+' '+CURRENCY_TICKER,'var(--green)'):''}
+  </div>`;
+}
+function updateCasinoStatsDisplay(){
+  const el=document.getElementById("casinoStatsBox");
+  const ru=state.lang!=="en";
+  const html=casinoStatsHTML(ru);
+  if(el)el.outerHTML=html||"";
+  else if(html)document.getElementById("casinoBody").insertAdjacentHTML("beforeend",html);
+}
+// The unit shown after a number in game result text — real mode reads e.g. "+18 INLI", virtual mode
+// drops the ticker entirely (it's explicitly not a currency, just a number the player set).
+function casinoUnit(){return state.casinoMode==="virtual"?"":" "+CURRENCY_TICKER}
+function casinoModeToggleHTML(ru){
+  return`<div class="rewards-subtabs" style="margin-bottom:6px">
+    <div class="rewards-subtab ${state.casinoMode!=='virtual'?'active':''}" data-cm="real">${CURRENCY_TICKER}</div>
+    <div class="rewards-subtab ${state.casinoMode==='virtual'?'active':''}" data-cm="virtual">${ru?'Виртуальный счёт':'Virtual balance'}</div>
+  </div>`;
+}
+// Real mode just shows the live INLI balance (read-only here — it's earned, not typed in). Virtual
+// mode instead shows an editable number: type anything and hit Set to start or reset it, any day,
+// to whatever you want — that's the whole point of it being a declared, not earned, number.
+function casinoBalanceAreaHTML(ru){
+  if(state.casinoMode==="virtual"){
+    const bal=state.casinoVirtualBalance;
+    return`<div class="casino-balance">${ru?'Виртуальный счёт':'Virtual balance'}: <b>${bal===null?"—":bal}</b></div>
+    <div class="bet-row">
+      <input type="number" class="inp" id="casinoVirtInp" placeholder="${ru?'Новое значение':'New value'}" value="${bal===null?'':bal}">
+      <button class="btn" id="btnCasinoVirtSet">${ru?'Задать/сбросить':'Set / Reset'}</button>
+    </div>`;
+  }
+  const pts=state.points||0;
+  return`<div class="casino-balance">${ru?'Баланс':'Balance'}: <b>${pts}</b> ${CURRENCY_TICKER}</div>`;
+}
+function renderCasino(){
+  const body=document.getElementById("casinoBody");
+  const ru=state.lang!=="en";
+  let inner=casinoTabsHTML(ru)+casinoModeToggleHTML(ru)+casinoBalanceAreaHTML(ru);
+  if(casinoGame==="plinko")inner+=plinkoHTML(ru);
+  else if(casinoGame==="double")inner+=doubleHTML(ru);
+  else if(casinoGame==="crash")inner+=crashHTML(ru);
+  else inner+=blackjackHTML(ru);
+  // The recent-bets ledger is specifically the real-money record (see placeCasinoBet) — showing it
+  // during virtual play would either be empty (confusing, looks broken) or show stale real history
+  // that has nothing to do with the round just played, so it's simplest to just hide it there.
+  if(state.casinoMode!=="virtual"){
+    inner+=casinoHistoryHTML(casinoGame,ru);
+    inner+=casinoStatsHTML(ru);
+  }
+  body.innerHTML=inner;
+  // Switching GAMES mid-hand is fine — Blackjack's own "resume" branch below picks the hand back up
+  // exactly where it left off, and Plinko/Double/an idle Crash don't touch bjRound at all. Switching
+  // WALLETS mid-round is the one that's actually unsafe (the open bet is tied to whichever wallet was
+  // active when it was placed), so that check also covers an open Blackjack hand, not just Crash.
+  body.querySelectorAll("[data-cg]").forEach(el=>el.onclick=()=>{
+    if(crashState&&crashState.running)return; // don't abandon a live crash round via a tab switch
+    casinoGame=el.dataset.cg;renderCasino();
+  });
+  body.querySelectorAll("[data-cm]").forEach(el=>el.onclick=()=>{
+    if(el.dataset.cm===state.casinoMode)return;
+    if((crashState&&crashState.running)||bjRound){toast(ru?"Сначала заверши текущий раунд":"Finish the current round first");return}
+    state.casinoMode=el.dataset.cm;save();renderCasino();
+  });
+  const virtInp=document.getElementById("casinoVirtInp"),virtBtn=document.getElementById("btnCasinoVirtSet");
+  if(virtBtn)virtBtn.onclick=()=>{
+    if((crashState&&crashState.running)||bjRound){toast(ru?"Сначала заверши текущий раунд":"Finish the current round first");return}
+    const v=+virtInp.value;
+    if(!Number.isFinite(v)){toast(ru?"Введи число":"Enter a number");return}
+    state.casinoVirtualBalance=Math.round(v*100)/100;
+    save();
+    renderCasino();
+  };
+  if(casinoGame==="plinko")wirePlinko(body);
+  else if(casinoGame==="double")wireDouble(body);
+  else if(casinoGame==="crash")wireCrash(body);
+  else wireBlackjack(body);
+}
+// A full renderCasino() after every resolved bet would also wipe the just-set result text/highlight
+// (they're transient, not rebuilt from state), so each game updates just the balance number in place.
+function updateCasinoBalanceDisplay(){
+  const el=document.querySelector(".casino-balance b");
+  if(!el)return;
+  el.textContent=state.casinoMode==="virtual"?(state.casinoVirtualBalance===null?"—":state.casinoVirtualBalance):(state.points||0);
+}
+
+/* ---- Plinko ---- */
+function plinkoHTML(ru){
+  return`<div class="card">
+    <div class="plinko-risk">
+      <div class="rk ${plinkoRisk==='low'?'active':''}" data-risk="low">${ru?'Низкий':'Low'}</div>
+      <div class="rk ${plinkoRisk==='medium'?'active':''}" data-risk="medium">${ru?'Средний':'Medium'}</div>
+      <div class="rk ${plinkoRisk==='high'?'active':''}" data-risk="high">${ru?'Высокий':'High'}</div>
+    </div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="plinkoBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnPlinkoDrop">${ru?'Бросить':'Drop'}</button>
+    </div>
+    <div class="plinko-board" id="plinkoBoard"></div>
+    <div class="plinko-slots" id="plinkoSlots"></div>
+    <p class="hint" id="plinkoResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function plinkoPegsHTML(){
+  let html="";
+  for(let i=0;i<PLINKO_ROWS;i++){
+    const pegsInRow=i+2;
+    for(let p=0;p<pegsInRow;p++){
+      html+=`<div class="plinko-peg" style="left:${(p+0.5)/pegsInRow*100}%;top:${(i+1)/(PLINKO_ROWS+1)*100}%"></div>`;
+    }
+  }
+  return html;
+}
+function plinkoSlotsHTML(risk){
+  return PLINKO_TABLES[risk].map(m=>`<div class="plinko-slot">${m}&times;</div>`).join('');
+}
+// Ball position is derived straight from the same binomial path used to pick the payout — after row
+// i, rightsSoFar - (ROWS-(i+1))/2 gives its horizontal offset in slot-units from center, landing
+// exactly on the final slot once all rows are done (see the comment above PLINKO_TABLES).
+function animatePlinkoBall(path,onDone){
+  const ball=document.getElementById("plinkoBall");
+  if(!ball){onDone();return}
+  ball.style.display="block";ball.style.left="50%";ball.style.top="0%";
+  let i=-1,rights=0;
+  const step=()=>{
+    i++;
+    if(i>=path.length){onDone();return}
+    rights+=path[i];
+    const posSlots=rights+(PLINKO_ROWS-(i+1))/2;
+    ball.style.left=((posSlots+0.5)/(PLINKO_ROWS+1)*100)+"%";
+    ball.style.top=((i+1)/(PLINKO_ROWS+1)*100)+"%";
+    setTimeout(step,130);
+  };
+  setTimeout(step,130);
+}
+function wirePlinko(body){
+  const ru=state.lang!=="en";
+  document.getElementById("plinkoBoard").innerHTML=plinkoPegsHTML()+'<div class="plinko-ball" id="plinkoBall" style="left:50%;top:0%;display:none"></div>';
+  document.getElementById("plinkoSlots").innerHTML=plinkoSlotsHTML(plinkoRisk);
+  body.querySelectorAll("[data-risk]").forEach(el=>el.onclick=()=>{plinkoRisk=el.dataset.risk;renderCasino()});
+  const betInp=document.getElementById("plinkoBetInp"),dropBtn=document.getElementById("btnPlinkoDrop");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+  dropBtn.onclick=()=>{
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const res=playPlinko(bet,plinkoRisk);
+    if(!res)return;
+    casinoBetAmount=bet;
+    dropBtn.disabled=true;betInp.disabled=true;
+    document.getElementById("plinkoResult").textContent="";
+    document.querySelectorAll("#plinkoSlots .plinko-slot").forEach(s=>s.classList.remove("hit"));
+    animatePlinkoBall(res.path,()=>{
+      const resEl=document.getElementById("plinkoResult");
+      const net=Math.round((res.payout-bet)*100)/100;
+      if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` (×${res.mult})`;
+      const slots=document.querySelectorAll("#plinkoSlots .plinko-slot");
+      if(slots[res.slot])slots[res.slot].classList.add("hit");
+      dropBtn.disabled=false;betInp.disabled=false;
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    });
+  };
+}
+
+/* ---- Double ---- */
+function doubleHTML(ru){
+  return`<div class="card">
+    <div class="double-picks" id="doublePicks">
+      <div class="double-pick ${doublePick==='red'?'sel':''}" data-pick="red" style="background:#c0392b">${ru?'Красное':'Red'}<span class="mx">&times;2</span></div>
+      <div class="double-pick ${doublePick==='black'?'sel':''}" data-pick="black" style="background:#2c2c34">${ru?'Чёрное':'Black'}<span class="mx">&times;2</span></div>
+      <div class="double-pick ${doublePick==='white'?'sel':''}" data-pick="white" style="background:#7f8c8d">${ru?'Белое':'White'}<span class="mx">&times;14</span></div>
+    </div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="doubleBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnDoubleSpin">${ru?'Крутить':'Spin'}</button>
+    </div>
+    <div class="double-strip" id="doubleStrip"></div>
+    <p class="hint" id="doubleResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function doubleStripHTML(){
+  let html="";
+  for(let i=0;i<DOUBLE_SLOTS;i++){
+    const color=doubleColorForSlot(i);
+    const bg=color==="red"?"#c0392b":color==="black"?"#2c2c34":"#7f8c8d";
+    html+=`<div class="double-seg" data-slot="${i}" style="background:${bg}">${color==="white"?"&#9733;":""}</div>`;
+  }
+  return html;
+}
+function wireDouble(body){
+  const ru=state.lang!=="en";
+  document.getElementById("doubleStrip").innerHTML=doubleStripHTML();
+  body.querySelectorAll("[data-pick]").forEach(el=>el.onclick=()=>{
+    doublePick=el.dataset.pick;
+    body.querySelectorAll("[data-pick]").forEach(e2=>e2.classList.toggle("sel",e2.dataset.pick===doublePick));
+  });
+  const betInp=document.getElementById("doubleBetInp"),spinBtn=document.getElementById("btnDoubleSpin");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+  spinBtn.onclick=()=>{
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const res=playDouble(bet,doublePick);
+    if(!res)return;
+    casinoBetAmount=bet;
+    const segs=document.querySelectorAll("#doubleStrip .double-seg");
+    segs.forEach(s=>s.classList.remove("hit"));
+    if(segs[res.slot])segs[res.slot].classList.add("hit");
+    const net=Math.round((res.payout-bet)*100)/100;
+    const resEl=document.getElementById("doubleResult");
+    if(resEl)resEl.textContent=(net>0?"+":"")+net+casinoUnit()+` — ${res.color}`;
+    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+  };
+}
+
+/* ---- Crash ---- */
+function crashMultAtTime(seconds){return Math.max(1,Math.floor(Math.pow(Math.E,0.18*seconds)*100)/100)}
+// Re-queries the DOM by id on every tick rather than closing over element references, so this one
+// running interval keeps updating whatever's currently mounted even if the user switches away to a
+// different top-level view and back (switchView never destroys the casino DOM, only hides it) — see
+// wireCrash's "resume" branch for the other half of that: showing the right state on return instead
+// of restarting.
+function crashTick(){
+  if(!crashState||!crashState.running)return;
+  const display=document.getElementById("crashDisplay");
+  const elapsed=(Date.now()-crashState.startTime)/1000;
+  const mult=crashMultAtTime(elapsed);
+  if(mult>=crashState.crashPoint){
+    clearInterval(crashState.timerId);
+    crashState.running=false;
+    const ru=state.lang!=="en",bet=crashState.bet,cp=crashState.crashPoint;
+    resolveCrash(bet,cp,null);
+    if(display){display.textContent=cp.toFixed(2)+"×";display.style.color="var(--red)"}
+    const resultEl=document.getElementById("crashResult");
+    if(resultEl)resultEl.textContent=(ru?"Крах! ":"Busted! ")+`-${bet}`+casinoUnit();
+    const actionBtn=document.getElementById("btnCrashAction");
+    if(actionBtn)actionBtn.textContent=ru?"Начать":"Start";
+    const betInp=document.getElementById("crashBetInp");
+    if(betInp)betInp.disabled=false;
+    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+    crashState=null;
+    return;
+  }
+  if(display)display.textContent=mult.toFixed(2)+"×";
+}
+function crashHTML(ru){
+  return`<div class="card">
+    <div class="crash-display" id="crashDisplay">1.00&times;</div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="crashBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnCrashAction">${ru?'Начать':'Start'}</button>
+    </div>
+    <p class="hint" id="crashResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function wireCrash(body){
+  const ru=state.lang!=="en";
+  const betInp=document.getElementById("crashBetInp"),actionBtn=document.getElementById("btnCrashAction"),display=document.getElementById("crashDisplay");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+  if(crashState&&crashState.running){
+    betInp.disabled=true;
+    actionBtn.textContent=ru?"Забрать":"Cash Out";
+    display.textContent=crashMultAtTime((Date.now()-crashState.startTime)/1000).toFixed(2)+"×";
+  }
+  actionBtn.onclick=()=>{
+    if(crashState&&crashState.running){
+      const elapsed=(Date.now()-crashState.startTime)/1000,mult=crashMultAtTime(elapsed);
+      if(mult>=crashState.crashPoint)return; // it's busting on this very tick — let crashTick handle it
+      clearInterval(crashState.timerId);
+      crashState.running=false;
+      const bet=crashState.bet;
+      const{payout}=resolveCrash(bet,crashState.crashPoint,mult);
+      const d=document.getElementById("crashDisplay");
+      if(d){d.textContent=mult.toFixed(2)+"×";d.style.color="var(--green)"}
+      const net=Math.round((payout-bet)*100)/100;
+      const resultEl=document.getElementById("crashResult");
+      if(resultEl)resultEl.textContent=(net>0?"+":"")+net+casinoUnit();
+      const ab=document.getElementById("btnCrashAction");if(ab)ab.textContent=ru?"Начать":"Start";
+      const bi=document.getElementById("crashBetInp");if(bi)bi.disabled=false;
+      updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+      crashState=null;
+      return;
+    }
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const round=startCrashRound(bet);
+    if(!round)return;
+    casinoBetAmount=bet;
+    document.getElementById("crashResult").textContent="";
+    const d=document.getElementById("crashDisplay");d.style.color="var(--text)";d.textContent="1.00×";
+    betInp.disabled=true;actionBtn.textContent=ru?"Забрать":"Cash Out";
+    crashState={bet,crashPoint:round.crashPoint,startTime:Date.now(),running:true,timerId:null};
+    crashState.timerId=setInterval(crashTick,50);
+  };
+}
+
+/* ---- Blackjack ---- */
+function bjCardHTML(card,hidden){
+  if(hidden)return'<div class="bj-card back"></div>';
+  const red=card.suit==="♥"||card.suit==="♦";
+  return`<div class="bj-card ${red?"red":""}">${card.rank}${card.suit}</div>`;
+}
+function bjRenderHands(playerCards,dealerCards,hideDealerHole){
+  document.getElementById("bjPlayerHand").innerHTML=playerCards.map(c=>bjCardHTML(c,false)).join("");
+  document.getElementById("bjDealerHand").innerHTML=dealerCards.map((c,i)=>bjCardHTML(c,hideDealerHole&&i===1)).join("");
+  document.getElementById("bjPlayerVal").textContent=playerCards.length?bjHandValue(playerCards).value:"";
+  document.getElementById("bjDealerVal").textContent=dealerCards.length?(hideDealerHole?bjCardValue(dealerCards[0].rank):bjHandValue(dealerCards).value):"";
+}
+function bjOutcomeText(outcome,ru){
+  return{
+    bust:ru?"Перебор — вы проиграли":"Bust — you lose",
+    lose:ru?"Дилер выиграл":"Dealer wins",
+    win:ru?"Вы выиграли!":"You win!",
+    dealerbust:ru?"Перебор у дилера — вы выиграли!":"Dealer busts — you win!",
+    push:ru?"Ничья, ставка возвращена":"Push — bet returned",
+    blackjack:ru?"Блэкджек! 3:2":"Blackjack! 3:2",
+  }[outcome]||outcome;
+}
+function blackjackHTML(ru){
+  return`<div class="card">
+    <div class="bj-table">
+      <div class="bj-handrow">
+        <div class="bj-handlabel"><span>${ru?'Дилер':'Dealer'}</span><span id="bjDealerVal"></span></div>
+        <div class="bj-hand" id="bjDealerHand"></div>
+      </div>
+      <div class="bj-handrow">
+        <div class="bj-handlabel"><span>${ru?'Вы':'You'}</span><span id="bjPlayerVal"></span></div>
+        <div class="bj-hand" id="bjPlayerHand"></div>
+      </div>
+    </div>
+    <div class="bet-row">
+      <input type="number" min="1" class="inp" id="bjBetInp" value="${casinoBetAmount}">
+      <button class="btn primary" id="btnBjDeal">${ru?'Раздать':'Deal'}</button>
+    </div>
+    <div class="bj-actions" id="bjActions" style="display:none">
+      <button class="btn" id="btnBjHit">${ru?'Ещё':'Hit'}</button>
+      <button class="btn" id="btnBjStand">${ru?'Хватит':'Stand'}</button>
+      <button class="btn" id="btnBjDouble">${ru?'Удвоить':'Double'}</button>
+    </div>
+    <p class="hint" id="bjResult" style="margin:6px 0 0;text-align:center"></p>
+  </div>`;
+}
+function wireBlackjack(body){
+  const ru=state.lang!=="en";
+  const betInp=document.getElementById("bjBetInp"),dealBtn=document.getElementById("btnBjDeal"),actions=document.getElementById("bjActions"),resultEl=document.getElementById("bjResult");
+  betInp.oninput=()=>{casinoBetAmount=+betInp.value||0};
+
+  function finishUI(res){
+    bjRenderHands(res.player,res.dealer,false);
+    const net=Math.round((res.payout-res.bet)*100)/100;
+    resultEl.textContent=bjOutcomeText(res.outcome,ru)+` (${net>0?"+":""}${net}${casinoUnit()})`;
+    actions.style.display="none";dealBtn.style.display="";betInp.disabled=false;
+    updateCasinoBalanceDisplay();updateCasinoHistoryDisplay();updateCasinoStatsDisplay();renderXP();
+  }
+  if(bjRound){
+    betInp.disabled=true;dealBtn.style.display="none";actions.style.display="flex";
+    document.getElementById("btnBjDouble").style.display=bjRound.player.length===2?"":"none";
+    bjRenderHands(bjRound.player,bjRound.dealer,true);
+  }else{
+    bjRenderHands([],[],false);
+  }
+  dealBtn.onclick=()=>{
+    const bet=+betInp.value||0;
+    if(bet<=0){toast(ru?'Укажи ставку':'Enter a bet');return}
+    const res=bjDeal(bet);
+    if(!res)return;
+    casinoBetAmount=bet;
+    resultEl.textContent="";
+    if(res.status==="resolved"){finishUI(res);return}
+    betInp.disabled=true;dealBtn.style.display="none";actions.style.display="flex";
+    document.getElementById("btnBjDouble").style.display="";
+    bjRenderHands(bjRound.player,bjRound.dealer,true);
+  };
+  document.getElementById("btnBjHit").onclick=()=>{
+    const res=bjHit();
+    if(!res)return;
+    document.getElementById("btnBjDouble").style.display="none";
+    if(res.status==="resolved"){finishUI(res);return}
+    bjRenderHands(bjRound.player,bjRound.dealer,true);
+  };
+  document.getElementById("btnBjStand").onclick=()=>{
+    const res=bjStand();
+    if(res)finishUI(res);
+  };
+  document.getElementById("btnBjDouble").onclick=()=>{
+    const res=bjDouble();
+    if(res)finishUI(res);
+  };
 }
 
 /* ===== MONTHLY SUMMARY ===== */
@@ -5953,6 +6995,7 @@ function switchView(v){
   if(v==="track")renderTrack();
   if(v==="habits")renderHabitsManager();
   if(v==="rewards")renderRewards();
+  if(v==="casino")renderCasino();
   if(v==="stats")renderStats();
   if(v==="settings")renderSettings();
 }
@@ -5961,6 +7004,7 @@ function rerenderActive(){
   else if(currentView==="track")renderTrack();
   else if(currentView==="habits")renderHabitsManager();
   else if(currentView==="rewards")renderRewards();
+  else if(currentView==="casino")renderCasino();
   else if(currentView==="stats")renderStats();
   else if(currentView==="settings")renderSettings();
   renderXP();
