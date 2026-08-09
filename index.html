@@ -1855,6 +1855,12 @@ function migrate(){
     if(h.target===undefined)h.target=0;
     if(h.weight===undefined)h.weight=5;
     if(h.order===undefined)h.order=i;
+    // Installs upgrading from before this existed have no record of when the habit was actually
+    // added — default to the global trackingStart, same as if it had always been tracked (i.e. no
+    // behavior change for existing habits). Only a habit created going forward gets its own real
+    // date (see the "new habit" push below), which is what actually fixes the reported bug: a habit
+    // added well after trackingStart no longer gets silently judged for every day back to it.
+    if(!h.createdAt)h.createdAt=state.trackingStart;
     if(h.archived===undefined)h.archived=false;
     // Archive history ledger (see isArchivedOn) — installs upgrading from before this existed only
     // have the live archived boolean, with no record of WHEN. Best we can do is anchor an open
@@ -2069,10 +2075,21 @@ function effTargetForYear(h,year,m,yd){
 // Days before state.trackingStart are outside the points economy entirely — never earn, never
 // penalize. Lets a brand-new install start clean from today instead of inheriting a debt for
 // every day since Jan 1, and lets existing installs anchor to whenever they actually began.
-function beforeTrackingStart(year,m,d){
-  if(!state.trackingStart)return false;
+// A habit created well after that global date needs the same protection scoped to ITS OWN start —
+// otherwise a brand-new habit gets silently judged against every day back to trackingStart, as if
+// it had existed (and been missed) the whole time. Whichever of the two dates is LATER (more
+// restrictive) governs: the app-wide date is the earliest anything could ever count, and a habit
+// obviously can't have been trackable before it existed either.
+function habitTrackingStart(h){
+  const global=state.trackingStart;
+  if(!global)return(h&&h.createdAt)||null;
+  return(h&&h.createdAt&&h.createdAt>global)?h.createdAt:global;
+}
+function beforeTrackingStart(year,m,d,h){
+  const start=h?habitTrackingStart(h):state.trackingStart;
+  if(!start)return false;
   const ds=year+"-"+String(m+1).padStart(2,"0")+"-"+String(d).padStart(2,"0");
-  return ds<state.trackingStart;
+  return ds<start;
 }
 // A tier is "available" for the NEXT unplanned use if dateISO is marked on its OWN calendar
 // (t.calendarDays — unconditional, never consumes freeLimit, mirrors sinCalendarDays below), or it
@@ -2173,7 +2190,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   let pts=0,curMissStreak=0,curSuccessStreak=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
-    if(beforeTrackingStart(year,m,d))continue;
+    if(beforeTrackingStart(year,m,d,h))continue;
     if(checksBucket[d]){
       curSuccessStreak++;curMissStreak=0;
       if(hasAchTiers){
@@ -2278,7 +2295,7 @@ function eventHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   let doneSoFar=0,pts=0,curMissStreak=0,curSuccessStreak=0;
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
-    if(beforeTrackingStart(year,m,d))continue;
+    if(beforeTrackingStart(year,m,d,h))continue;
     if(frozen.includes(d))continue;
     if(habitFrozenBucket[d])continue;
     if(isArchivedOn(h,year,m,d))continue;
@@ -2612,6 +2629,10 @@ function perfectDaysBonusForMonth(year,m,yd){
       if(checksBucket[d])return true;
       if(frozen.includes(d))return true;
       if(isArchivedOn(h,year,m,d))return true;
+      // A day before THIS habit's own creation date is as neutral as one it was archived on — it
+      // shouldn't be able to single-handedly deny the whole month's perfect-day bonus just because
+      // it didn't exist yet.
+      if(beforeTrackingStart(year,m,d,h))return true;
       if(h.type==="event"){
         const N=effTargetForYear(h,year,m,yd);
         const minRequired=(totalDays>0&&N>0)?Math.floor(d/totalDays*N):0;
@@ -2832,7 +2853,7 @@ function recalcXP(){
           const bucket=yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id];
           if(!bucket)continue;
           Object.keys(bucket).forEach(dStr=>{
-            if(!bucket[dStr]||beforeTrackingStart(yNum,m,+dStr))return;
+            if(!bucket[dStr]||beforeTrackingStart(yNum,m,+dStr,h))return;
             xp+=xpForCheck(h.weight);
           });
         }
@@ -4217,7 +4238,7 @@ function saveHabit(){
     Object.assign(h,{name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,monthTargets});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length});
+    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,type,target,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,monthTargets,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length,createdAt:todayISO()});
     toast(T.habitAdded);
   }
   recalcPoints(); // weight/type/tiers/sin-days changes retroactively affect every already-logged day
@@ -4486,7 +4507,7 @@ function weeklyPatternHTML(months,habits){
       if(beforeTrackingStart(ay,m,d))continue;
       const wd=weekday(m,d);
       habits.forEach(h=>{
-        if(frozen.includes(d)||isArchivedOn(h,ay,m,d))return;
+        if(frozen.includes(d)||isArchivedOn(h,ay,m,d)||beforeTrackingStart(ay,m,d,h))return;
         dayTotals[wd]++;
         if(getChecks(m,h.id)[d])dayCounts[wd]++;
       });
@@ -4581,7 +4602,7 @@ function calculateCorrelations(m){
       const cA=getChecks(m,hs[i].id),cB=getChecks(m,hs[j].id);
       let aDone=0,aNotDone=0,bAfterA=0,bAfterNotA=0;
       for(let d=1;d<=upper;d++){
-        if(beforeTrackingStart(ay,m,d)||beforeTrackingStart(ay,m,d+1))continue;
+        if(beforeTrackingStart(ay,m,d,hs[i])||beforeTrackingStart(ay,m,d+1,hs[j]))continue;
         if(cA[d]){aDone++;if(cB[d+1])bAfterA++}
         else{aNotDone++;if(cB[d+1])bAfterNotA++}
       }
