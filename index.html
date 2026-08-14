@@ -118,7 +118,6 @@ td.cell{border-left:1px solid var(--line)}
 .cell-mark.hf-on{background:#4A90D9;border-color:#4A90D9;color:#fff}
 td.today-col,th.today-col{box-shadow:inset 0 0 0 2px var(--accent)}
 .rowmeta{font-size:10px;color:var(--dim);margin-top:2px;font-weight:600}
-.rowmeta b.ok{color:var(--green)} .rowmeta b.bad{color:var(--accent2)}
 .tag-group-header{background:var(--panel2);padding:8px 12px;font-size:12px;font-weight:800;
   letter-spacing:.05em;cursor:pointer;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px}
 .tag-group-header .tgdot{width:10px;height:10px;border-radius:50%}
@@ -3919,13 +3918,13 @@ function renderGrid(){
 
     if(!collapsed){
       grouped[tid].forEach(h=>{
-        const c=getChecks(m,h.id),cnt=Object.keys(c).length,t=effTarget(h,m);
+        const c=getChecks(m,h.id);
         const bal=habitMonthBalance(h,m);
         const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
         body+=`<tr><td class="cname"><div class="rowname">
           <span class="dot" style="background:${tag.color}"></span>
           <div><div>${escapeHtml(h.name)}</div>
-          <div class="rowmeta"><b class="${bal>0?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(m,h.id)} ${balBadge}</div>
+          <div class="rowmeta">${T.streak} ${longestStreak(m,h.id)} ${balBadge}</div>
           </div></div></td>`;
         for(let d=1;d<=N;d++){
           const fr=frozen.includes(d);
@@ -4067,11 +4066,10 @@ function renderGrid(){
 }
 function updateRowMeta(tr,hid){
   const h=state.habits.find(x=>x.id===hid);if(!h)return;
-  const cnt=checkedCount(curMonth,hid),t=effTarget(h,curMonth);
   const bal=habitMonthBalance(h,curMonth);
   const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
   const meta=tr.querySelector(".rowmeta");
-  if(meta)meta.innerHTML=`<b class="${bal>0?'ok':'bad'}">${cnt}/${t}</b> &middot; ${T.streak} ${longestStreak(curMonth,hid)} ${balBadge}`;
+  if(meta)meta.innerHTML=`${T.streak} ${longestStreak(curMonth,hid)} ${balBadge}`;
 }
 function renderTrack(){renderMonthTabs();renderHero();renderSummaryButton();renderGrid()}
 
