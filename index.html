@@ -2706,9 +2706,10 @@ function perfectWeekBonusForMonth(year,m,yd,precomputed){
    habit grid, since a challenge is often about something not otherwise tracked as a habit at all.
    Ground truth is still real day-by-day check-ins (never a pure honor-system "mark it done at the
    end" flag — that would be the one place in this whole economy money could be gotten for free),
-   just scoped to the challenge's own day range (day 1 = its own startDate) instead of a calendar
-   month. Status and reward are both purely DERIVED from checks/startDate/days — exactly like
-   perfectDaysBonusForMonth above, never a stored/frozen flag — so editing a past day (fixing an
+   just scoped to the challenge's own day range (day 1 = whenever you actually check it, which can be
+   any time after declaring the challenge — see challengeStatus) instead of a calendar month. Status
+   and reward are both purely DERIVED from checks/day1Date/days — exactly like perfectDaysBonusForMonth
+   above, never a stored/frozen flag — so editing a past day (fixing an
    honest miss, same as the Track grid already allows everywhere else) immediately and safely
    re-derives the right outcome instead of leaving a stale status behind. A challenge never locks
    away any principal — it's pure upside, not a wager — so unlike savings there's nothing to
@@ -2734,28 +2735,45 @@ function createChallenge(name,days){
   recalcPoints();save();
   return ch;
 }
-// Day 1 is the challenge's own startDate, not a calendar-month day — so each challenge runs on its
-// own private day-index timeline, however many calendar days that turns out to span.
+// Day 1 has no deadline of its own — it stays checkable, and the challenge stays "active", no matter
+// how long it takes you to actually get to it (see challengeStatus). The real clock only starts once
+// day 1 is checked, anchored to ch.day1Date (the calendar day THAT happened, not ch.startDate, the
+// day the challenge was merely declared) — so day 1 falls back to index 1 for as long as it's
+// unchecked, then the usual elapsed-days count takes over from its own actual start. ch.day1Date can
+// be absent on a challenge that already had day 1 checked before this existed; ch.startDate is the
+// only anchor those ever had, so it's the correct fallback for them specifically.
 function challengeDayIndexForToday(ch){
-  const start=new Date(ch.startDate+"T00:00:00"),today=new Date(todayISO()+"T00:00:00");
+  if(!ch.checks[1])return 1;
+  const anchor=ch.day1Date||ch.startDate;
+  const start=new Date(anchor+"T00:00:00"),today=new Date(todayISO()+"T00:00:00");
   return Math.round((today-start)/86400000)+1;
 }
 // Purely derived, recomputed fresh every call — never a stored status that could drift out of sync
-// with the underlying checks. "failed" the moment any day strictly before today (i.e. fully elapsed,
-// no time left to still check it) turns up unchecked; "completed" only once the full duration has
-// actually elapsed AND every one of its days ended up checked; "active" while still inside the
-// window (unless explicitly cancelled, which always wins).
+// with the underlying checks. Day 1 is exempt from the "elapsed and unchecked" failure rule entirely
+// — you can start a 7-day challenge today and not actually begin it for a year, and it'll just sit
+// "active" waiting for you the whole time. The instant day 1 IS checked, the sequence starts for
+// real: "failed" the moment any day from 2 on that's strictly before today (i.e. fully elapsed, no
+// time left to still check it) turns up unchecked; "completed" once the full duration has elapsed
+// from that actual start AND every day ended up checked; "active" while still inside the window
+// (unless explicitly cancelled, which always wins).
 function challengeStatus(ch){
   if(ch.cancelled)return"cancelled";
+  if(!ch.checks[1])return"active";
   const todayIdx=challengeDayIndexForToday(ch);
-  for(let d=1;d<Math.min(todayIdx,ch.days+1);d++)if(!ch.checks[d])return"failed";
+  for(let d=2;d<Math.min(todayIdx,ch.days+1);d++)if(!ch.checks[d])return"failed";
   return todayIdx<=ch.days?"active":"completed";
 }
 function challengeReward(ch){return challengeStatus(ch)==="completed"?challengeRewardAmount(ch.days):0}
 function toggleChallengeDay(id,dayIdx){
   const ch=(state.challenges||[]).find(c=>c.id===id);
   if(!ch||ch.cancelled||dayIdx<1||dayIdx>ch.days)return;
-  if(ch.checks[dayIdx])delete ch.checks[dayIdx];else ch.checks[dayIdx]=true;
+  if(ch.checks[dayIdx]){
+    delete ch.checks[dayIdx];
+    if(dayIdx===1)delete ch.day1Date; // un-checking day 1 stops the clock again, same as never having started
+  }else{
+    ch.checks[dayIdx]=true;
+    if(dayIdx===1)ch.day1Date=todayISO();
+  }
   recalcPoints();save();
 }
 function cancelChallenge(id){
