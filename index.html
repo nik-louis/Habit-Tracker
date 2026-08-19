@@ -127,6 +127,7 @@ td.frozen-cell{position:relative}
 .freeze-icon{font-size:18px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;margin:6px auto;opacity:.6}
 td.archived-cell{position:relative}
 .archive-icon{font-size:16px;display:flex;align-items:center;justify-content:center;width:30px;height:30px;margin:6px auto;opacity:.4}
+.dayoff-glyph{font-size:13px;opacity:.45}
 .note-dot{position:absolute;top:3px;right:3px;width:5px;height:5px;border-radius:50%;background:var(--accent)}
 .day-header{cursor:pointer}
 .day-header:hover{color:var(--accent)}
@@ -683,10 +684,23 @@ textarea.inp{resize:vertical;min-height:60px}
         </div>
       </div>
       <div class="field">
-        <div class="toggle on" id="fEveryday">
-          <div class="switch"></div>
-          <span id="lTargetEveryDay" style="font-size:13px;font-weight:600">Everyday habit</span>
+        <label id="lScheduleModeLabel">Schedule</label>
+        <div style="display:flex;gap:6px" id="fScheduleModeBtns">
+          <button type="button" class="fbtn active" data-mode="everyday" id="lModeEveryday" style="flex:1">Every day</button>
+          <button type="button" class="fbtn" data-mode="offdays" id="lModeOffdays" style="flex:1">Days off</button>
+          <button type="button" class="fbtn" data-mode="weekly" id="lModeWeekly" style="flex:1">Times/week</button>
         </div>
+      </div>
+      <div id="offWeekdaysRow" style="display:none;margin-bottom:12px">
+        <label id="lOffWeekdaysLabel" style="display:block;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim);margin-bottom:6px">Days off for this habit</label>
+        <div style="display:flex;gap:5px;flex-wrap:wrap" id="offWeekdaysChips"></div>
+      </div>
+      <div class="row2" id="weeklyQuotaRow" style="display:none">
+        <div class="field">
+          <label id="lWeeklyQuotaLabel">Times per week</label>
+          <input class="inp" type="number" inputmode="numeric" id="fWeeklyQuota" placeholder="2" min="1" max="7">
+        </div>
+        <div class="field"></div>
       </div>
       <div class="field">
         <label id="lWeightLabel">Вес (1-10)</label>
@@ -1034,7 +1048,8 @@ monthlyIncome:"Monthly Income",incomeDesc:"Base for penalty bank. The system all
 incomePerMonth:"Income per month",penaltyRateLabel:"Penalty rate %",
 newHabit:"New Habit",editHabit:"Edit Habit",formDesc:"Set a goal, weight (1-10), and reward.",
 nameLabel:"Name",namePH:"e.g. Morning workout",tagLabel:"Tag",
-targetEveryDay:"Everyday habit",
+scheduleModeLabel:"Schedule",modeEveryday:"Every day",modeOffdays:"Days off",modeWeekly:"Times/week",
+offWeekdaysLabel:"Days off for this habit",weeklyQuotaLabel:"Times per week",
 weightLabel:"Weight (1-10)",
 sinDaysTitle:"Conscious skip days",sinDaysHint:"Mark specific dates on the calendar below — a skip pre-declared on one of them always costs −1×weight (or that tier's own conscious rate if you configure violation tiers), with no limit. For any OTHER day, use the monthly quota field: it lets you pre-declare a limited number of conscious skips per month at the same rate. Once tiers are configured, each tier gets its own quota instead and the flat field below is ignored.",
 sinQuotaLabel:"Conscious skip on any other day, times/month",
@@ -1046,7 +1061,7 @@ trackingStartTitle:"Tracking start date",trackingStartDesc:"Days before this dat
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
 myHabits:"My Habits",habitListDesc:"Tap edit to change. Drag ⠿ to reorder.",
 active:"Active",archived:"Archived",deleted:"Deleted",empty:"Empty",
-penaltyBankLabel:"Penalty Bank",setIncome:"set income",everyDay:"every day",notEveryDay:"not every day",
+penaltyBankLabel:"Penalty Bank",setIncome:"set income",everyDay:"every day",notEveryDay:"not every day",offExcept:"off",timesPerWeekShort:"×/wk",thisWeek:"this week",dayOffToday:"day off today",
 resetTitle:"Reset",resetDesc:"Load default 19 habits (your check marks stay).",loadDefaults:"Load defaults",
 confirmReset:"Replace current habits with default 19?",defaultsLoaded:"Defaults loaded",
 fullYear:"Full Year",completionByHabit:"Completion by habit",pctOfTarget:"% of target for",
@@ -1107,7 +1122,7 @@ dangerZone:"Danger Zone",clearAllData:"Clear All Data",
 confirmWipe1:"DELETE ALL DATA? This cannot be undone!",confirmWipe2:"Are you absolutely sure?",
 allDataCleared:"All data cleared",
 notePrefix:"Note:",notePH:"What happened this day...",saveBtn:"Save",closeBtn:"Close",noteSaved:"Note saved",
-habitUpdated:"Habit updated",habitAdded:"Habit added",enterName:"Enter a name",enterTagName:"Enter tag name",
+habitUpdated:"Habit updated",habitAdded:"Habit added",enterName:"Enter a name",enterWeeklyQuota:"Enter how many times a week",enterTagName:"Enter tag name",
 confirmDelete:"Delete \"{0}\"? History is preserved, habit marked as deleted.",
 deletedPreserved:"Deleted (history preserved)",archivedBadge:"[archived]",deletedBadge:"[deleted]",
 restoredActive:"Restored to active",restoredLabel:"Restored",
@@ -1149,7 +1164,8 @@ monthlyIncome:"Ежемесячный доход",incomeDesc:"База для б
 incomePerMonth:"Доход в месяц",penaltyRateLabel:"Ставка штрафа %",
 newHabit:"Новая привычка",editHabit:"Редактировать привычку",formDesc:"Цель, вес (1-10) и награда.",
 nameLabel:"Название",namePH:"напр. Утренняя зарядка",tagLabel:"Тег",
-targetEveryDay:"Привычка на каждый день",
+scheduleModeLabel:"Расписание",modeEveryday:"Каждый день",modeOffdays:"Выходные",modeWeekly:"Раз в неделю",
+offWeekdaysLabel:"Выходные для этой привычки",weeklyQuotaLabel:"Сколько раз в неделю",
 weightLabel:"Вес (1-10)",
 sinDaysTitle:"Дни осознанного пропуска",sinDaysHint:"Отметь конкретные даты в календаре ниже — пропуск, объявленный заранее в отмеченный день, всегда стоит −1×вес (или по осознанной ставке нужного уровня, если ниже настроены уровни срыва), без ограничений. Для ЛЮБОГО другого дня используй поле месячной квоты — оно позволяет объявить ограниченное число осознанных пропусков в месяц по той же ставке. Как только настроены уровни срыва, у каждого появляется своя квота, и общее поле ниже больше не используется.",
 sinQuotaLabel:"Осознанный пропуск в любой другой день, раз/мес",
@@ -1161,7 +1177,7 @@ trackingStartTitle:"Начало трекинга",trackingStartDesc:"Дни д�
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
 myHabits:"Мои привычки",habitListDesc:"Нажмите ✎ для изменения. Перетащите ⠿ для сортировки.",
 active:"Активные",archived:"Архив",deleted:"Удалённые",empty:"Пусто",
-penaltyBankLabel:"Банк штрафов",setIncome:"укажите доход",everyDay:"каждый день",notEveryDay:"не каждый день",
+penaltyBankLabel:"Банк штрафов",setIncome:"укажите доход",everyDay:"каждый день",notEveryDay:"не каждый день",offExcept:"вых",timesPerWeekShort:"р/нед",thisWeek:"на этой неделе",dayOffToday:"сегодня выходной",
 resetTitle:"Сброс",resetDesc:"Загрузить 19 привычек по умолчанию (отметки сохранятся).",loadDefaults:"Загрузить стандартные",
 confirmReset:"Заменить текущие привычки на 19 стандартных?",defaultsLoaded:"Стандартные загружены",
 fullYear:"Весь год",completionByHabit:"Выполнение по привычкам",pctOfTarget:"% от цели за",
@@ -1222,7 +1238,7 @@ dangerZone:"Опасная зона",clearAllData:"Удалить все дан�
 confirmWipe1:"УДАЛИТЬ ВСЕ ДАННЫЕ? Это необратимо!",confirmWipe2:"Вы абсолютно уверены?",
 allDataCleared:"Все данные удалены",
 notePrefix:"Заметка:",notePH:"Что произошло в этот день...",saveBtn:"Сохранить",closeBtn:"Закрыть",noteSaved:"Заметка сохранена",
-habitUpdated:"Привычка обновлена",habitAdded:"Привычка добавлена",enterName:"Введите название",enterTagName:"Введите название тега",
+habitUpdated:"Привычка обновлена",habitAdded:"Привычка добавлена",enterName:"Введите название",enterWeeklyQuota:"Укажи, сколько раз в неделю",enterTagName:"Введите название тега",
 confirmDelete:"Удалить \"{0}\"? История сохранится, привычка будет помечена как удалённая.",
 deletedPreserved:"Удалено (история сохранена)",archivedBadge:"[архив]",deletedBadge:"[удалено]",
 restoredActive:"Восстановлено в активные",restoredLabel:"Восстановлено",
@@ -1264,7 +1280,8 @@ monthlyIncome:"Ingreso mensual",incomeDesc:"Base para el banco de multas. El sis
 incomePerMonth:"Ingreso por mes",penaltyRateLabel:"Tasa de multa %",
 newHabit:"Nuevo hábito",editHabit:"Editar hábito",formDesc:"Establece meta, peso (1-10) y recompensa.",
 nameLabel:"Nombre",namePH:"ej. Ducha fría",tagLabel:"Etiqueta",
-targetEveryDay:"Hábito diario",
+scheduleModeLabel:"Horario",modeEveryday:"Cada día",modeOffdays:"Días libres",modeWeekly:"Veces/semana",
+offWeekdaysLabel:"Días libres para este hábito",weeklyQuotaLabel:"Veces por semana",
 weightLabel:"Peso (1-10)",
 sinDaysTitle:"Días de salto consciente",sinDaysHint:"Marca fechas específicas en el calendario de abajo — un salto declarado con antelación en una de ellas siempre cuesta −1×peso (o la tarifa consciente del nivel, si configuras niveles de recaída), sin límite. Para CUALQUIER otro día, usa el campo de cuota mensual: permite declarar un número limitado de saltos conscientes al mes a la misma tarifa. Con niveles configurados, cada uno tiene su propia cuota y el campo de abajo deja de usarse.",
 sinQuotaLabel:"Salto consciente en cualquier otro día, veces/mes",
@@ -1276,7 +1293,7 @@ trackingStartTitle:"Fecha de inicio",trackingStartDesc:"Los días antes de esta 
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
 myHabits:"Mis hábitos",habitListDesc:"Toca ✎ para editar. Arrastra ⠿ para reordenar.",
 active:"Activos",archived:"Archivados",deleted:"Eliminados",empty:"Vacío",
-penaltyBankLabel:"Banco de multas",setIncome:"indicar ingreso",everyDay:"cada día",notEveryDay:"no todos los días",
+penaltyBankLabel:"Banco de multas",setIncome:"indicar ingreso",everyDay:"cada día",notEveryDay:"no todos los días",offExcept:"libre",timesPerWeekShort:"×/sem",thisWeek:"esta semana",dayOffToday:"hoy es libre",
 resetTitle:"Restablecer",resetDesc:"Cargar 19 hábitos predeterminados (las marcas se mantienen).",loadDefaults:"Cargar predeterminados",
 confirmReset:"¿Reemplazar hábitos actuales con los 19 predeterminados?",defaultsLoaded:"Predeterminados cargados",
 fullYear:"Año completo",completionByHabit:"Cumplimiento por hábito",pctOfTarget:"% del objetivo para",
@@ -1337,7 +1354,7 @@ dangerZone:"Zona de peligro",clearAllData:"Borrar todos los datos",
 confirmWipe1:"¿BORRAR TODOS LOS DATOS? ¡No se puede deshacer!",confirmWipe2:"¿Estás absolutamente seguro?",
 allDataCleared:"Todos los datos borrados",
 notePrefix:"Nota:",notePH:"Qué pasó este día...",saveBtn:"Guardar",closeBtn:"Cerrar",noteSaved:"Nota guardada",
-habitUpdated:"Hábito actualizado",habitAdded:"Hábito agregado",enterName:"Ingrese un nombre",enterTagName:"Ingrese nombre de etiqueta",
+habitUpdated:"Hábito actualizado",habitAdded:"Hábito agregado",enterName:"Ingrese un nombre",enterWeeklyQuota:"Indica cuántas veces por semana",enterTagName:"Ingrese nombre de etiqueta",
 confirmDelete:"¿Eliminar \"{0}\"? El historial se conserva.",
 deletedPreserved:"Eliminado (historial conservado)",archivedBadge:"[archivado]",deletedBadge:"[eliminado]",
 restoredActive:"Restaurado a activos",restoredLabel:"Restaurado",
@@ -1379,7 +1396,8 @@ monthlyIncome:"月收入",incomeDesc:"罚款库的基础。系统分配固定百
 incomePerMonth:"每月收入",penaltyRateLabel:"罚款率 %",
 newHabit:"新习惯",editHabit:"编辑习惯",formDesc:"设置目标、权重(1-10)和奖励。",
 nameLabel:"名称",namePH:"例如 冷水澡",tagLabel:"标签",
-targetEveryDay:"每日习惯",
+scheduleModeLabel:"日程",modeEveryday:"每天",modeOffdays:"每周休息日",modeWeekly:"每周次数",
+offWeekdaysLabel:"该习惯的休息日",weeklyQuotaLabel:"每周次数",
 weightLabel:"权重 (1-10)",
 sinDaysTitle:"自觉跳过日",sinDaysHint:"在下面的日历中标记具体日期——提前在标记日声明的跳过始终只扣 −1×权重(如果设置了违规等级,则按该等级的自觉费率),没有次数限制。对于其他任何一天,使用月度配额字段:允许每月按相同费率声明有限次数的自觉跳过。一旦设置了等级,每个等级会有自己的配额,下面的通用字段将不再使用。",
 sinQuotaLabel:"其他任何一天的自觉跳过,次/月",
@@ -1391,7 +1409,7 @@ trackingStartTitle:"追踪开始日期",trackingStartDesc:"此日期之前的天
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
 myHabits:"我的习惯",habitListDesc:"点击 ✎ 编辑。拖动 ⠿ 排序。",
 active:"活跃",archived:"已归档",deleted:"已删除",empty:"空",
-penaltyBankLabel:"罚款库",setIncome:"设置收入",everyDay:"每天",notEveryDay:"非每天",
+penaltyBankLabel:"罚款库",setIncome:"设置收入",everyDay:"每天",notEveryDay:"非每天",offExcept:"休",timesPerWeekShort:"次/周",thisWeek:"本周",dayOffToday:"今天休息",
 resetTitle:"重置",resetDesc:"加载默认19个习惯（打卡记录保留）。",loadDefaults:"加载默认值",
 confirmReset:"用19个默认习惯替换当前习惯？",defaultsLoaded:"默认值已加载",
 fullYear:"全年",completionByHabit:"按习惯完成度",pctOfTarget:"目标完成率",
@@ -1452,7 +1470,7 @@ dangerZone:"危险区域",clearAllData:"清除所有数据",
 confirmWipe1:"删除所有数据？此操作不可撤销！",confirmWipe2:"你确定吗？",
 allDataCleared:"所有数据已清除",
 notePrefix:"笔记：",notePH:"这天发生了什么...",saveBtn:"保存",closeBtn:"关闭",noteSaved:"笔记已保存",
-habitUpdated:"习惯已更新",habitAdded:"习惯已添加",enterName:"请输入名称",enterTagName:"请输入标签名称",
+habitUpdated:"习惯已更新",habitAdded:"习惯已添加",enterName:"请输入名称",enterWeeklyQuota:"请填写每周次数",enterTagName:"请输入标签名称",
 confirmDelete:"删除 \"{0}\"？历史记录将保留。",
 deletedPreserved:"已删除（历史保留）",archivedBadge:"[已归档]",deletedBadge:"[已删除]",
 restoredActive:"已恢复为活跃",restoredLabel:"已恢复",
@@ -1494,7 +1512,8 @@ monthlyIncome:"Revenu mensuel",incomeDesc:"Base pour la banque de pénalités. L
 incomePerMonth:"Revenu par mois",penaltyRateLabel:"Taux de pénalité %",
 newHabit:"Nouvelle habitude",editHabit:"Modifier l'habitude",formDesc:"Définir objectif, poids (1-10) et récompense.",
 nameLabel:"Nom",namePH:"ex. Douche froide",tagLabel:"Étiquette",
-targetEveryDay:"Habitude quotidienne",
+scheduleModeLabel:"Planning",modeEveryday:"Chaque jour",modeOffdays:"Jours de repos",modeWeekly:"Fois/semaine",
+offWeekdaysLabel:"Jours de repos pour cette habitude",weeklyQuotaLabel:"Fois par semaine",
 weightLabel:"Poids (1-10)",
 sinDaysTitle:"Jours d'écart conscient",sinDaysHint:"Marque des dates précises dans le calendrier ci-dessous — un écart déclaré à l'avance sur l'une d'elles coûte toujours −1×poids (ou le tarif conscient du niveau, si tu configures des niveaux d'écart), sans limite. Pour N'IMPORTE QUEL autre jour, utilise le champ de quota mensuel : il permet de déclarer un nombre limité d'écarts conscients par mois au même tarif. Une fois des niveaux configurés, chacun a son propre quota et le champ ci-dessous n'est plus utilisé.",
 sinQuotaLabel:"Écart conscient un autre jour, fois/mois",
@@ -1506,7 +1525,7 @@ trackingStartTitle:"Date de début du suivi",trackingStartDesc:"Les jours avant 
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
 myHabits:"Mes habitudes",habitListDesc:"Appuyez ✎ pour modifier. Glissez ⠿ pour réordonner.",
 active:"Actives",archived:"Archivées",deleted:"Supprimées",empty:"Vide",
-penaltyBankLabel:"Banque de pénalités",setIncome:"indiquer revenu",everyDay:"chaque jour",notEveryDay:"pas tous les jours",
+penaltyBankLabel:"Banque de pénalités",setIncome:"indiquer revenu",everyDay:"chaque jour",notEveryDay:"pas tous les jours",offExcept:"repos",timesPerWeekShort:"×/sem",thisWeek:"cette semaine",dayOffToday:"repos aujourd'hui",
 resetTitle:"Réinitialiser",resetDesc:"Charger les 19 habitudes par défaut (les coches restent).",loadDefaults:"Charger par défaut",
 confirmReset:"Remplacer les habitudes actuelles par les 19 par défaut ?",defaultsLoaded:"Par défaut chargées",
 fullYear:"Année complète",completionByHabit:"Achèvement par habitude",pctOfTarget:"% de l'objectif pour",
@@ -1567,7 +1586,7 @@ dangerZone:"Zone de danger",clearAllData:"Effacer toutes les données",
 confirmWipe1:"EFFACER TOUTES LES DONNÉES ? C'est irréversible !",confirmWipe2:"Êtes-vous absolument sûr ?",
 allDataCleared:"Toutes les données effacées",
 notePrefix:"Note :",notePH:"Que s'est-il passé ce jour...",saveBtn:"Enregistrer",closeBtn:"Fermer",noteSaved:"Note enregistrée",
-habitUpdated:"Habitude mise à jour",habitAdded:"Habitude ajoutée",enterName:"Entrez un nom",enterTagName:"Entrez le nom de l'étiquette",
+habitUpdated:"Habitude mise à jour",habitAdded:"Habitude ajoutée",enterName:"Entrez un nom",enterWeeklyQuota:"Indiquez combien de fois par semaine",enterTagName:"Entrez le nom de l'étiquette",
 confirmDelete:"Supprimer \"{0}\" ? L'historique est conservé.",
 deletedPreserved:"Supprimé (historique conservé)",archivedBadge:"[archivé]",deletedBadge:"[supprimé]",
 restoredActive:"Restauré en actif",restoredLabel:"Restauré",
@@ -1604,7 +1623,9 @@ function applyLang(){
     lDangerZone:T.dangerZone,lBtnWipe:T.clearAllData,
     lMonthlyIncome:T.monthlyIncome,lIncomeDesc:T.incomeDesc,lIncomePerMonth:T.incomePerMonth,
     lPenaltyRate:T.penaltyRateLabel,lFormDesc:T.formDesc,
-    lNameLabel:T.nameLabel,lTagLabel:T.tagLabel,lTargetEveryDay:T.targetEveryDay,
+    lNameLabel:T.nameLabel,lTagLabel:T.tagLabel,
+    lScheduleModeLabel:T.scheduleModeLabel,lModeEveryday:T.modeEveryday,lModeOffdays:T.modeOffdays,lModeWeekly:T.modeWeekly,
+    lOffWeekdaysLabel:T.offWeekdaysLabel,lWeeklyQuotaLabel:T.weeklyQuotaLabel,
     lWeightLabel:T.weightLabel,
     lSinDaysTitle:T.sinDaysTitle,lSinDaysHint:T.sinDaysHint,lSinQuotaLabel:T.sinQuotaLabel,
     lHabitFreezeTitle:T.habitFreezeTitle,lHabitFreezeHintText:T.habitFreezeHintText,lHabitFreezeQuotaLabel:T.habitFreezeQuotaLabel,
@@ -1680,7 +1701,7 @@ function defaultTags(){
   ];
 }
 function defaultHabits(){
-  const H=(name,tagId,reward,weight,order)=>({id:uid(),name,tagId,everyday:true,weight,reward,archived:false,deleted:false,deletedAt:null,order});
+  const H=(name,tagId,reward,weight,order)=>({id:uid(),name,tagId,scheduleMode:"everyday",offWeekdays:[],weeklyQuota:null,weight,reward,archived:false,deleted:false,deletedAt:null,order});
   return[
     H("Привычка 1","biohacking","Награда 1",9,0),
     H("Привычка 2","biohacking","Награда 2",4,1),
@@ -1963,8 +1984,13 @@ function migrate(){
   if(!state.theme)state.theme="dark";
   if(!state.accentColor)state.accentColor="#ffd400";
   state.habits.forEach((h,i)=>{
-    if(h.everyday===undefined)h.everyday=true;
-    if(h.target===undefined)h.target=0;
+    // scheduleMode replaces the old everyday boolean (see below). Every habit — including old
+    // "event"-type ones, which by now score exactly like an everyday habit already (the monthly-quota
+    // system they used to run on is gone) — defaults to "everyday": no behavior change for anything
+    // that already existed, opting into "offdays"/"weekly" is a deliberate per-habit choice from here.
+    if(h.scheduleMode===undefined)h.scheduleMode="everyday";
+    if(!Array.isArray(h.offWeekdays))h.offWeekdays=[];
+    if(h.weeklyQuota===undefined)h.weeklyQuota=null;
     if(h.weight===undefined)h.weight=5;
     if(h.order===undefined)h.order=i;
     // Installs upgrading from before this existed have no record of when the habit was actually
@@ -1990,9 +2016,10 @@ function migrate(){
     // and these fields are never read anywhere anymore — actively strip them from real saved data
     // instead of just leaving them as permanent unread clutter.
     delete h.zoneMode;delete h.zonePct;delete h.zoneAbs;
-    // The monthly-quota/pace-line system is gone too (every habit is judged day-by-day now, same
-    // as an everyday habit already was) — same active-strip treatment as the zone fields above.
-    delete h.target;delete h.monthTargets;delete h.type;
+    // The old monthly-quota/pace-line system is gone too — same active-strip treatment as the zone
+    // fields above. everyday is superseded by scheduleMode (set above) now that "not every day" has
+    // two real shapes (offdays/weekly) instead of one boolean.
+    delete h.target;delete h.monthTargets;delete h.type;delete h.everyday;
     // sinDays (old weekday-recurring chips) is retired — superseded by sinCalendarDays (specific
     // dates, picked via a calendar widget) + sinMonthlyQuota (habit-level "any day" allowance,
     // fixes the old 0-tier gap where declaring a conscious skip on a non-weekday did nothing).
@@ -2211,6 +2238,24 @@ function countPreCreationDaysInMonth(h,year,m){
   for(let d=1;d<=total;d++)if(beforeTrackingStart(year,m,d,h))count++;
   return count;
 }
+// Same day-count-shrinking pattern again, this time for scheduleMode:"offdays" habits — how many of
+// this month's days fall on one of h's declared off-weekdays (getDay()'s 0=Sunday..6=Saturday, same
+// convention weekday()/isWeekend() already use). Only meaningful for offdays habits; a habit with no
+// off-weekdays configured returns 0, same as one with an empty archive.
+function countOffWeekdaysInMonth(h,year,m){
+  if(!Array.isArray(h.offWeekdays)||!h.offWeekdays.length)return 0;
+  const total=daysInMonthY(year,m);
+  let count=0;
+  for(let d=1;d<=total;d++)if(h.offWeekdays.includes(new Date(year,m,d).getDay()))count++;
+  return count;
+}
+// Which non-overlapping 7-day "week" a day-of-month falls into, for scheduleMode:"weekly" habits —
+// chunk 0 = days 1-7, chunk 1 = days 8-14, etc. Deliberately NOT aligned to real Mon-Sun calendar
+// weeks (which could span two different months) — every check/score/freeze in this app is already
+// scoped to a single month's data, and a real cross-month week would mean reading two months' worth
+// of checks for one judgment. A trailing short chunk (e.g. days 29-31) is still a real chunk; whether
+// it's judged at all is decided by weeklyHabitPointsForMonth (only once it's fully elapsed).
+function weekChunkOfDay(d){return Math.floor((d-1)/7)}
 // A tier is "available" for the NEXT unplanned use if dateISO is marked on its OWN calendar
 // (t.calendarDays — unconditional, never consumes freeLimit, mirrors sinCalendarDays below), or it
 // has no free-use cap, or hasn't hit its cap yet.
@@ -2325,6 +2370,9 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     if(frozen.includes(d))continue;
     if(isArchivedOn(h,year,m,d))continue;
     if(habitFrozenBucket[d])continue; // per-habit freeze: a true zero, same as the global freeze above
+    // offdays habits: a declared off-weekday is unconditionally excused, exactly like a freeze —
+    // it never even reaches the "did you miss it" question, so it can't cost a tier-quota slot either.
+    if(h.scheduleMode==="offdays"&&(h.offWeekdays||[]).includes(new Date(year,m,d).getDay()))continue;
     const isPast=isCurMonth?d<rt.d:true;
     if(!isPast)continue;
     const hasTiers=h.violationTiers&&h.violationTiers.length>0;
@@ -2391,11 +2439,61 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   }
   return pts;
 }
-// Every habit is scored by dailyHabitPointsForMonth now — there's no separate monthly-quota/
-// pace-line path anymore, so a habit that isn't meant to happen literally every day just relies on
-// freezes (or a sin day, or a softer violation tier) for a day it's intentionally skipped, exactly
-// like an everyday habit already does.
+// Week-chunk scoring for scheduleMode:"weekly" habits (see weekChunkOfDay) — no per-day miss/success
+// at all. A chunk is only judged once every one of its days has fully elapsed; today (and any later,
+// still-open chunk) is never touched. Within a judged chunk: every day actually checked earns the
+// normal base success bonus — being checked always pays, exactly like every other schedule, there's
+// no "doesn't count toward anything" day — and if the chunk's checked count falls short of its
+// quota, the shortfall costs one base miss penalty PER missing check (not one flat penalty for the
+// whole chunk), the same no-cliff, scales-with-the-actual-gap principle every other penalty in this
+// app already uses. A frozen/personally-frozen/archived/pre-creation day inside the chunk lowers
+// that chunk's OWN effective quota by one — the same flat-subtraction excused-day treatment
+// effTarget already gives every other schedule — rather than demanding a catch-up on a day that was
+// genuinely never available. A short trailing chunk (e.g. days 29-31) never had a full week to work
+// with, so it's never held to the quota either — any checks inside it still pay out, just without
+// judgment (this app already only scores whole calendar months, never spilling into the next one to
+// complete a real 7-day week). Sin days and violation tiers don't apply here: those are inherently
+// single-day concepts ("declaring today a planned skip"), which doesn't map onto "this week came up
+// short" — a weekly-quota habit is already meant to be forgiving enough on its own that skipping any
+// one given day was the plan all along.
+function weeklyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut){
+  const totalDays=daysInMonthY(year,m);
+  const rt=realTodayParts();
+  const isCurMonth=(year===rt.y&&m===rt.m);
+  if(year>rt.y||(year===rt.y&&m>rt.m))return 0;
+  const mk="m"+m;
+  const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
+  const frozen=(yd.freezesUsed&&yd.freezesUsed[mk])||[];
+  const habitFrozenBucket=(yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{};
+  const upper=isCurMonth?rt.d-1:totalDays;
+  const quota=Math.max(0,h.weeklyQuota||0);
+  let pts=0;
+  const numChunks=Math.ceil(totalDays/7);
+  for(let c=0;c<numChunks;c++){
+    const chunkStart=c*7+1,chunkEnd=Math.min(chunkStart+6,totalDays);
+    if(stopBeforeDay&&chunkStart>=stopBeforeDay)break;
+    if(chunkEnd>upper)break; // this chunk, and every later one, hasn't fully elapsed yet
+    const isFullChunk=(chunkEnd-chunkStart+1)===7; // a short trailing chunk (e.g. days 29-31) never gets a full week to work with
+    let checked=0,excused=0;
+    for(let d=chunkStart;d<=chunkEnd;d++){
+      if(beforeTrackingStart(year,m,d,h)){excused++;continue}
+      if(frozen.includes(d)||habitFrozenBucket[d]||isArchivedOn(h,year,m,d)){excused++;continue}
+      if(checksBucket[d]){checked++;pts+=successBonusMult(1)*h.weight}
+    }
+    // A short trailing chunk still pays out any checks it happened to get (above) — being checked
+    // always pays — it's just never held to the quota, since it was never given a full week to meet it.
+    if(!isFullChunk)continue;
+    const effQuota=Math.max(0,quota-excused);
+    const shortfall=Math.max(0,effQuota-checked);
+    if(shortfall>0)pts+=-missPenaltyMult(1)*h.weight*shortfall;
+  }
+  return pts;
+}
+// Dispatches by schedule: weekly-quota habits get the week-chunk pass above; everyday AND offdays
+// habits both go through dailyHabitPointsForMonth (offdays' excused-weekday handling lives inside
+// that one function already, keyed off h.scheduleMode — no separate path needed for it).
 function habitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut){
+  if(h.scheduleMode==="weekly")return weeklyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut);
   return dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut);
 }
 // Current-month balance for the ACTIVE (bound) year — used by the money pool & UI previews.
@@ -3460,9 +3558,13 @@ function toggleCheck(m,hid,day){
   save();
 }
 function checkedCount(m,hid){return Object.keys(getChecks(m,hid)).length}
-// Every habit is judged day-by-day now (no more monthly-quota pace line), so the achievable target
-// for a month is just its day count, minus every kind of excused day: globally frozen, personally
-// frozen, archived, or before the habit's own creation date.
+// A daily/offdays habit is judged day-by-day (no more monthly-quota pace line), so the achievable
+// target for a month is just its day count, minus every kind of excused day: globally frozen,
+// personally frozen, archived, before the habit's own creation date, or — for offdays habits — one
+// of its declared off-weekdays. A weekly-quota habit has no day-count target at all in the same
+// sense (see weeklyHabitPointsForMonth) — this still returns the same "days available" figure for
+// it since every %-of-days display that reads effTarget wants *some* sane denominator, just not one
+// shaped around a weekly quota specifically.
 function effTarget(h,m){
   const year=activeYear();
   if(!habitExistsInMonth(h,year,m))return 0;
@@ -3471,7 +3573,50 @@ function effTarget(h,m){
   const habitFrozen=Object.keys((state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{}).length;
   const archivedDays=countArchivedDaysInMonth(h,year,m);
   const preCreationDays=countPreCreationDaysInMonth(h,year,m);
-  return Math.max(0,daysInMonth(m)-frozen-habitFrozen-archivedDays-preCreationDays);
+  const offWeekdayDays=h.scheduleMode==="offdays"?countOffWeekdaysInMonth(h,year,m):0;
+  return Math.max(0,daysInMonth(m)-frozen-habitFrozen-archivedDays-preCreationDays-offWeekdayDays);
+}
+// Short "what schedule does this habit follow" label, shared by the habit list and the Today/Track
+// meta line — everyday needs no explanation, offdays names which weekdays are skipped, weekly states
+// the quota. An offdays habit with nothing actually selected reads the same as "every day", since
+// nothing is excluded yet.
+function habitScheduleLabel(h){
+  if(h.scheduleMode==="offdays"&&(h.offWeekdays||[]).length){
+    return T.offExcept+" "+h.offWeekdays.slice().sort().map(i=>T.daysShort[i]).join(",");
+  }
+  if(h.scheduleMode==="weekly")return(h.weeklyQuota||0)+" "+T.timesPerWeekShort;
+  return T.everyDay;
+}
+// Live "checked so far in the week-chunk (day,m) currently falls in" + that chunk's effective quota,
+// for the always-visible weekly counter (Today card, Track row) — mirrors weeklyHabitPointsForMonth's
+// per-chunk math exactly (an excused day still shrinks the effective quota by one) but for whichever
+// chunk is CURRENT, elapsed or not, since the whole point is showing live progress before judgment.
+function weeklyProgressThisChunk(h,m,d){
+  const chunk=weekChunkOfDay(d);
+  const chunkStart=chunk*7+1,chunkEnd=Math.min(chunkStart+6,daysInMonth(m));
+  const c=getChecks(m,h.id),frozenDays=getFreezes(m);
+  const mk="m"+m,year=activeYear();
+  const habitFrozenBucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
+  let checked=0,excused=0;
+  for(let dd=chunkStart;dd<=chunkEnd;dd++){
+    if(beforeTrackingStart(year,m,dd,h)){excused++;continue}
+    if(frozenDays.includes(dd)||habitFrozenBucket[dd]||isArchivedOn(h,year,m,dd)){excused++;continue}
+    if(c[dd])checked++;
+  }
+  return{checked,quota:Math.max(0,(h.weeklyQuota||0)-excused)};
+}
+// Shared row-meta text for the Track grid (full render + the single-row fast-path update both call
+// this) — weekly-mode habits show the live this-week counter instead of a streak, since a month-local
+// streak doesn't mean much for a habit that's judged per week, not per day.
+function habitRowMetaHTML(h,m){
+  const bal=habitMonthBalance(h,m);
+  const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
+  if(h.scheduleMode==="weekly"){
+    const refDay=(curTodayM()===m)?curTodayD():daysInMonth(m);
+    const wp=weeklyProgressThisChunk(h,m,refDay);
+    return `${wp.checked}/${wp.quota} ${T.thisWeek} ${balBadge}`;
+  }
+  return `${T.streak} ${longestStreak(m,h.id)} ${balBadge}`;
 }
 function metTarget(h,m){return habitMonthBalance(h,m)>0}
 // A day counts toward the streak if it was checked, OR it was neutrally excused (frozen, personally
@@ -3703,8 +3848,17 @@ function renderToday(){
     html+=`<div class="today-tag"><div class="today-tag-name"><span class="tgdot" style="background:${tag.color}"></span>${escapeHtml(tag.name)}</div>`;
     grouped[tid].forEach(h=>{
       const done=!!getChecks(m,h.id)[d]||frozen;
-      const streak=longestStreak(m,h.id);
-      const metaLine=`${T.streak} ${streak} &middot; <span class="ti-xp">+${xpForCheck(h.weight)} XP</span>`;
+      const isOffToday=h.scheduleMode==="offdays"&&(h.offWeekdays||[]).includes(weekday(m,d));
+      let metaLine;
+      if(h.scheduleMode==="weekly"){
+        const wp=weeklyProgressThisChunk(h,m,d);
+        metaLine=`${wp.checked}/${wp.quota} ${T.thisWeek} &middot; <span class="ti-xp">+${xpForCheck(h.weight)} XP</span>`;
+      }else if(isOffToday&&!done){
+        metaLine=`<span style="color:var(--dim)">&#128564; ${T.dayOffToday}</span>`;
+      }else{
+        const streak=longestStreak(m,h.id);
+        metaLine=`${T.streak} ${streak} &middot; <span class="ti-xp">+${xpForCheck(h.weight)} XP</span>`;
+      }
       let achRow="";
       if(done&&(h.achievementTiers||[]).length>0){
         const loggedAch=(state.achievementLogs["m"+m]&&state.achievementLogs["m"+m][h.id])?state.achievementLogs["m"+m][h.id][d]:undefined;
@@ -3719,7 +3873,7 @@ function renderToday(){
       // grid's bare sin-mark/hf-mark/tier-mark) so this view's click-handler wiring below can never
       // cross-match elements sitting in the grid's own (possibly still-in-DOM-but-hidden) markup.
       let tierRow="";
-      const showTiers=!done&&!frozen&&(h.violationTiers||[]).length>0;
+      const showTiers=!done&&!frozen&&!isOffToday&&(h.violationTiers||[]).length>0;
       if(showTiers){
         // Named chips, same as achRow above — not the grid's blind cycle-by-number icon, since a
         // Today card has the room to show every tier's actual label. A tier is only disabled (not
@@ -3735,7 +3889,7 @@ function renderToday(){
         }).join('')}</div>`;
       }
       let actionRow="";
-      if(!done&&!frozen){
+      if(!done&&!frozen&&!isOffToday){
         const marks=[];
         if(sinMarkAvailable(h,m,d)){
           const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
@@ -3937,12 +4091,10 @@ function renderGrid(){
     if(!collapsed){
       grouped[tid].forEach(h=>{
         const c=getChecks(m,h.id);
-        const bal=habitMonthBalance(h,m);
-        const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
         body+=`<tr><td class="cname"><div class="rowname">
           <span class="dot" style="background:${tag.color}"></span>
           <div><div>${escapeHtml(h.name)}</div>
-          <div class="rowmeta">${T.streak} ${longestStreak(m,h.id)} ${balBadge}</div>
+          <div class="rowmeta">${habitRowMetaHTML(h,m)}</div>
           </div></div></td>`;
         for(let d=1;d<=N;d++){
           const fr=frozen.includes(d);
@@ -3956,11 +4108,17 @@ function renderGrid(){
             body+=`<td class="cell ${td?'today-col':''} archived-cell"><div class="archive-icon">&#128230;</div></td>`;
           }else{
             const on=!!c[d];
+            // A day off (offdays mode, weekday listed in offWeekdays) is optional, not excused —
+            // unlike frozen/archived above it stays a real, clickable checkbox (checking it anyway is
+            // a voluntary bonus, mirroring Today view's isOffToday treatment), it just shows a dim
+            // sleep glyph instead of nothing while unchecked, and none of the sin/tier/freeze marks
+            // make sense here since there's nothing to excuse on a day that was never required.
+            const isOff=h.scheduleMode==="offdays"&&(h.offWeekdays||[]).includes(weekday(m,d));
             let mark="";
             // Sin and tier marks can now coexist on the same past day (sin no longer requires
             // planning ahead — see allMonthSinUse()/sinMarkAvailable()'s comment for why the quota
             // math already supports this) — both are independent ifs, not else-if, so both render.
-            if(!on&&sinMarkAvailable(h,m,d)){
+            if(!on&&!isOff&&sinMarkAvailable(h,m,d)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
               // Differentiate the tooltip: a date marked on the relevant calendar (the habit's own,
               // or — once tiers exist — the currently-governing tier's own) is unlimited; any OTHER
@@ -3971,12 +4129,12 @@ function renderGrid(){
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
               mark+=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
             }
-            if(!on&&(h.violationTiers||[]).length>0){
+            if(!on&&!isOff&&(h.violationTiers||[]).length>0){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark+=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
             }
-            if(!on&&habitFreezeAvailable(h,m,d)){
+            if(!on&&!isOff&&habitFreezeAvailable(h,m,d)){
               const hfOn=!!(state.habitFreezes["m"+m]&&state.habitFreezes["m"+m][h.id]&&state.habitFreezes["m"+m][h.id][d]);
               mark+=`<span class="cell-mark hf-mark ${hfOn?'hf-on':''}" data-hf-h="${h.id}" data-hf-d="${d}" title="${T.habitFreezeHint}">&#10052;</span>`;
             }
@@ -3985,7 +4143,8 @@ function renderGrid(){
               const idx=(loggedAch!==undefined&&h.achievementTiers[loggedAch])?loggedAch:0;
               mark+=`<span class="cell-mark ach-mark" data-ach-h="${h.id}" data-ach-d="${d}" title="${T.achTierLogHint}">${idx+1}</span>`;
             }
-            body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${on?'&#10003;':''}${mark?`<div class="cell-marks">${mark}</div>`:''}</div></td>`;
+            const glyph=on?'&#10003;':(isOff?`<span class="dayoff-glyph" title="${T.dayOffToday}">&#128564;</span>`:'');
+            body+=`<td class="cell ${td?'today-col':''}"><div class="chk ${on?'on':''}" data-h="${h.id}" data-d="${d}" style="--chkcolor:${tag.color};${on?'background:'+tag.color+';border-color:'+tag.color:''}">${glyph}${mark?`<div class="cell-marks">${mark}</div>`:''}</div></td>`;
           }
         }
         body+="</tr>";
@@ -4000,8 +4159,10 @@ function renderGrid(){
       const h=state.habits.find(x=>x.id===cell.dataset.h);
       const hid=cell.dataset.h,d=+cell.dataset.d;
       toggleCheck(m,hid,d);
-      if(h&&h.achievementTiers&&h.achievementTiers.length){
-        // achievement-tier state can't be represented by simple class/text patching — re-render fully
+      const isOffDay=h&&h.scheduleMode==="offdays"&&(h.offWeekdays||[]).includes(weekday(m,d));
+      if(h&&((h.achievementTiers&&h.achievementTiers.length)||isOffDay)){
+        // Achievement-tier state, and the day-off glyph swapping back in on uncheck, can't be
+        // represented by simple class/text patching — re-render fully in both cases.
         renderGrid();renderHero();renderXP();
         offerCheckUndo(m,hid,d,()=>{renderGrid();renderHero();renderXP()});
         return;
@@ -4084,15 +4245,13 @@ function renderGrid(){
 }
 function updateRowMeta(tr,hid){
   const h=state.habits.find(x=>x.id===hid);if(!h)return;
-  const bal=habitMonthBalance(h,curMonth);
-  const balBadge=`<span class="zbadge" style="color:${bal>0?'var(--green)':bal<0?'var(--red)':'var(--dim)'}">${bal>0?'+':''}${bal}</span>`;
   const meta=tr.querySelector(".rowmeta");
-  if(meta)meta.innerHTML=`${T.streak} ${longestStreak(curMonth,hid)} ${balBadge}`;
+  if(meta)meta.innerHTML=habitRowMetaHTML(h,curMonth);
 }
 function renderTrack(){renderMonthTabs();renderHero();renderSummaryButton();renderGrid()}
 
 /* ===== HABITS VIEW ===== */
-let editId=null,fEveryday=true,habitFilterMode="active";
+let editId=null,fScheduleMode="everyday",fOffWeekdays=new Set(),habitFilterMode="active";
 
 function renderHabitsManager(){
   document.getElementById("incomeInp").value=state.income||"";
@@ -4151,7 +4310,7 @@ function renderHabitList(){
   }else{
     el.innerHTML=hs.map(h=>{
       const tag=getTag(h.tagId);
-      const norm=h.everyday?T.everyDay:T.notEveryDay;
+      const norm=habitScheduleLabel(h);
       const inc=getIncome(curMonth);
       const pen=inc?(" &middot; "+rub(habitMoneyOwed(h,curMonth))):"";
       const badge=h.deleted?`<span class="deleted-badge">${T.deletedBadge}</span>`:h.archived?`<span class="archived-badge">${T.archivedBadge}</span>`:"";
@@ -4571,13 +4730,31 @@ function readAchTiersFromForm(){
   });
   return editAchTiers.filter(t=>t.label);
 }
+// Redraws the mode buttons' active state + which of the two mode-specific rows is visible, and
+// (re)populates the off-weekday chips from fOffWeekdays — called on every mode switch, not just once,
+// since switching modes is the only time these rows' visibility needs to change.
+function renderScheduleModeUI(){
+  document.querySelectorAll("#fScheduleModeBtns .fbtn").forEach(b=>b.classList.toggle("active",b.dataset.mode===fScheduleMode));
+  const offRow=document.getElementById("offWeekdaysRow"),weekRow=document.getElementById("weeklyQuotaRow");
+  if(offRow)offRow.style.display=fScheduleMode==="offdays"?"":"none";
+  if(weekRow)weekRow.style.display=fScheduleMode==="weekly"?"":"none";
+  const chipsEl=document.getElementById("offWeekdaysChips");
+  if(!chipsEl)return;
+  chipsEl.innerHTML=T.daysShort.map((d,i)=>`<button type="button" class="day-chip ${fOffWeekdays.has(i)?'on':''}" data-day="${i}">${d}</button>`).join("");
+  chipsEl.querySelectorAll(".day-chip").forEach(c=>c.onclick=()=>{
+    const d=+c.dataset.day;
+    if(fOffWeekdays.has(d))fOffWeekdays.delete(d);else fOffWeekdays.add(d);
+    c.classList.toggle("on");
+  });
+}
 function clearForm(){
   editId=null;
   document.getElementById("fName").value="";
   document.getElementById("fWeight").value="";
   document.getElementById("fTag").selectedIndex=0;
-  fEveryday=true;
-  document.getElementById("fEveryday").classList.add("on");
+  fScheduleMode="everyday";fOffWeekdays=new Set();
+  document.getElementById("fWeeklyQuota").value="";
+  renderScheduleModeUI();
   document.getElementById("formTitle").textContent=T.newHabit;
   document.getElementById("btnSaveHabit").textContent=T.addHabit;
   document.getElementById("btnCancelEdit").style.display="none";
@@ -4595,8 +4772,9 @@ function startEdit(id){
   document.getElementById("fName").value=h.name;
   document.getElementById("fWeight").value=h.weight;
   document.getElementById("fTag").value=h.tagId;
-  fEveryday=!!h.everyday;
-  document.getElementById("fEveryday").classList.toggle("on",fEveryday);
+  fScheduleMode=h.scheduleMode||"everyday";fOffWeekdays=new Set(h.offWeekdays||[]);
+  document.getElementById("fWeeklyQuota").value=h.weeklyQuota!=null?h.weeklyQuota:"";
+  renderScheduleModeUI();
   document.getElementById("formTitle").textContent=T.editHabit;
   document.getElementById("btnSaveHabit").textContent=T.saveChanges;
   document.getElementById("btnCancelEdit").style.display="block";
@@ -4616,6 +4794,9 @@ function saveHabit(){
   const tagId=document.getElementById("fTag").value;
   if(!tiersAreValid())return; // toast already shown — an invalid (non-negative) tier multiplier blocks the save
   if(!achTiersAreValid())return; // toast already shown — an invalid (non-positive) achievement multiplier blocks the save
+  if(fScheduleMode==="weekly"&&!(+document.getElementById("fWeeklyQuota").value>0)){
+    toast(T.enterWeeklyQuota);return;
+  }
   const sinCalendarDays=[...editSinCalDays];
   const sinQuotaRaw=document.getElementById("fSinQuota").value;
   const sinMonthlyQuota=sinQuotaRaw===""?null:Math.max(0,+sinQuotaRaw);
@@ -4624,15 +4805,18 @@ function saveHabit(){
   const violationTiers=readTiersFromForm();
   const achievementTiers=readAchTiersFromForm();
   const createdAt=document.getElementById("fCreatedAt").value||todayISO();
+  const scheduleMode=fScheduleMode;
+  const offWeekdays=scheduleMode==="offdays"?[...fOffWeekdays]:[];
+  const weeklyQuota=scheduleMode==="weekly"?Math.max(1,Math.round(+document.getElementById("fWeeklyQuota").value)):null;
   if(editId){
     const h=state.habits.find(x=>x.id===editId);
-    Object.assign(h,{name,tagId,everyday:fEveryday,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,createdAt});
+    Object.assign(h,{name,tagId,scheduleMode,offWeekdays,weeklyQuota,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,createdAt});
     toast(T.habitUpdated);
   }else{
-    state.habits.push({id:uid(),name,tagId,everyday:fEveryday,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length,createdAt});
+    state.habits.push({id:uid(),name,tagId,scheduleMode,offWeekdays,weeklyQuota,weight,sinCalendarDays,sinMonthlyQuota,freezeMonthlyQuota,violationTiers,achievementTiers,archived:false,archivePeriods:[],deleted:false,deletedAt:null,order:state.habits.length,createdAt});
     toast(T.habitAdded);
   }
-  recalcPoints(); // weight/tiers/sin-days changes retroactively affect every already-logged day
+  recalcPoints(); // weight/schedule/tiers/sin-days changes retroactively affect every already-logged day
   save();clearForm();renderHabitsManager();
 }
 function delHabit(id){
@@ -7611,6 +7795,7 @@ function init(){
   loadBackupMeta();
   if(!sync.code){sync.code=genCode();saveSyncCfg()}
   applyTheme();
+  renderScheduleModeUI();
   editSinCalDays=[];resetSinCalNav();renderSinCal();collapseSinCal();editTiers=[];renderTiersList();editAchTiers=[];renderAchTiersList();
   updateBackupStatusLine();
   checkBackupReminder();
@@ -7621,10 +7806,10 @@ function init(){
   document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>switchView(t.dataset.view));
 
   // habits form
-  document.getElementById("fEveryday").onclick=()=>{
-    fEveryday=!fEveryday;
-    document.getElementById("fEveryday").classList.toggle("on",fEveryday);
-  };
+  document.querySelectorAll("#fScheduleModeBtns .fbtn").forEach(b=>b.onclick=()=>{
+    fScheduleMode=b.dataset.mode;
+    renderScheduleModeUI();
+  });
   document.getElementById("fTierAdd").onclick=()=>{
     readTiersFromForm(); // capture any in-progress edits before appending a new blank row
     editTiers.push({label:"",deltaMult:-1,freeLimit:null,calendarDays:[],sinDeltaMult:-1,sinLimit:null,sinCalendarDays:[]});
