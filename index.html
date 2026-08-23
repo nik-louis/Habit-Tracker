@@ -2356,6 +2356,12 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   for(let d=1;d<=upper;d++){
     if(stopBeforeDay&&d>=stopBeforeDay)break;
     if(beforeTrackingStart(year,m,d,h))continue;
+    // Freeze (global or per-habit) must be checked BEFORE checksBucket — freezing a day is a true
+    // zero no matter what, even if the habit was already checked before the freeze was applied (e.g.
+    // check it, then decide to freeze the whole day anyway); otherwise an already-checked day would
+    // keep its success bonus despite being frozen, which defeats the point of freezing it.
+    if(frozen.includes(d))continue;
+    if(habitFrozenBucket[d])continue; // per-habit freeze: a true zero, same as the global freeze above
     if(checksBucket[d]){
       curSuccessStreak++;curMissStreak=0;
       if(hasAchTiers){
@@ -2367,9 +2373,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
       }
       continue;
     }
-    if(frozen.includes(d))continue;
     if(isArchivedOn(h,year,m,d))continue;
-    if(habitFrozenBucket[d])continue; // per-habit freeze: a true zero, same as the global freeze above
     // offdays habits: a declared off-weekday is unconditionally excused, exactly like a freeze —
     // it never even reaches the "did you miss it" question, so it can't cost a tier-quota slot either.
     if(h.scheduleMode==="offdays"&&(h.offWeekdays||[]).includes(new Date(year,m,d).getDay()))continue;
