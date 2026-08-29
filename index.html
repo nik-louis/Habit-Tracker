@@ -2249,13 +2249,18 @@ function countOffWeekdaysInMonth(h,year,m){
   for(let d=1;d<=total;d++)if(h.offWeekdays.includes(new Date(year,m,d).getDay()))count++;
   return count;
 }
-// Which non-overlapping 7-day "week" a day-of-month falls into, for scheduleMode:"weekly" habits —
-// chunk 0 = days 1-7, chunk 1 = days 8-14, etc. Deliberately NOT aligned to real Mon-Sun calendar
-// weeks (which could span two different months) — every check/score/freeze in this app is already
-// scoped to a single month's data, and a real cross-month week would mean reading two months' worth
-// of checks for one judgment. A trailing short chunk (e.g. days 29-31) is still a real chunk; whether
-// it's judged at all is decided by weeklyHabitPointsForMonth (only once it's fully elapsed).
-function weekChunkOfDay(d){return Math.floor((d-1)/7)}
+// Real Monday-Sunday week containing day d, clipped to stay within (year,m) — the first week of the
+// month is short unless day 1 falls on a Monday, the last week is short unless the month ends on a
+// Sunday. Deliberately never crosses into the next/previous month's own data (every check/score/freeze
+// in this app is already scoped to a single month) — a real week straddling two months is simply two
+// separate short chunks, one judged in each month, rather than one chunk spanning both.
+function weekBoundsForDay(year,m,d){
+  const totalDays=daysInMonthY(year,m);
+  const wd=new Date(year,m,d).getDay(); // 0=Sun..6=Sat
+  const sinceMonday=(wd+6)%7; // Mon=0,Tue=1,...,Sun=6
+  const untilSunday=6-sinceMonday; // Mon=6,Tue=5,...,Sun=0
+  return{start:Math.max(1,d-sinceMonday),end:Math.min(totalDays,d+untilSunday)};
+}
 // A tier is "available" for the NEXT unplanned use if dateISO is marked on its OWN calendar
 // (t.calendarDays — unconditional, never consumes freeLimit, mirrors sinCalendarDays below), or it
 // has no free-use cap, or hasn't hit its cap yet.
@@ -2443,7 +2448,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
   }
   return pts;
 }
-// Week-chunk scoring for scheduleMode:"weekly" habits (see weekChunkOfDay) — no per-day miss/success
+// Week-chunk scoring for scheduleMode:"weekly" habits (see weekBoundsForDay) — no per-day miss/success
 // at all. A chunk is only judged once every one of its days has fully elapsed; today (and any later,
 // still-open chunk) is never touched. Within a judged chunk: every day actually checked earns the
 // normal base success bonus — being checked always pays, exactly like every other schedule, there's
@@ -2453,13 +2458,12 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
 // app already uses. A frozen/personally-frozen/archived/pre-creation day inside the chunk lowers
 // that chunk's OWN effective quota by one — the same flat-subtraction excused-day treatment
 // effTarget already gives every other schedule — rather than demanding a catch-up on a day that was
-// genuinely never available. A short trailing chunk (e.g. days 29-31) never had a full week to work
-// with, so it's never held to the quota either — any checks inside it still pay out, just without
-// judgment (this app already only scores whole calendar months, never spilling into the next one to
-// complete a real 7-day week). Sin days and violation tiers don't apply here: those are inherently
-// single-day concepts ("declaring today a planned skip"), which doesn't map onto "this week came up
-// short" — a weekly-quota habit is already meant to be forgiving enough on its own that skipping any
-// one given day was the plan all along.
+// genuinely never available. A short chunk at the start or end of the month (the real week it belongs
+// to spills into the next/previous month) never had a full week to work with, so it's never held to
+// the quota either — any checks inside it still pay out, just without judgment. Sin days and violation
+// tiers don't apply here: those are inherently single-day concepts ("declaring today a planned skip"),
+// which doesn't map onto "this week came up short" — a weekly-quota habit is already meant to be
+// forgiving enough on its own that skipping any one given day was the plan all along.
 function weeklyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBeforeDay,sinUseOut){
   const totalDays=daysInMonthY(year,m);
   const rt=realTodayParts();
@@ -2472,24 +2476,26 @@ function weeklyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefo
   const upper=isCurMonth?rt.d-1:totalDays;
   const quota=Math.max(0,h.weeklyQuota||0);
   let pts=0;
-  const numChunks=Math.ceil(totalDays/7);
-  for(let c=0;c<numChunks;c++){
-    const chunkStart=c*7+1,chunkEnd=Math.min(chunkStart+6,totalDays);
+  let chunkStart=1;
+  while(chunkStart<=totalDays){
+    const chunkEnd=weekBoundsForDay(year,m,chunkStart).end;
     if(stopBeforeDay&&chunkStart>=stopBeforeDay)break;
     if(chunkEnd>upper)break; // this chunk, and every later one, hasn't fully elapsed yet
-    const isFullChunk=(chunkEnd-chunkStart+1)===7; // a short trailing chunk (e.g. days 29-31) never gets a full week to work with
+    const isFullChunk=(chunkEnd-chunkStart+1)===7; // a short chunk at month start/end never gets a full week to work with
     let checked=0,excused=0;
     for(let d=chunkStart;d<=chunkEnd;d++){
       if(beforeTrackingStart(year,m,d,h)){excused++;continue}
       if(frozen.includes(d)||habitFrozenBucket[d]||isArchivedOn(h,year,m,d)){excused++;continue}
       if(checksBucket[d]){checked++;pts+=successBonusMult(1)*h.weight}
     }
-    // A short trailing chunk still pays out any checks it happened to get (above) — being checked
-    // always pays — it's just never held to the quota, since it was never given a full week to meet it.
-    if(!isFullChunk)continue;
-    const effQuota=Math.max(0,quota-excused);
-    const shortfall=Math.max(0,effQuota-checked);
-    if(shortfall>0)pts+=-missPenaltyMult(1)*h.weight*shortfall;
+    // A short chunk still pays out any checks it happened to get (above) — being checked always
+    // pays — it's just never held to the quota, since it was never given a full week to meet it.
+    if(isFullChunk){
+      const effQuota=Math.max(0,quota-excused);
+      const shortfall=Math.max(0,effQuota-checked);
+      if(shortfall>0)pts+=-missPenaltyMult(1)*h.weight*shortfall;
+    }
+    chunkStart=chunkEnd+1;
   }
   return pts;
 }
@@ -3596,10 +3602,10 @@ function habitScheduleLabel(h){
 // per-chunk math exactly (an excused day still shrinks the effective quota by one) but for whichever
 // chunk is CURRENT, elapsed or not, since the whole point is showing live progress before judgment.
 function weeklyProgressThisChunk(h,m,d){
-  const chunk=weekChunkOfDay(d);
-  const chunkStart=chunk*7+1,chunkEnd=Math.min(chunkStart+6,daysInMonth(m));
+  const year=activeYear();
+  const{start:chunkStart,end:chunkEnd}=weekBoundsForDay(year,m,d);
   const c=getChecks(m,h.id),frozenDays=getFreezes(m);
-  const mk="m"+m,year=activeYear();
+  const mk="m"+m;
   const habitFrozenBucket=(state.habitFreezes&&state.habitFreezes[mk]&&state.habitFreezes[mk][h.id])||{};
   let checked=0,excused=0;
   for(let dd=chunkStart;dd<=chunkEnd;dd++){
