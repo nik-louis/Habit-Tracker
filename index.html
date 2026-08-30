@@ -2860,16 +2860,23 @@ function challengeDayIndexForToday(ch){
 // with the underlying checks. Day 1 is exempt from the "elapsed and unchecked" failure rule entirely
 // — you can start a 7-day challenge today and not actually begin it for a year, and it'll just sit
 // "active" waiting for you the whole time. The instant day 1 IS checked, the sequence starts for
-// real: "failed" the moment any day from 2 on that's strictly before today (i.e. fully elapsed, no
-// time left to still check it) turns up unchecked; "completed" once the full duration has elapsed
-// from that actual start AND every day ended up checked; "active" while still inside the window
-// (unless explicitly cancelled, which always wins).
+// real: "completed" the moment every day 1..ch.days is checked — checking the last day is already a
+// final, deliberate act, unlike a miss there's no "still time left today" to wait out, and since
+// everything here re-derives from the raw checks on every call (see recalcPoints), even an accidental
+// un-check of that final day instantly un-completes it and claws the reward back, so there's no risk
+// in paying out the moment the last box is ticked instead of waiting for the calendar to turn over.
+// Otherwise: "failed" the moment any day from 2 on that's strictly before today (i.e. fully elapsed,
+// no time left to still check it) turns up unchecked; "active" while still inside the window (unless
+// explicitly cancelled, which always wins).
 function challengeStatus(ch){
   if(ch.cancelled)return"cancelled";
   if(!ch.checks[1])return"active";
+  let allChecked=true;
+  for(let d=1;d<=ch.days;d++)if(!ch.checks[d]){allChecked=false;break}
+  if(allChecked)return"completed";
   const todayIdx=challengeDayIndexForToday(ch);
   for(let d=2;d<Math.min(todayIdx,ch.days+1);d++)if(!ch.checks[d])return"failed";
-  return todayIdx<=ch.days?"active":"completed";
+  return"active";
 }
 function challengeReward(ch){return challengeStatus(ch)==="completed"?challengeRewardAmount(ch.days):0}
 function toggleChallengeDay(id,dayIdx){
