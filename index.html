@@ -3309,12 +3309,16 @@ function unlockSpecialReward(rewardId){
 // frozen out for every day) counts toward NEITHER bucket: it didn't succeed or fail, there was
 // nothing to succeed or fail at. This is evaluated per-month from archivePeriods/freezes, not from
 // the habit's current-moment archived flag, so it's automatically correct for any month regardless
-// of whether the habit has since been restored or re-archived.
+// of whether the habit has since been restored or re-archived. A habit that broke exactly even
+// (balance===0) ALSO counts toward neither bucket — it didn't fail, so it shouldn't cost a rate-reset
+// month its reset, but it didn't actually succeed either, so it doesn't inflate "good" — same
+// reasoning habitMoneyOwed uses to excuse it from the penalty pool.
 function monthGoodBadCounts(m){
   let good=0,bad=0;
   activeHabits().forEach(h=>{
     if(effTarget(h,m)<=0)return;
-    if(habitMonthBalance(h,m)>0)good++;else bad++;
+    const bal=habitMonthBalance(h,m);
+    if(bal>0)good++;else if(bal<0)bad++;
   });
   return{good,bad};
 }
@@ -3343,9 +3347,11 @@ function moneyPool(m){return getIncome(m)*getEffectiveRatePct(m)/100}
 function habitMoneyOwed(h,m){
   // Nothing was actually asked of this habit this month (didn't exist yet, or fully frozen/archived
   // out) — habitMonthBalance is exactly 0 either way, same as a real 0-net month, so the balance
-  // check alone can't tell "excused" apart from "failed and broke even." Check the target first.
+  // check alone can't tell "excused" apart from "broke even." Check the target first.
   if(effTarget(h,m)<=0)return 0;
-  if(habitMonthBalance(h,m)>0)return 0;
+  // >=0, not >0: a habit that broke exactly even isn't a failure — successes and misses cancelled
+  // out, it owes nothing either way, same as monthGoodBadCounts treating 0 as neither good nor bad.
+  if(habitMonthBalance(h,m)>=0)return 0;
   const tw=activeMoneyWeight(m);if(!tw)return 0;
   return moneyPool(m)*(h.weight||1)/tw;
 }
