@@ -2675,6 +2675,17 @@ function sinMarkAvailable(h,m,d){
   }
   return false;
 }
+// A sin declaration is inherently "conscious skip AT THIS TIER" — sinMarkAvailable's own grandfather
+// rule (an already-declared day stays available even once ITS tier's quota later fills from OTHER
+// days) only covers that one case. It must NOT also cover the governing tier itself changing: without
+// this, logging tier 1 (quota free), declaring it conscious, then switching the SAME day to tier 2
+// (quota already exhausted) would keep the old declaration and let dailyHabitPointsForMonth charge
+// tier 2's lenient sinDeltaMult instead of correctly falling through to its real-miss deltaMult. Call
+// this whenever a day's violationLogs entry changes (set or cleared) so any stale declaration is
+// dropped and has to be consciously re-made against whatever tier now governs the day.
+function clearSinOnTierChange(mk,hid,d){
+  if(state.declaredSins[mk]&&state.declaredSins[mk][hid])delete state.declaredSins[mk][hid][d];
+}
 // Availability check for the per-habit freeze icon — counts BOTH this habit's own personal freeze
 // days AND any globally-frozen day toward the SAME h.freezeMonthlyQuota ceiling, since a whole-day
 // freeze (MAX_FREEZES/state.freezesUsed) zeroes this habit too as a side effect. Without merging
@@ -4038,6 +4049,7 @@ function renderToday(){
       if(!state.violationLogs[mkey][hid])state.violationLogs[mkey][hid]={};
       const bucket=state.violationLogs[mkey][hid];
       if(bucket[d]===idx)delete bucket[d];else bucket[d]=idx;
+      clearSinOnTierChange(mkey,hid,d);
       recalcPoints();save();renderToday();renderXP();
     };
   });
@@ -4299,6 +4311,7 @@ function renderGrid(){
       // cycle only through currently-available tiers; past the last one, clear the log entirely
       if(curPos+1<avail.length)bucket[d]=avail[curPos+1];
       else delete bucket[d];
+      clearSinOnTierChange(mk,hid,d);
       recalcPoints();save();renderGrid();renderHero();renderXP();
     };
   });
