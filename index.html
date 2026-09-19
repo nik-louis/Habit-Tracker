@@ -3943,10 +3943,13 @@ function renderToday(){
       // grid's bare sin-mark/hf-mark/tier-mark) so this view's click-handler wiring below can never
       // cross-match elements sitting in the grid's own (possibly still-in-DOM-but-hidden) markup.
       let tierRow="";
-      // Weekly-mode habits never read violationLogs at all (weeklyHabitPointsForMonth judges the
-      // whole week as one aggregate, never a specific day) — showing a tier picker here would be
-      // clickable but silently do nothing, so it's excluded the same as in the Track grid.
-      const showTiers=!done&&!frozen&&!isOffToday&&!isWeekly&&(h.violationTiers||[]).length>0;
+      // Weekly-mode habits never read violationLogs for SCORING (weeklyHabitPointsForMonth judges the
+      // whole week as one aggregate, never a specific day) — but tier severity is still worth letting
+      // the user record on the one day that actually caused a shortfall, same reasoning as the purely
+      // cosmetic weekly sleep-mark. Sin-mark stays excluded here (see actionRow below) — its corner
+      // slot is now used by the sleep-mark toggle in the Track grid, so only one of the two can live
+      // there without a layout clash, and this was the one actually asked for.
+      const showTiers=!done&&!frozen&&!isOffToday&&(h.violationTiers||[]).length>0;
       if(showTiers){
         // Named chips, same as achRow above — not the grid's blind cycle-by-number icon, since a
         // Today card has the room to show every tier's actual label. A tier is only disabled (not
@@ -4194,9 +4197,12 @@ function renderGrid(){
             // Sin and tier marks can now coexist on the same past day (sin no longer requires
             // planning ahead — see allMonthSinUse()/sinMarkAvailable()'s comment for why the quota
             // math already supports this) — both are independent ifs, not else-if, so both render.
-            // Neither applies to weekly-mode habits at all: weeklyHabitPointsForMonth judges the whole
-            // week as one aggregate, never a specific day, so a per-day sin/tier declaration would be
-            // clickable but silently do nothing to the score — misleading rather than just unused.
+            // Sin-mark specifically is excluded for weekly-mode habits: weeklyHabitPointsForMonth
+            // never reads declaredSins, and its corner slot is now the weekly sleep-mark toggle's, so
+            // showing it here would both do nothing to the score and clash visually. Tier-mark stays
+            // available for weekly-mode though (its own corner is free) — purely as a record of which
+            // day actually caused a shortfall and how severe it was, same reasoning as the sleep-mark:
+            // worth keeping even though it doesn't feed weekly scoring either.
             if(!on&&!isOff&&!isWeekly&&sinMarkAvailable(h,m,d)){
               const declared=!!(state.declaredSins["m"+m]&&state.declaredSins["m"+m][h.id]&&state.declaredSins["m"+m][h.id][d]);
               // Differentiate the tooltip: a date marked on the relevant calendar (the habit's own,
@@ -4208,7 +4214,7 @@ function renderGrid(){
               const sinTitle=isCalendarDay?T.sinDeclareHint:T.sinDeclareQuotaHint;
               mark+=`<span class="cell-mark sin-mark ${declared?'sin-on':''}" data-sin-h="${h.id}" data-sin-d="${d}" title="${sinTitle}">🙏</span>`;
             }
-            if(!on&&!isOff&&!isWeekly&&(h.violationTiers||[]).length>0){
+            if(!on&&!isOff&&(h.violationTiers||[]).length>0){
               const logged=(state.violationLogs["m"+m]&&state.violationLogs["m"+m][h.id])?state.violationLogs["m"+m][h.id][d]:undefined;
               const lbl=logged!==undefined&&h.violationTiers[logged]?(logged+1):"";
               mark+=`<span class="cell-mark tier-mark ${logged!==undefined?'tier-set':''}" data-tier-h="${h.id}" data-tier-d="${d}" title="${T.tierLogHint}">${lbl}</span>`;
