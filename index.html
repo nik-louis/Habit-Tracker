@@ -2786,6 +2786,11 @@ function satisfiedDaysForMonth(year,m,yd){
       const checksBucket=(yd.checks&&yd.checks[mk]&&yd.checks[mk][h.id])||{};
       if(checksBucket[d])return true;
       if(frozen.includes(d))return true;
+      // A per-habit freeze (see toggleHabitFreeze/habitFreezeAvailable) is just as much a true zero
+      // as the global freeze above — without this, freezing just THIS habit for a day could still
+      // silently cost the whole month its perfect-day bonus on that day.
+      const habitFrozenBucket=(yd.habitFreezes&&yd.habitFreezes[mk]&&yd.habitFreezes[mk][h.id])||{};
+      if(habitFrozenBucket[d])return true;
       if(isArchivedOn(h,year,m,d))return true;
       // A day before THIS habit's own creation date is as neutral as one it was archived on — it
       // shouldn't be able to single-handedly deny the whole month's perfect-day bonus just because
