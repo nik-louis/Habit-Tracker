@@ -795,7 +795,7 @@ textarea.inp{resize:vertical;min-height:60px}
           <span style="font-size:13px;font-weight:700" id="lExceptionCategoriesTitle">Категории допустимых исключений (необязательно)</span>
           <button type="button" class="mini" id="fExceptionCategoryAdd">+ <span id="lExceptionCategoryAdd">категория</span></button>
         </div>
-        <p class="hint" id="lExceptionCategoriesHint" style="margin:0 0 8px">Раздели редкие исключения на независимые категории (напр. «чипсы», «сладкое») и разреши себе до N раз за период (неделю или месяц) по КАЖДОЙ категории — в один день можно использовать только одну категорию, поэтому все сразу в один день не попадут. Считается истинным нулём, как заморозка.</p>
+        <p class="hint" id="lExceptionCategoriesHint" style="margin:0 0 8px">Раздели редкие исключения на независимые категории (напр. «чипсы», «сладкое») и разреши себе до N раз за период (неделю или месяц) по КАЖДОЙ категории — используй их в любой день, хоть все сразу, хоть по отдельности. Считается истинным нулём, как заморозка.</p>
         <div id="fExceptionCategoriesList"></div>
       </div>
       <button class="btn primary" id="btnSaveHabit">Add Habit</button>
@@ -1076,7 +1076,7 @@ sinQuotaLabel:"Conscious skip on any other day, times/month",
 habitFreezeTitle:"Per-habit freeze",habitFreezeHintText:"A limited number of days per month you can freeze for just THIS habit — a true zero, doesn't help or hurt, doesn't touch streaks. Works for past and future days alike.",habitFreezeQuotaLabel:"Free freezes per month",habitFreezeHint:"Freeze this day for this habit (zero, streak untouched)",habitCreatedAtLabel:"Habit created on",
 tiersTitle:"Slip severity tiers (optional)",tierAdd:"tier",tiersHint:"By default any miss is −3×weight. Add tiers to distinguish a minor slip from a major one (e.g. \"processed\" −1×weight, \"junk\" −5×weight). First number = penalty multiplier, must be negative. Second number = free uses per month before it escalates to the next tier — leave blank for unlimited.",
 achTiersTitle:"Success tiers (optional)",achTierAdd:"tier",achTiersHint:"By default any check is +1×weight. Add tiers to reward different ways of succeeding differently (e.g. \"cold shower\" +1×weight, \"cold bath\" +2×weight) — only ONE tier counts per day, your choice, even if you technically did several. Number = reward multiplier, must be positive.",
-exceptionCategoriesTitle:"Allowed-exception categories (optional)",exceptionCategoryAdd:"category",exceptionCategoriesHint:"Split occasional slip-ups into independent categories (e.g. \"chips\", \"sweets\") and allow yourself up to N per period (week or month) for EACH category — only one category can be used per day, so they can't all land on the same day. Counts as a true zero, like a freeze.",
+exceptionCategoriesTitle:"Allowed-exception categories (optional)",exceptionCategoryAdd:"category",exceptionCategoriesHint:"Split occasional slip-ups into independent categories (e.g. \"chips\", \"sweets\") and allow yourself up to N per period (week or month) for EACH category — use them on any day, together or spread out, however you like. Counts as a true zero, like a freeze.",
 sinDeclareHint:"Declare a conscious skip for this day",sinDeclareQuotaHint:"Conscious skip via the monthly quota (not a marked calendar date)",tierLogHint:"Tap to log which severity tier this miss was",tierUnavailableHint:"This tier's monthly quota is already used up by another day",achTierLogHint:"Tap to cycle which success tier this check counts as",excCategoryHint:"Tap to use this category's allowance for this day (a true zero, like a freeze)",excCategoryUnavailableHint:"This category's quota for the period is already used up by another day",excCategoryLogHint:"Tap to cycle which allowed-exception category this day used",
 trackingStartTitle:"Tracking start date",trackingStartDesc:"Days before this date never enter the points economy — no gains, no penalties. Set it to when you actually started using this system.",trackingStartLabel:"Start date",
 addHabit:"Add Habit",saveChanges:"Save Changes",cancel:"Cancel",
@@ -1193,7 +1193,7 @@ sinQuotaLabel:"Осознанный пропуск в любой другой д
 habitFreezeTitle:"Заморозка по привычке",habitFreezeHintText:"Ограниченное число дней в месяц, которые можно заморозить именно для ЭТОЙ привычки — настоящий ноль, не в плюс и не в минус, серию не трогает. Работает и для прошлых, и для будущих дней.",habitFreezeQuotaLabel:"Бесплатных заморозок в месяц",habitFreezeHint:"Заморозить этот день для привычки (ноль, серия не рвётся)",habitCreatedAtLabel:"Дата создания привычки",
 tiersTitle:"Уровни срыва (необязательно)",tierAdd:"уровень",tiersHint:"По умолчанию любой пропуск = −3×вес. Добавь уровни, если хочешь различать лёгкий и тяжёлый срыв (напр. «не цельное» −1×вес, «джанк» −5×вес). Первое число — множитель штрафа, обязательно отрицательное. Второе число — сколько раз в месяц этот уровень бесплатный, дальше срыв эскалирует к следующему уровню; пусто = без ограничений.",
 achTiersTitle:"Уровни успеха (необязательно)",achTierAdd:"уровень",achTiersHint:"По умолчанию любая галочка = +1×вес. Добавь уровни, если хочешь награждать разные варианты выполнения по-разному (напр. «холодный душ» +1×вес, «холодная ванна» +2×вес) — засчитывается только ОДИН уровень в день, по твоему выбору, даже если сделал несколько. Число — множитель награды, обязательно положительное.",
-exceptionCategoriesTitle:"Категории допустимых исключений (необязательно)",exceptionCategoryAdd:"категория",exceptionCategoriesHint:"Раздели редкие исключения на независимые категории (напр. «чипсы», «сладкое») и разреши себе до N раз за период (неделю или месяц) по КАЖДОЙ категории — в один день можно использовать только одну категорию, поэтому все сразу в один день не попадут. Считается истинным нулём, как заморозка.",
+exceptionCategoriesTitle:"Категории допустимых исключений (необязательно)",exceptionCategoryAdd:"категория",exceptionCategoriesHint:"Раздели редкие исключения на независимые категории (напр. «чипсы», «сладкое») и разреши себе до N раз за период (неделю или месяц) по КАЖДОЙ категории — используй их в любой день, хоть все сразу, хоть по отдельности. Считается истинным нулём, как заморозка.",
 sinDeclareHint:"Объявить осознанный пропуск на этот день",sinDeclareQuotaHint:"Осознанный пропуск через месячную квоту (день не отмечен в календаре)",tierLogHint:"Нажми, чтобы отметить уровень этого срыва",tierUnavailableHint:"Месячная квота этого уровня уже израсходована в другой день",achTierLogHint:"Нажми, чтобы переключить уровень успеха для этой галочки",excCategoryHint:"Нажми, чтобы использовать лимит этой категории на этот день (истинный ноль, как заморозка)",excCategoryUnavailableHint:"Лимит этой категории за период уже израсходован в другой день",excCategoryLogHint:"Нажми, чтобы переключить категорию допустимого исключения для этого дня",
 trackingStartTitle:"Начало трекинга",trackingStartDesc:"Дни до этой даты не участвуют в подсчёте очков — ни в плюс, ни в минус. Поставь дату, когда реально начал(а) использовать систему.",trackingStartLabel:"Дата начала",
 addHabit:"Добавить привычку",saveChanges:"Сохранить",cancel:"Отмена",
@@ -1310,7 +1310,7 @@ sinQuotaLabel:"Salto consciente en cualquier otro día, veces/mes",
 habitFreezeTitle:"Congelación por hábito",habitFreezeHintText:"Un número limitado de días al mes que puedes congelar solo para ESTE hábito — un cero real, no suma ni resta, no afecta las rachas. Funciona tanto para días pasados como futuros.",habitFreezeQuotaLabel:"Congelaciones gratis por mes",habitFreezeHint:"Congelar este día para este hábito (cero, la racha no se rompe)",habitCreatedAtLabel:"Hábito creado el",
 tiersTitle:"Niveles de recaída (opcional)",tierAdd:"nivel",tiersHint:"Por defecto cualquier fallo es −3×peso. Añade niveles para distinguir un desliz leve de uno grave. Primer número = multiplicador de penalización, debe ser negativo. Segundo número = usos gratis por mes antes de escalar al siguiente nivel; déjalo en blanco para ilimitado.",
 achTiersTitle:"Niveles de éxito (opcional)",achTierAdd:"nivel",achTiersHint:"Por defecto cualquier marca es +1×peso. Añade niveles para premiar distintas formas de cumplir (p. ej. «ducha fría» +1×peso, «baño frío» +2×peso) — solo cuenta UN nivel por día, a tu elección, aunque hayas hecho varios. El número = multiplicador de recompensa, debe ser positivo.",
-exceptionCategoriesTitle:"Categorías de excepciones permitidas (opcional)",exceptionCategoryAdd:"categoría",exceptionCategoriesHint:"Divide los deslices ocasionales en categorías independientes (p. ej. «papas fritas», «dulces») y permítete hasta N por período (semana o mes) en CADA categoría — solo se puede usar una categoría por día, así que no pueden caer todas el mismo día. Cuenta como cero real, como una congelación.",
+exceptionCategoriesTitle:"Categorías de excepciones permitidas (opcional)",exceptionCategoryAdd:"categoría",exceptionCategoriesHint:"Divide los deslices ocasionales en categorías independientes (p. ej. «papas fritas», «dulces») y permítete hasta N por período (semana o mes) en CADA categoría — úsalas cualquier día, juntas o por separado, como prefieras. Cuenta como cero real, como una congelación.",
 sinDeclareHint:"Declarar un salto consciente para este día",sinDeclareQuotaHint:"Salto consciente vía la cuota mensual (fecha no marcada en el calendario)",tierLogHint:"Toca para registrar el nivel de este fallo",tierUnavailableHint:"La cuota mensual de este nivel ya se usó otro día",achTierLogHint:"Toca para cambiar el nivel de éxito de esta marca",excCategoryHint:"Toca para usar el cupo de esta categoría hoy (un cero real, como una congelación)",excCategoryUnavailableHint:"El cupo de esta categoría para el período ya se usó otro día",excCategoryLogHint:"Toca para cambiar qué categoría de excepción permitida usó este día",
 trackingStartTitle:"Fecha de inicio",trackingStartDesc:"Los días antes de esta fecha no entran en la economía de puntos — sin ganancias, sin penalizaciones. Ponla en el día que realmente empezaste a usar el sistema.",trackingStartLabel:"Fecha de inicio",
 addHabit:"Agregar hábito",saveChanges:"Guardar cambios",cancel:"Cancelar",
@@ -1427,7 +1427,7 @@ sinQuotaLabel:"其他任何一天的自觉跳过,次/月",
 habitFreezeTitle:"单习惯冻结",habitFreezeHintText:"每月可为这一个习惯冻结的天数上限——真正的零,不加分不扣分,不影响连续记录。过去和未来的日期都适用。",habitFreezeQuotaLabel:"每月免费冻结次数",habitFreezeHint:"为此习惯冻结这一天(零,连续记录不中断)",habitCreatedAtLabel:"习惯创建日期",
 tiersTitle:"违规等级(可选)",tierAdd:"等级",tiersHint:"默认任何未完成都是 −3×权重。添加等级可以区分轻微和严重违规(例如「非全天然」−1×权重,「垃圾食品」−5×权重)。第一个数字 = 惩罚倍数,必须为负数。第二个数字 = 每月免费次数,超过后升级到下一等级;留空表示不限。",
 achTiersTitle:"成功等级(可选)",achTierAdd:"等级",achTiersHint:"默认任何打卡都是 +1×权重。添加等级可以对不同完成方式给予不同奖励(例如「冷水淋浴」+1×权重,「冷水浴」+2×权重)——每天只算一个等级,由你选择,即使实际完成了多种。数字 = 奖励倍数,必须为正数。",
-exceptionCategoriesTitle:"允许的例外类别(可选)",exceptionCategoryAdd:"类别",exceptionCategoriesHint:"把偶尔的破例拆分成独立的类别(例如「薯片」「甜食」),并允许自己每个类别每个周期(周或月)最多 N 次——每天只能使用一个类别,所以不会都堆在同一天。按真正的零计算,和冻结一样。",
+exceptionCategoriesTitle:"允许的例外类别(可选)",exceptionCategoryAdd:"类别",exceptionCategoriesHint:"把偶尔的破例拆分成独立的类别(例如「薯片」「甜食」),并允许自己每个类别每个周期(周或月)最多 N 次——可以在任意一天使用,一起用或分开用都可以。按真正的零计算,和冻结一样。",
 sinDeclareHint:"为这一天声明自觉跳过",sinDeclareQuotaHint:"通过月度配额的自觉跳过(该日期未在日历中标记)",tierLogHint:"点击记录此次违规的等级",tierUnavailableHint:"该等级的月度配额已被其他日期用完",achTierLogHint:"点击切换此次打卡的成功等级",excCategoryHint:"点击使用该类别今天的额度(按真正的零计算,和冻结一样)",excCategoryUnavailableHint:"该类别本周期的额度已被其他日期用完",excCategoryLogHint:"点击切换这一天使用的允许例外类别",
 trackingStartTitle:"追踪开始日期",trackingStartDesc:"此日期之前的天数不计入积分——无得分，无扣分。请设置为你真正开始使用本系统的日期。",trackingStartLabel:"开始日期",
 addHabit:"添加习惯",saveChanges:"保存更改",cancel:"取消",
@@ -1544,7 +1544,7 @@ sinQuotaLabel:"Écart conscient un autre jour, fois/mois",
 habitFreezeTitle:"Gel par habitude",habitFreezeHintText:"Un nombre limité de jours par mois que tu peux geler seulement pour CETTE habitude — un vrai zéro, ni positif ni négatif, la série n'est pas affectée. Fonctionne pour les jours passés comme futurs.",habitFreezeQuotaLabel:"Gels gratuits par mois",habitFreezeHint:"Geler ce jour pour cette habitude (zéro, la série n'est pas rompue)",habitCreatedAtLabel:"Habitude créée le",
 tiersTitle:"Niveaux d'écart (optionnel)",tierAdd:"niveau",tiersHint:"Par défaut tout échec vaut −3×poids. Ajoute des niveaux pour distinguer un écart mineur d'un majeur. Premier nombre = multiplicateur de pénalité, doit être négatif. Second nombre = utilisations gratuites par mois avant d'escalader au niveau suivant ; laisse vide pour illimité.",
 achTiersTitle:"Niveaux de réussite (optionnel)",achTierAdd:"niveau",achTiersHint:"Par défaut toute coche vaut +1×poids. Ajoute des niveaux pour récompenser différemment plusieurs façons de réussir (ex. « douche froide » +1×poids, « bain froid » +2×poids) — un SEUL niveau compte par jour, à ton choix, même si tu en as fait plusieurs. Le nombre = multiplicateur de récompense, doit être positif.",
-exceptionCategoriesTitle:"Catégories d'exceptions autorisées (optionnel)",exceptionCategoryAdd:"catégorie",exceptionCategoriesHint:"Répartis les écarts occasionnels en catégories indépendantes (ex. « chips », « sucreries ») et autorise-toi jusqu'à N par période (semaine ou mois) pour CHAQUE catégorie — une seule catégorie peut être utilisée par jour, donc elles ne peuvent pas toutes tomber le même jour. Compte comme un vrai zéro, comme un gel.",
+exceptionCategoriesTitle:"Catégories d'exceptions autorisées (optionnel)",exceptionCategoryAdd:"catégorie",exceptionCategoriesHint:"Répartis les écarts occasionnels en catégories indépendantes (ex. « chips », « sucreries ») et autorise-toi jusqu'à N par période (semaine ou mois) pour CHAQUE catégorie — utilise-les n'importe quel jour, ensemble ou séparément, comme tu veux. Compte comme un vrai zéro, comme un gel.",
 sinDeclareHint:"Déclarer un écart conscient pour ce jour",sinDeclareQuotaHint:"Écart conscient via le quota mensuel (date non marquée dans le calendrier)",tierLogHint:"Touchez pour enregistrer le niveau de cet écart",tierUnavailableHint:"Le quota mensuel de ce niveau est déjà utilisé un autre jour",achTierLogHint:"Touchez pour changer le niveau de réussite de cette coche",excCategoryHint:"Touchez pour utiliser le quota de cette catégorie aujourd'hui (un vrai zéro, comme un gel)",excCategoryUnavailableHint:"Le quota de cette catégorie pour la période est déjà utilisé un autre jour",excCategoryLogHint:"Touchez pour changer la catégorie d'exception autorisée utilisée ce jour-là",
 trackingStartTitle:"Date de début du suivi",trackingStartDesc:"Les jours avant cette date n'entrent pas dans l'économie de points — ni gain, ni pénalité. Mets la date à laquelle tu as vraiment commencé à utiliser ce système.",trackingStartLabel:"Date de début",
 addHabit:"Ajouter habitude",saveChanges:"Enregistrer",cancel:"Annuler",
@@ -2406,7 +2406,7 @@ function dailyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefor
     // keep its success bonus despite being frozen, which defeats the point of freezing it.
     if(frozen.includes(d))continue;
     if(habitFrozenBucket[d])continue; // per-habit freeze: a true zero, same as the global freeze above
-    if(categoryExceptionBucket[d]!==undefined)continue; // a declared category exception: also a true zero, same reasoning
+    if(excArr(categoryExceptionBucket,d).length)continue; // a declared category exception: also a true zero, same reasoning
     if(checksBucket[d]){
       curSuccessStreak++;curMissStreak=0;
       if(hasAchTiers){
@@ -2531,7 +2531,7 @@ function weeklyHabitPointsForMonth(h,year,m,yd,unresolvedOut,tierUseOut,stopBefo
       // Without this, a habit created partway through a real week could have most of that week's days
       // "excuse" the quota down to 0 in one shot, on top of the small weekly quota's own smallness.
       if(beforeTrackingStart(year,m,d,h)){hasPreCreation=true;continue}
-      if(frozen.includes(d)||habitFrozenBucket[d]||isArchivedOn(h,year,m,d)||categoryExceptionBucket[d]!==undefined){excused++;continue}
+      if(frozen.includes(d)||habitFrozenBucket[d]||isArchivedOn(h,year,m,d)||excArr(categoryExceptionBucket,d).length){excused++;continue}
       if(checksBucket[d]){checked++;pts+=successBonusMult(1)*h.weight}
     }
     // A short chunk still pays out any checks it happened to get (above) — being checked always
@@ -2793,20 +2793,27 @@ function toggleHabitFreeze(m,hid,d){
     }
   }
 }
-// Category-exception quota check: h.exceptionCategories[ci] is one independently-tracked "allow up
-// to N per period" bucket (e.g. "chips", "sweets" — each user-defined, not hardcoded). Storing at
-// most ONE category index per calendar day (state.categoryExceptions[mk][h.id][d]=ci) both records
-// which category a day used AND structurally guarantees at most one exception per day — the same
-// single-value-per-day trick state.declaredSins/violationLogs already rely on — so "не хочу все в
-// один день" (don't want them all landing on the same day) needs no extra validation code at all.
-// An already-declared day always stays available (mirrors sinMarkAvailable's grandfather rule), so
-// it can still be toggled back off even once its own category's quota has since filled elsewhere.
+// h.exceptionCategories[ci] is one independently-tracked "allow up to N per period" bucket (e.g.
+// "chips", "sweets" — each user-defined, not hardcoded). A day can use SEVERAL categories at once
+// (state.categoryExceptions[mk][h.id][d]=[ci,ci,...]) — the only real limit is each category's own
+// quota per period, not how many categories land on one day; that was tried as a hard per-day cap
+// and dropped; a day is excused from scoring the moment its array is non-empty, same as before.
+// excArr tolerates the older single-index format (bucket[d]=ci, a bare number) from before this
+// was reworked, so a habit tested under that format keeps working without a separate migration pass.
+function excArr(bucket,d){
+  const v=bucket[d];
+  if(v===undefined)return[];
+  return Array.isArray(v)?v:[v];
+}
+// An already-declared category always stays available for its own day (mirrors sinMarkAvailable's
+// grandfather rule), so it can still be toggled back off even once its own quota has since filled
+// elsewhere.
 function categoryExceptionAvailable(h,m,d,ci){
   const cat=(h.exceptionCategories||[])[ci];
   if(!cat)return false;
   const mk="m"+m;
   const bucket=(state.categoryExceptions&&state.categoryExceptions[mk]&&state.categoryExceptions[mk][h.id])||{};
-  if(bucket[d]===ci)return true;
+  if(excArr(bucket,d).includes(ci))return true;
   const year=activeYear();
   let start=1,end=daysInMonth(m);
   if(cat.period==="week"){
@@ -2814,33 +2821,35 @@ function categoryExceptionAvailable(h,m,d,ci){
     start=bounds.start;end=bounds.end;
   }
   let used=0;
-  for(let dd=start;dd<=end;dd++)if(bucket[dd]===ci)used++;
+  for(let dd=start;dd<=end;dd++)if(excArr(bucket,dd).includes(ci))used++;
   return used<Math.max(1,cat.quota||1);
 }
-// All currently-available category indices for (h,m,d) — mirrors availableTiersOnDay, used by the
-// grid's cycle-through-available-categories click handler (categoryExceptionAvailable alone can't
-// tell the handler which index comes "next").
+// All category indices for (h,m,d) that are either already used today or still have quota room —
+// mirrors availableTiersOnDay, used by the grid's cycle-through-and-add click handler.
 function availableExceptionCategoriesOnDay(h,m,d){
   const cats=h.exceptionCategories||[];
   const out=[];
   for(let ci=0;ci<cats.length;ci++)if(categoryExceptionAvailable(h,m,d,ci))out.push(ci);
   return out;
 }
-// Toggles category ci as day d's declared exception, shared by the grid and Today click handlers.
-// Setting a NEW category on a day that already has a different one simply overwrites it — the
-// one-value-per-day storage means the old category is implicitly freed the moment this fires, no
-// separate cleanup needed (same reasoning as clearSinOnTierChange, but automatic here).
+// Toggles category ci within day d's declared exceptions (add if absent and available, remove if
+// present) — shared by the grid and Today click handlers. Other categories already on the same day
+// are left untouched, since several can now coexist.
 function toggleCategoryException(m,hid,d,ci){
   const h=state.habits.find(x=>x.id===hid);if(!h)return;
   const mk="m"+m;
   if(!state.categoryExceptions[mk])state.categoryExceptions[mk]={};
   if(!state.categoryExceptions[mk][hid])state.categoryExceptions[mk][hid]={};
   const bucket=state.categoryExceptions[mk][hid];
-  if(bucket[d]===ci){
-    delete bucket[d];
+  const arr=excArr(bucket,d);
+  const idx=arr.indexOf(ci);
+  if(idx>=0){
+    arr.splice(idx,1);
+    if(arr.length)bucket[d]=arr;else delete bucket[d];
   }else{
     if(!categoryExceptionAvailable(h,m,d,ci))return;
-    bucket[d]=ci;
+    arr.push(ci);
+    bucket[d]=arr;
   }
   recalcPoints();save();
 }
@@ -2889,7 +2898,7 @@ function satisfiedDaysForMonth(year,m,yd){
       // A declared category exception is a true zero exactly like a freeze — it shouldn't cost the
       // day its perfect-day bonus any more than a freeze would.
       const categoryExceptionBucket=(yd.categoryExceptions&&yd.categoryExceptions[mk]&&yd.categoryExceptions[mk][h.id])||{};
-      if(categoryExceptionBucket[d]!==undefined)return true;
+      if(excArr(categoryExceptionBucket,d).length)return true;
       return false;
     }));
   }
@@ -3743,7 +3752,7 @@ function weeklyProgressThisChunk(h,m,d){
   let checked=0,excused=0;
   for(let dd=chunkStart;dd<=chunkEnd;dd++){
     if(beforeTrackingStart(year,m,dd,h))continue;
-    if(frozenDays.includes(dd)||habitFrozenBucket[dd]||isArchivedOn(h,year,m,dd)||categoryExceptionBucket[dd]!==undefined){excused++;continue}
+    if(frozenDays.includes(dd)||habitFrozenBucket[dd]||isArchivedOn(h,year,m,dd)||excArr(categoryExceptionBucket,dd).length){excused++;continue}
     if(c[dd])checked++;
   }
   return{checked,quota:Math.max(0,(h.weeklyQuota||0)-excused)};
@@ -4067,11 +4076,13 @@ function renderToday(){
       }
       // User-defined "allow up to N per period" categories (see categoryExceptionAvailable) — an
       // independent axis from violation tiers, so it renders regardless of isWeekly, same as tierRow.
+      // Several can be selected at once (a day isn't capped to one category).
       let excRow="";
       if(!done&&!frozen&&!isOffToday&&(h.exceptionCategories||[]).length>0){
-        const loggedIdx=(state.categoryExceptions["m"+m]&&state.categoryExceptions["m"+m][h.id])?state.categoryExceptions["m"+m][h.id][d]:undefined;
+        const loggedBucket=(state.categoryExceptions["m"+m]&&state.categoryExceptions["m"+m][h.id])||{};
+        const loggedArr=excArr(loggedBucket,d);
         excRow=`<div class="ti-ach-row">${h.exceptionCategories.map((c,i)=>{
-          const isSel=loggedIdx===i,isAvail=categoryExceptionAvailable(h,m,d,i);
+          const isSel=loggedArr.includes(i),isAvail=categoryExceptionAvailable(h,m,d,i);
           const cls=`tier-chip exc-chip ${isSel?'sel':''} ${(!isAvail&&!isSel)?'disabled':''}`;
           return `<span class="${cls}" data-h="${h.id}" data-exc-idx="${i}" title="${isAvail?T.excCategoryHint:T.excCategoryUnavailableHint}">${escapeHtml(c.label||('#'+(i+1)))}</span>`;
         }).join('')}</div>`;
@@ -4349,9 +4360,13 @@ function renderGrid(){
               mark+=`<span class="cell-mark ach-mark" data-ach-h="${h.id}" data-ach-d="${d}" title="${T.achTierLogHint}">${idx+1}</span>`;
             }
             if(!on&&!isOff&&(h.exceptionCategories||[]).length>0){
-              const loggedExc=(state.categoryExceptions["m"+m]&&state.categoryExceptions["m"+m][h.id])?state.categoryExceptions["m"+m][h.id][d]:undefined;
-              const excLbl=loggedExc!==undefined&&h.exceptionCategories[loggedExc]?(loggedExc+1):"";
-              mark+=`<span class="cell-mark exc-mark ${loggedExc!==undefined?'exc-set':''}" data-exc-h="${h.id}" data-exc-d="${d}" title="${T.excCategoryLogHint}">${excLbl}</span>`;
+              const loggedExcBucket=(state.categoryExceptions["m"+m]&&state.categoryExceptions["m"+m][h.id])||{};
+              const loggedExcArr=excArr(loggedExcBucket,d);
+              // Small corner circle can't list names — show a count when 1+, and the actual labels
+              // in the tooltip (falling back to the generic hint when nothing's logged yet).
+              const excLbl=loggedExcArr.length?String(loggedExcArr.length):"";
+              const excTitle=loggedExcArr.length?loggedExcArr.map(ci=>(h.exceptionCategories[ci]||{}).label||("#"+(ci+1))).join(", "):T.excCategoryLogHint;
+              mark+=`<span class="cell-mark exc-mark ${loggedExcArr.length?'exc-set':''}" data-exc-h="${h.id}" data-exc-d="${d}" title="${escapeHtml(excTitle)}">${excLbl}</span>`;
             }
             if(!on&&isWeekly){
               // Corner toggle always reflects only the MANUAL flag (regardless of auto-dormant status
@@ -4466,13 +4481,14 @@ function renderGrid(){
       e.stopPropagation();
       const hid=el.dataset.excH,d=+el.dataset.excD,mk="m"+m;
       const h=state.habits.find(x=>x.id===hid);if(!h||!h.exceptionCategories||!h.exceptionCategories.length)return;
-      const avail=availableExceptionCategoriesOnDay(h,m,d);
       const bucket=(state.categoryExceptions[mk]&&state.categoryExceptions[mk][hid])||{};
-      const cur=bucket[d];
-      const curPos=cur===undefined?-1:avail.indexOf(cur);
-      // cycle only through currently-available categories; past the last one, clear the day entirely
-      if(curPos+1<avail.length)toggleCategoryException(m,hid,d,avail[curPos+1]);
-      else if(cur!==undefined)toggleCategoryException(m,hid,d,cur); // toggles it back off (bucket[d]===ci)
+      const today=excArr(bucket,d);
+      const avail=availableExceptionCategoriesOnDay(h,m,d);
+      // Each click ADDS the next available category not yet on this day (several can now coexist);
+      // once none are left to add, the next click clears the whole day and the cycle starts over.
+      const nextToAdd=avail.find(ci=>!today.includes(ci));
+      if(nextToAdd!==undefined)toggleCategoryException(m,hid,d,nextToAdd);
+      else if(today.length)[...today].forEach(ci=>toggleCategoryException(m,hid,d,ci));
       renderGrid();renderHero();renderXP();
     };
   });
