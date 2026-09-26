@@ -3652,19 +3652,19 @@ function weeklyProgressThisChunk(h,m,d){
   }
   return{checked,quota:Math.max(0,(h.weeklyQuota||0)-excused)};
 }
-// Whether (m,d) should render as "dormant" for a weekly-quota habit — either the week's quota is
-// already met by other checked days (auto-derived, always accurate, needs no manual upkeep) or the
-// user manually marked it (see toggleWeeklySleepMark). Purely a display concept: weeklyHabitPointsForMonth
-// never reads either signal, so this can never change the score — the scoring model only tracks an
-// aggregate shortfall per week, not which specific day "was" the miss, so a shortfall week's unchecked
-// days can only ever be dormant via the manual mark, never automatically. A checked day is never dormant.
+// Whether (m,d) should render as "dormant" for a weekly-quota habit — purely the user's OWN manual
+// mark (see toggleWeeklySleepMark). This used to also auto-derive dormant from the week's quota
+// already being met by other checked days, but showing that automatically on every remaining day of
+// the week, on top of the always-offered manual toggle icon, looked cluttered — so the display is
+// manual-only now; the toggle icon is still always offered on an unchecked day regardless of quota
+// status, letting the user decide for themselves which days to mark. Purely a display concept either
+// way: weeklyHabitPointsForMonth never reads this signal, so it can never change the score. A checked
+// day is never dormant.
 function weeklyDayIsDormant(h,m,d){
   if(h.scheduleMode!=="weekly")return false;
   if(getChecks(m,h.id)[d])return false;
   const mk="m"+m;
-  if(state.weeklySleepMarks&&state.weeklySleepMarks[mk]&&state.weeklySleepMarks[mk][h.id]&&state.weeklySleepMarks[mk][h.id][d])return true;
-  const{checked,quota}=weeklyProgressThisChunk(h,m,d);
-  return checked>=quota;
+  return!!(state.weeklySleepMarks&&state.weeklySleepMarks[mk]&&state.weeklySleepMarks[mk][h.id]&&state.weeklySleepMarks[mk][h.id][d]);
 }
 // Toggles the manual sleep mark on (m,hid,d) — purely cosmetic bookkeeping, no recalcPoints() needed
 // since nothing scoring-related ever reads state.weeklySleepMarks.
@@ -4234,10 +4234,8 @@ function renderGrid(){
               mark+=`<span class="cell-mark ach-mark" data-ach-h="${h.id}" data-ach-d="${d}" title="${T.achTierLogHint}">${idx+1}</span>`;
             }
             if(!on&&isWeekly){
-              // Corner toggle always reflects only the MANUAL flag (regardless of auto-dormant status
-              // from the quota already being met) — otherwise it would disappear the moment a day goes
-              // dormant automatically, with no way left to click it back off. The center glyph below
-              // shows the derived, overall dormant state (auto OR manual).
+              // Corner toggle and the center glyph below now read the exact same manual-only flag —
+              // the glyph no longer also fires on quota-met automatically (see weeklyDayIsDormant).
               const manuallyMarked=!!(state.weeklySleepMarks["m"+m]&&state.weeklySleepMarks["m"+m][h.id]&&state.weeklySleepMarks["m"+m][h.id][d]);
               mark+=`<span class="cell-mark sleep-mark ${manuallyMarked?'sleep-on':''}" data-sleep-h="${h.id}" data-sleep-d="${d}" title="${T.weeklySleepHint}">😴</span>`;
             }
